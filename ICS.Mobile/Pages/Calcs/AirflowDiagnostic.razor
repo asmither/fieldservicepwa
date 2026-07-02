@@ -1,0 +1,592 @@
+@page "/airflowdiagnostic"
+@inherits AirflowDiagPage
+@using ICS.Mobile.Pages.AirflowDiagnostic
+@using ICS.Mobile.Components
+@using ICS.Mobile.DataModels.Custom;
+@using static ICS.Mobile.DataModels.Custom.HVACCalculations;
+
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/calc-theme.css" rel="stylesheet">
+
+<style>
+    /* Token bridge — map Bootstrap onto the ICS design tokens (guide rule 7). */
+    .container-fluid {
+        color: var(--text-primary);
+        --bs-body-color: var(--text-primary);
+        --bs-body-color-rgb: 255, 255, 255;
+        --bs-body-bg: var(--surface-input);
+        --bs-emphasis-color: var(--text-primary);
+        --bs-heading-color: var(--text-primary);
+        --bs-secondary-color: var(--text-muted);
+        --bs-secondary-bg: var(--surface-raised-subtle);
+        --bs-tertiary-color: var(--text-muted);
+        --bs-tertiary-bg: var(--surface-raised-subtle);
+        --bs-border-color: rgba(255, 255, 255, 0.15);
+        --bs-border-color-translucent: rgba(255, 255, 255, 0.09);
+        --bs-link-color: var(--accent-soft);
+        --bs-link-hover-color: var(--accent);
+        --bs-primary-rgb: 41, 148, 208; /* --brand-500 */
+        --bs-box-shadow-sm: var(--elevation-1);
+    }
+
+        .container-fluid .card {
+            --bs-card-bg: var(--surface-card);
+            --bs-card-border-color: rgba(255, 255, 255, 0.09);
+            --bs-card-cap-bg: rgba(255, 255, 255, 0.04);
+            --bs-card-border-radius: var(--radius-md);
+        }
+
+        .container-fluid .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--text-primary);
+            --bs-table-border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .container-fluid .bg-light {
+            --bs-bg-opacity: 0.08;
+        }
+
+
+        .container-fluid .form-select {
+            --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgba(255,255,255,0.75)' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        }
+</style>
+
+<PageHeaderBasic Title="Airflow Diagnostic" Icon="bi-activity">
+    <RoundButtonGreen Icon="bi-arrow-left" OnClick="HomePageClick" />
+</PageHeaderBasic>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-11">
+            
+            <!-- Header -->
+            <div class="text-center mb-4">
+               @*  <div class="d-flex align-items-center justify-content-center mb-3">
+                    <svg class="me-3" width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #dc3545;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    
+                </div> *@
+               @*  <p class="text-muted">
+                    Advanced diagnostic analysis for commercial HVAC systems (2-115+ tons)
+                </p> *@
+                <div class="alert alert-info border-start border-4 border-info">
+                    <small>
+                        <strong>Commercial-Grade Diagnostic Tool:</strong> Analyzes systems from small commercial (2-10 tons) 
+                        to large industrial (115+ tons). Includes code compliance, occupant comfort, and operational cost analysis.
+                    </small>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Input Sections -->
+                <div class="col-lg-8">
+                    
+                    <!-- Basic System Information -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary bg-opacity-10">
+                            <h5 class="card-title mb-0 text-primary">Commercial System Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">System Capacity (BTU/hr)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.SystemCapacity" @bind:after="OnInputChanged" 
+                                           min="24000" max="1500000" step="6000" />
+                                    <div class="form-text">Range: 24,000 - 1,500,000+ BTU/hr (2-125+ tons)</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">System Type</label>
+                                    <select class="form-select" @bind="Inputs.SystemType" @bind:after="OnInputChanged">
+                                        <option value="Packaged Rooftop Unit">Packaged Rooftop Unit</option>
+                                        <option value="Split System">Split System</option>
+                                        <option value="Variable Air Volume (VAV)">Variable Air Volume (VAV)</option>
+                                        <option value="Constant Volume">Constant Volume</option>
+                                        <option value="Heat Pump">Heat Pump</option>
+                                        <option value="Chilled Water">Chilled Water</option>
+                                        <option value="Direct Expansion">Direct Expansion</option>
+                                        <option value="Economizer Unit">Economizer Unit</option>
+                                        <option value="Industrial Process">Industrial Process</option>
+                                        <option value="Clean Room">Clean Room</option>
+                                        <option value="Data Center">Data Center</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Application Type</label>
+                                    <select class="form-select" @bind="Inputs.ApplicationType" @bind:after="OnInputChanged">
+                                        <option value="Office Building">Office Building</option>
+                                        <option value="Retail">Retail</option>
+                                        <option value="Restaurant">Restaurant</option>
+                                        <option value="Manufacturing">Manufacturing</option>
+                                        <option value="Warehouse">Warehouse</option>
+                                        <option value="Healthcare">Healthcare</option>
+                                        <option value="Educational">Educational</option>
+                                        <option value="Data Center">Data Center</option>
+                                        <option value="Laboratory">Laboratory</option>
+                                        <option value="Hotel">Hotel</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">System Age (Years)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.SystemAge" @bind:after="OnInputChanged" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Number of Zones</label>
+                                    <input type="number" class="form-control" @bind="Inputs.NumberOfZones" @bind:after="OnInputChanged" min="1" max="50" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Building Sq Ft</label>
+                                    <input type="number" class="form-control" @bind="Inputs.BuildingSquareFootage" @bind:after="OnInputChanged" min="500" max="500000" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Occupancy (hrs/week)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.OccupancySchedule" @bind:after="OnInputChanged" min="24" max="168" />
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-2">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="Inputs.HasEconomizer" @bind:after="OnInputChanged" id="economizer">
+                                        <label class="form-check-label" for="economizer">Has Economizer</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="Inputs.IsVAVSystem" @bind:after="OnInputChanged" id="vav">
+                                        <label class="form-check-label" for="vav">VAV System</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="Inputs.IsR22System" @bind:after="OnInputChanged" id="r22Commercial">
+                                        <label class="form-check-label" for="r22Commercial">R-22 System</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="Inputs.EconomizerStuck" @bind:after="OnInputChanged" id="econStuck">
+                                        <label class="form-check-label" for="econStuck">Economizer Issues</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Temperature Measurements -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success bg-opacity-10">
+                            <h5 class="card-title mb-0 text-success">Temperature Measurements</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Supply Air (°F)</label>
+                                    <input type="number" step="0.1" class="form-control" @bind="Inputs.SupplyAirTemp" @bind:after="OnInputChanged" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Return Air (°F)</label>
+                                    <input type="number" step="0.1" class="form-control" @bind="Inputs.ReturnAirTemp" @bind:after="OnInputChanged" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Ambient (°F)</label>
+                                    <input type="number" step="0.1" class="form-control" @bind="Inputs.AmbientTemp" @bind:after="OnInputChanged" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Coil Surface (°F)</label>
+                                    <input type="number" step="0.1" class="form-control" @bind="Inputs.CoilTemp" @bind:after="OnInputChanged" />
+                                </div>
+                                @if (Inputs.HasEconomizer)
+                                {
+                                    <div class="col-md-3">
+                                        <label class="form-label">Mixed Air (°F)</label>
+                                        <input type="number" step="0.1" class="form-control" @bind="Inputs.MixedAirTemp" @bind:after="OnInputChanged" />
+                                        <div class="form-text">Economizer mixed air temperature</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pressure Readings - Commercial Scale -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-warning bg-opacity-10">
+                            <h5 class="card-title mb-0 text-warning">Pressure Readings (Commercial Scale)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Total Static Pressure (" WC)</label>
+                                    <input type="number" step="0.01" class="form-control" @bind="Inputs.StaticPressure" @bind:after="OnInputChanged" />
+                                    <div class="form-text">Commercial range: 0.8 - 3.0" WC</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Velocity Pressure (" WC)</label>
+                                    <input type="number" step="0.01" class="form-control" @bind="Inputs.VelocityPressure" @bind:after="OnInputChanged" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Filter Drop (" WC)</label>
+                                    <input type="number" step="0.01" class="form-control" @bind="Inputs.FilterPressureDrop" @bind:after="OnInputChanged" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Coil Drop (" WC)</label>
+                                    <input type="number" step="0.01" class="form-control" @bind="Inputs.CoilPressureDrop" @bind:after="OnInputChanged" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Ductwork Drop (" WC)</label>
+                                    <input type="number" step="0.01" class="form-control" @bind="Inputs.DuctworkPressureDrop" @bind:after="OnInputChanged" />
+                                    <div class="form-text">Distribution system pressure loss</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Electrical & Motor Data -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-info bg-opacity-10">
+                                    <h6 class="card-title mb-0 text-info">Commercial Electrical Data</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label class="form-label">Blower Motor HP</label>
+                                            <input type="number" step="0.5" class="form-control" @bind="Inputs.BlowerMotorHP" @bind:after="OnInputChanged" min="1" max="150" />
+                                            <div class="form-text">Commercial motors: 1-150 HP</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Blower Amp Draw</label>
+                                            <input type="number" step="0.1" class="form-control" @bind="Inputs.BlowerAmpDraw" @bind:after="OnInputChanged" />
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Rated Blower Amps</label>
+                                            <input type="number" step="0.1" class="form-control" @bind="Inputs.RatedBlowerAmps" @bind:after="OnInputChanged" />
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Supply Voltage</label>
+                                            <select class="form-select" @bind="Inputs.SupplyVoltage" @bind:after="OnInputChanged">
+                                                <option value="208">208V (3-phase)</option>
+                                                <option value="240">240V</option>
+                                                <option value="480">480V (3-phase)</option>
+                                                <option value="575">575V (3-phase)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-secondary bg-opacity-10">
+                                    <h6 class="card-title mb-0 text-secondary">Commercial Runtime Data</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label class="form-label">Runtime % (During Occupied Hours)</label>
+                                            <input type="number" class="form-control" @bind="Inputs.RuntimePercentage" @bind:after="OnInputChanged" min="0" max="100" />
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Duct Leakage Estimate %</label>
+                                            <input type="number" class="form-control" @bind="Inputs.DuctLeakageEstimate" @bind:after="OnInputChanged" min="0" max="50" />
+                                            <div class="form-text">Commercial typically 5-15%</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Min Ventilation CFM</label>
+                                            <input type="number" class="form-control" @bind="Inputs.MinimumVentilationCFM" @bind:after="OnInputChanged" min="0" />
+                                            <div class="form-text">ASHRAE 62.1 requirement</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" @bind="Inputs.ShortCycling" @bind:after="OnInputChanged" id="shortCycleCommercial">
+                                                <label class="form-check-label" for="shortCycleCommercial">Short Cycling Observed</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Physical Observations -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-danger bg-opacity-10">
+                            <h5 class="card-title mb-0 text-danger">Physical Observations & Filter Data</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Filter Type</label>
+                                    <select class="form-select" @bind="Inputs.FilterType" @bind:after="OnInputChanged">
+                                        <option value="Pleated">Standard Pleated</option>
+                                        <option value="HEPA">HEPA Filter</option>
+                                        <option value="Bag">Bag Filter</option>
+                                        <option value="Electronic">Electronic Filter</option>
+                                        <option value="Carbon">Carbon Filter</option>
+                                        <option value="Pre-Filter">Pre-Filter Only</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Filter Condition</label>
+                                    <select class="form-select" @bind="Inputs.FilterCondition" @bind:after="OnInputChanged">
+                                        <option value="Clean">Clean</option>
+                                        <option value="Dirty">Dirty</option>
+                                        <option value="Extremely Dirty">Extremely Dirty</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Coil Condition</label>
+                                    <select class="form-select" @bind="Inputs.CoilCondition" @bind:after="OnInputChanged">
+                                        <option value="Clean">Clean</option>
+                                        <option value="Moderately Dirty">Moderately Dirty</option>
+                                        <option value="Very Dirty">Very Dirty</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Measured CFM (Optional)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.MeasuredCFM" @bind:after="OnInputChanged" min="0" max="200000" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Measurement Method</label>
+                                    <select class="form-select" @bind="Inputs.MeasurementMethod" @bind:after="OnInputChanged">
+                                        <option value="None">None</option>
+                                        <option value="Pitot Traverse">Pitot Traverse</option>
+                                        <option value="Balometer">Balometer</option>
+                                        <option value="Anemometer">Anemometer</option>
+                                        <option value="Flow Hood">Flow Hood</option>
+                                        <option value="Calculated">Calculated</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" @bind="Inputs.IceFormation" @bind:after="OnInputChanged" id="iceCommercial">
+                                        <label class="form-check-label" for="iceCommercial">Ice Formation</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" @bind="Inputs.ExcessiveCondensation" @bind:after="OnInputChanged" id="condensationCommercial">
+                                        <label class="form-check-label" for="condensationCommercial">Excessive Condensation</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" @bind="Inputs.UnusualNoises" @bind:after="OnInputChanged" id="noisesCommercial">
+                                        <label class="form-check-label" for="noisesCommercial">Unusual Noises</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-danger btn-lg w-100 mb-4" @onclick="RunDiagnostic">
+                        <svg class="me-2" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Run Commercial Airflow Diagnostic
+                    </button>
+                </div>
+
+                <!-- Results Section -->
+                <div class="col-lg-4">
+                    <div class="position-sticky" style="top: 1rem;">
+                        
+                        @if (Results != null)
+                        {
+                            <!-- System Health Overview -->
+                            <div class="card mb-4">
+                                <div class="card-header @GetOverallHealthClass()">
+                                    <h5 class="card-title mb-0 text-white">
+                                        <svg class="me-2" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                        </svg>
+                                        System Health: @Results.OverallSystemHealth.ToString("F0")%
+                                    </h5>
+                                    <small class="text-white-50">@GetSystemSizeCategory() System</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <div class="progress mb-2">
+                                            <div class="progress-bar @GetHealthProgressClass()" role="progressbar" 
+                                                 style="width: @Results.OverallSystemHealth%"></div>
+                                        </div>
+                                        <small class="text-muted">Airflow Efficiency: @Results.AirflowEfficiency.ToString("F0")%</small>
+                                    </div>
+                                    <div class="row g-2 small">
+                                        <div class="col-6"><strong>System Size:</strong></div>
+                                        <div class="col-6">@Results.SystemTons.ToString("F1") tons</div>
+                                        <div class="col-6"><strong>Nominal CFM:</strong></div>
+                                        <div class="col-6">@Results.NominalCFM.ToString("F0")</div>
+                                        <div class="col-6"><strong>Estimated CFM:</strong></div>
+                                        <div class="col-6">@Results.EstimatedCFM.ToString("F0")</div>
+                                        <div class="col-6"><strong>CFM/Ton:</strong></div>
+                                        <div class="col-6">@Results.CFMPerTon.ToString("F0")</div>
+                                        <div class="col-6"><strong>CFM/Sq Ft:</strong></div>
+                                        <div class="col-6">@Results.CFMPerSquareFoot.ToString("F2")</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Primary Diagnostic Result -->
+                            <div class="card mb-4">
+                                <div class="card-header @GetDiagnosticHeaderClass(Results.PrimaryResult.Status)">
+                                    <h5 class="card-title mb-0 text-white">
+                                        @GetDiagnosticIcon(Results.PrimaryResult.Status)
+                                        @Results.PrimaryResult.Title
+                                    </h5>
+                                    <small class="text-white-50">
+                                        Confidence: @Results.PrimaryResult.ConfidenceLevel.ToString("F0")% | 
+                                        Severity: @Results.PrimaryResult.Severity.ToString("F0")/10
+                                    </small>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-3">@Results.PrimaryResult.Description</p>
+                                    
+                                    @if (!string.IsNullOrEmpty(Results.PrimaryResult.BusinessImpact))
+                                    {
+                                        <div class="alert alert-warning alert-sm mb-3">
+                                            <strong>Business Impact:</strong> @Results.PrimaryResult.BusinessImpact
+                                        </div>
+                                    }
+                                    
+                                    @if (Results.PrimaryResult.Symptoms.Any())
+                                    {
+                                        <div class="mb-3">
+                                            <h6 class="text-muted">Key Symptoms:</h6>
+                                            <ul class="list-unstyled small">
+                                                @foreach (var symptom in Results.PrimaryResult.Symptoms.Take(3))
+                                                {
+                                                    <li>• @symptom</li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Commercial Cost Impact -->
+                            @if (Results.AnnualCostImpact > 0)
+                            {
+                                <div class="card mb-4">
+                                    <div class="card-header bg-warning">
+                                        <h6 class="card-title mb-0 text-dark">Annual Cost Impact</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-2 small">
+                                            <div class="col-7"><strong>Energy Costs:</strong></div>
+                                            <div class="col-5 text-end">$@Results.AnnualCostImpact.ToString("N0")</div>
+                                            
+                                            @if (Results.DemandChargeImpact > 0)
+                                            {
+                                                <div class="col-7"><strong>Demand Charges:</strong></div>
+                                                <div class="col-5 text-end">$@Results.DemandChargeImpact.ToString("N0")</div>
+                                            }
+                                            
+                                            @if (Results.MaintenanceCostImpact > 0)
+                                            {
+                                                <div class="col-7"><strong>Maintenance:</strong></div>
+                                                <div class="col-5 text-end">$@Results.MaintenanceCostImpact.ToString("N0")</div>
+                                            }
+                                            
+                                            <div class="col-12 border-top pt-2 mt-2">
+                                                <div class="row">
+                                                    <div class="col-7"><strong>Total Annual:</strong></div>
+                                                    <div class="col-5 text-end"><strong>$@(Results.AnnualCostImpact + Results.DemandChargeImpact + Results.MaintenanceCostImpact).ToString("N0")</strong></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted d-block mt-2">
+                                            Due to @Results.EstimatedEfficiencyLoss.ToString("F0")% efficiency loss
+                                        </small>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Top Repair Priorities -->
+                            @if (Results.RepairPriorities.Any())
+                            {
+                                <div class="card mb-4">
+                                    <div class="card-header bg-info">
+                                        <h6 class="card-title mb-0 text-white">Commercial Repair Priorities</h6>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        @foreach (var repair in Results.RepairPriorities.Take(3))
+                                        {
+                                            <div class="p-3 border-bottom">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <strong>@repair.Action</strong>
+                                                    <span class="badge @GetPriorityBadgeClass(repair.Priority)">Priority @repair.Priority</span>
+                                                </div>
+                                                <small class="text-muted d-block mb-1">@repair.BusinessJustification</small>
+                                                <div class="row g-2 small">
+                                                    @if (repair.EstimatedCost > 0)
+                                                    {
+                                                        <div class="col-6">Cost: $@repair.EstimatedCost.ToString("N0")</div>
+                                                    }
+                                                    @if (repair.PaybackPeriod > 0)
+                                                    {
+                                                        <div class="col-6">Payback: @repair.PaybackPeriod.ToString("F0") months</div>
+                                                    }
+                                                    @if (repair.LaborHours > 0)
+                                                    {
+                                                        <div class="col-6">Labor: @repair.LaborHours.ToString("F0") hrs</div>
+                                                    }
+                                                    @if (repair.RequiresShutdown)
+                                                    {
+                                                        <div class="col-6 text-danger">Requires Shutdown</div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Additional Issues -->
+                            @if (Results.AllDiagnostics.Count > 1)
+                            {
+                                <div class="card">
+                                    <div class="card-header bg-secondary">
+                                        <h6 class="card-title mb-0 text-white">Additional Issues (@(Results.AllDiagnostics.Count - 1))</h6>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        @foreach (var diagnostic in Results.AllDiagnostics.Skip(1).Take(4))
+                                        {
+                                            <div class="p-2 border-bottom">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <strong class="@GetStatusTextClass(diagnostic.Status) small">@diagnostic.Title</strong>
+                                                    <small class="badge @GetStatusBadgeClass(diagnostic.Status)">@diagnostic.ConfidenceLevel.ToString("F0")%</small>
+                                                </div>
+                                                @if (diagnostic.AffectsCodeCompliance)
+                                                {
+                                                    <small class="text-danger d-block"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Code Compliance Issue</small>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <!-- No Results State -->
+                            <div class="card">
+                                <div class="card-body text-center py-5">
+                                    <svg class="mb-3 opacity-50" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                    </svg>
+                                    <h5 class="text-muted">Commercial Diagnostic Ready</h5>
+                                    <p class="text-muted">Enter commercial system measurements for comprehensive analysis</p>
+                                    <small class="text-muted">Supports 2-115+ ton systems</small>
+                                </div>
+                            </div>
+                        }
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>

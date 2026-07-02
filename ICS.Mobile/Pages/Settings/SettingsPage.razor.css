@@ -1,0 +1,85 @@
+.ThemeChoices {
+    display: flex;
+    gap: var(--touch-gap);
+    padding: var(--space-1) 0;
+}
+
+.ThemeChoice {
+    flex: 1;
+    min-height: var(--touch-target);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    background: var(--surface-raised-subtle);
+    color: var(--text-secondary);
+    border: var(--border-subtle);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    font-weight: var(--weight-medium);
+}
+
+    .ThemeChoice i {
+        font-size: var(--text-lg);
+    }
+
+    .ThemeChoice.Selected {
+        background: var(--brand-700); /* 4.5:1+ with white at this size */
+        color: var(--text-on-accent);
+        border-color: transparent;
+        font-weight: var(--weight-semibold);
+    }
+
+/* CardRow base styles are global (root.css). Page-specific bits only: */
+.CardRow i.ToggleOn {
+    color: var(--status-success);
+    font-size: 2.5rem;
+}
+
+.CardRow i.bi-toggle-off {
+    font-size: 2.5rem;
+}
+
+/* Developer — view-as-technician row (DEBUG builds only) */
+.DevOverrideRow {
+    display: flex;
+    gap: var(--touch-gap);
+    padding: var(--space-1) 0 var(--space-2);
+}
+
+    .DevOverrideRow input,
+    .DevOverrideRow select {
+        flex: 1;
+        min-width: 0;
+        min-height: var(--touch-target);
+        background: var(--surface-input);
+        border: var(--border-hairline);
+        border-radius: var(--radius-md);
+        color: var(--text-primary);
+        font-size: var(--text-base);
+        padding: 0 var(--space-3);
+    }
+
+    .DevOverrideRow select option {
+        color: initial;
+    }
+
+.DevBtn.Wide {
+    flex: 1;
+}
+
+.DevBtn {
+    min-height: var(--touch-target);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-md);
+    border: var(--border-hairline);
+    background: var(--surface-raised-subtle);
+    color: var(--text-primary);
+    font-weight: var(--weight-semibold);
+}
+
+    .DevBtn.Apply {
+        background: var(--brand-700); /* 4.5:1+ with white at this size */
+        color: var(--text-on-accent);
+        border-color: transparent;
+    }

@@ -1,0 +1,185 @@
+﻿@using ICS.Portal.Data.Enumerations
+<div class="DispatchListItem">
+    <div class="Content" @onclick="SelectDispatch">
+        <button class="Header">
+            <div class="CustomerName">@CustomerName</div>
+            <div class="FullAddress">@FullAddress</div>
+            <img class="Pin" src="/images/@Image" />
+        </button>
+        <div class="Status">
+            <div class="StatusAndPriority @Status?.Replace("Travel To", "Traveling").Replace("Travelling", "Traveling") ?? string.Empty">@StatusAndPriorityText</div>
+            <div class="PromissedDate">@PromissedDate</div>
+            <div class="Area">@Area</div>
+        </div>
+        <div class="Border"></div>
+        <div class="Details">
+            <div class="Tasks">
+                @if (!string.IsNullOrEmpty(Tasks) && Tasks.Contains(","))
+                {
+                    <span class="TasksLabel">Issue:&nbsp; </span>
+                }
+                else
+                {
+                    <span class="TasksLabel">Issues:&nbsp; </span>
+                }
+                <span class="TasksValue">@Tasks</span>
+            </div>
+            <div class="PO">
+                <span class="POLabel">PO#:&nbsp; </span>
+                <span class="POValue">@PO</span>
+            </div>
+            <div class="DNE">
+                <span class="DNELabel"></span>
+                <span class="DNEValue">@DNE</span>
+            </div>
+            <div class="ESC">
+                <span class="ESCLabel">Dispatch#:&nbsp; </span>
+                <span class="ESCValue">@DispatchNumber</span>
+            </div>
+            <div class="Zone">
+                <span class="ZoneLabel">Zone:&nbsp; </span>
+                <span class="ZoneValue">@Zone</span>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+
+    private string Image
+    {
+        get
+        {
+            if (IsActive.HasValue && IsActive.Value)
+            {
+                return "icon-pin-active.png";
+            }
+            return "icon-pin-inactive.png";
+        }
+    }
+    private string StatusAndPriorityText
+    {
+        get
+        {
+            return $"{Status!.ToUpper()} : {Priority}";
+        }
+    }
+
+    public async Task SelectDispatch()
+    {
+
+        if (Id.HasValue)
+            await ItemSelected.InvokeAsync(Id!.Value);
+
+    }
+
+    [Parameter]
+    [EditorRequired]
+    public EventCallback<int> ItemSelected { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public int? Id { set; get; }
+
+    [Parameter]
+    public string? DispatchNumber { set; get; }
+
+    [Parameter]
+    public string? CustomerName { set; get; }
+
+    [Parameter]
+    public string? FullAddress { set; get; }
+
+    [Parameter]
+    public bool? IsActive { set; get; } = false;
+
+    [Parameter]
+    public string? Status { set; get; }
+
+    [Parameter]
+    public string? Priority { set; get; }
+
+    [Parameter]
+    public string? PromissedDate { set; get; }
+
+    [Parameter]
+    public string? Area { set; get; }
+
+    [Parameter]
+    public string? PO { set; get; }
+
+    [Parameter]
+    public string? Zone { set; get; }
+
+    [Parameter]
+    public string? County { set; get; }
+
+    [Parameter]
+    public string? DNE { set; get; }
+
+    [Parameter]
+    public string? ESC { set; get; }
+
+    [Parameter]
+    public string? Tasks { set; get; }
+
+    protected override void OnInitialized()
+    {
+        if (!Id.HasValue)
+        {
+            Id = 0;
+        }
+
+        if (string.IsNullOrEmpty(DispatchNumber))
+        {
+            DispatchNumber = string.Empty;
+        }
+
+        if (string.IsNullOrEmpty(CustomerName))
+        {
+            CustomerName = string.Empty;
+        }
+
+        if (!IsActive.HasValue)
+        {
+            IsActive = true;
+        }
+
+
+        if (string.IsNullOrEmpty(Priority))
+        {
+            Priority = string.Empty;
+        }
+
+        if (string.IsNullOrEmpty(PromissedDate))
+        {
+            PromissedDate = string.Empty;
+        }
+
+        if (string.IsNullOrEmpty(Area))
+        {
+            Area = string.Empty;
+        }
+
+        if (string.IsNullOrEmpty(PO))
+        {
+            PO = string.Empty;
+        }
+
+        if (string.IsNullOrEmpty(Zone))
+        {
+            Zone = string.Empty;
+        }
+
+        if (string.IsNullOrEmpty(County))
+        {
+            County = string.Empty;
+        }
+
+        if (string.IsNullOrEmpty(DNE))
+        {
+            DNE = string.Empty;
+        }
+    }
+}

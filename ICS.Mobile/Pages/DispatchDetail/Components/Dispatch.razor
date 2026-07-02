@@ -1,0 +1,274 @@
+﻿<div class="DispatchDetailDispatch">
+    <div class="CustomerNumber">@DispatchNumber</div>
+    <div class="CustomerName">@LocationName</div>
+    <div class="DueDate">
+        @DueDateTime @Timezone
+        @if (!string.IsNullOrEmpty(DueDateDaysAgo))
+        {
+            <span>&nbsp;&nbsp;</span>
+            <span class="DueDateMissed">@DueDateDaysAgo</span>
+        }
+    </div>
+    <div class="CustomerLocation">
+        <button class="MapButton Transparent" @onclick="MapButtonClick">
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="44.25" height="66.855" viewBox="0 0 44.25 66.855"><defs><linearGradient id="a" x1="0.5" y1="1" x2="0.5" gradientUnits="objectBoundingBox"><stop offset="0" stop-color="#ed5000" /><stop offset="1" stop-color="#fbde40" /></linearGradient></defs><g transform="translate(-52.75 -381.145)"><ellipse cx="19.5" cy="7" rx="19.5" ry="7" transform="translate(57 434)" fill="#505050" opacity="0.3" /><path d="M452.468,175.981a22.125,22.125,0,0,0-22.126,22.124c0,18.138,22.126,37.819,22.126,37.819s22.124-19.681,22.124-37.819A22.124,22.124,0,0,0,452.468,175.981Zm0,33.122a11,11,0,1,1,11-11A11,11,0,0,1,452.468,209.1Z" transform="translate(-377.592 205.164)" fill="url(#a)" /></g></svg>
+        </button>
+        <div class="Location">
+            <span class="LocAddressBlock">
+                <div class="AddressLine">@AddressLine1</div>
+                @if (AddressLine2 is not null)
+                {
+                    <div class="AddressLine">@AddressLine2</div>
+                }
+                <div class="CityStateZip">@CityStateZip</div>
+            </span>
+            @if (!string.IsNullOrEmpty(Neighborhood) && !Neighborhood.ToUpper().Equals(City?.ToUpper() ?? ""))
+            {
+                <div class="Neighborhood">
+                    <span class="NeighborhoodLabel">
+                        Town Name: &nbsp;
+                    </span>
+                    <span class="NeighborhoodValue">
+                        @Neighborhood
+                    </span>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Landmark))
+            {
+                <div class="Landmark">
+                    <span class="LandmarkLabel">
+                        Landmark: &nbsp;
+                    </span>
+                    <span class="LandmarkValue">
+                        @Landmark
+                    </span>
+                </div>
+            }
+
+            @* @if (Contacts != null && Contacts.Count > 0)
+            {
+
+                @foreach (var contact in Contacts)
+                {
+                    <div class="Contacts">
+                        <span class="ContactName">
+                            @if (!string.IsNullOrEmpty(contact.Key))
+                            {
+                                @((MarkupString)contact.Key) 
+                            }
+                        </span>
+                        <span class="ContactData">
+                            @if (!string.IsNullOrEmpty(contact.Value))
+                            {
+                                @((MarkupString)contact.Value)
+                            }
+                        </span>
+                    </div>
+                }
+
+            } *@
+
+        </div>
+    </div>
+
+    <div class="SubDetail">
+
+        @* <div class="DispatchNumber">
+        <span class="DispatchNumberLabel">
+        <small>Dispatch#: &nbsp;</small>
+        </span>
+        <span class="DispatchNumberValue">
+        @DispatchNumber
+        </span>
+        </div> *@
+        <div class="Zone">
+            <span class="ZoneLabel">
+                Team: &nbsp;
+            </span>
+            <span class="ZoneValue">
+                @Zone
+            </span>
+        </div>
+        <div class="DNE">
+            <span class="DNELabel">
+            </span>
+            <span class="DNEValue">
+                @DNE
+            </span>
+        </div>
+        <div class="Tasks">
+            <span class="TasksLabel">
+                Tasks: &nbsp;
+            </span>
+            <span class="TasksValue">
+                @Tasks
+            </span>
+        </div>
+
+        <div class="CompleteDate">
+            <span class="CompleteDateLabel">
+                @if (!string.IsNullOrEmpty(CompleteDate))
+                {
+                    <i class="bi-check-circle-fill"> </i>
+                }
+            </span>
+            <span class="CompleteDateValue">
+                @if (!string.IsNullOrEmpty(CompleteDate))
+                {
+                    @CompleteDate
+                }
+            </span>
+        </div>
+        <div class="CustomerFullName">
+            <span class="CustomerFullNameLabel"></span>
+            <span class="CustomerFullNameValue">
+                @CustomerName?.Replace(CustNo ?? string.Empty, string.Empty).Trim()
+            </span>
+        </div>
+        <div class="CustomerPO">
+            <span class="PONumberLabel"></span>
+            <span class="PONumberValue">@CustomerPONumber</span>
+        </div>
+    </div>
+    <div class="SubDetailSeparator" />
+</div>
+
+@code {
+
+    private void MapButtonClick()
+    {
+        OnMapButtonClick.InvokeAsync();
+
+    }
+
+    private string DueDateTime
+    {
+        get
+        {
+            return $"{DueDate} @ {DueTime}";
+        }
+    }
+
+    private string CityStateZip
+    {
+        get
+        {
+            return $"{City}, {State}  {Zip}";
+        }
+    }
+
+
+
+    [Parameter]
+    [EditorRequired]
+    public int? Id { set; get; } = 0;
+
+
+    [Parameter]
+    public int? CustomerId { set; get; } = null;
+
+    [Parameter]
+    public int? CustomerLocationId { set; get; } = null;
+
+    [Parameter]
+    public int? EmployeeId { set; get; } = 0;
+
+    [Parameter]
+    public string? CustNo { set; get; } = null;
+
+    [Parameter]
+    public string? LocNo { set; get; } = null;
+
+    [Parameter]
+    public string? CustomerName { set; get; } = null;
+
+    [Parameter]
+    public string? Timezone { set; get; } = "";
+
+
+
+    [Parameter]
+    [EditorRequired]
+    public string? CustomerPONumber { set; get; } = (string)"";
+
+    [Parameter]
+    [EditorRequired]
+    public string? LocationName { set; get; } = (string)"";
+
+    [Parameter]
+    public string? Zone { set; get; } = (string)"";
+
+    [Parameter]
+    [EditorRequired]
+    public string? DueDate { set; get; } = (string)"";
+
+    [Parameter]
+    [EditorRequired]
+    public string? DueTime { set; get; } = (string)"";
+
+    [Parameter]
+    [EditorRequired]
+    public string? AddressLine1 { set; get; } = (string)"";
+
+    [Parameter]
+    public string? AddressLine2 { set; get; } = null;
+
+    [Parameter]
+    public string? City { set; get; } = (string)"";
+    [Parameter]
+    public string? State { set; get; } = (string)"";
+    [Parameter]
+    public string? Zip { set; get; } = (string)"";
+
+    [Parameter]
+    public string? Neighborhood { set; get; } = "";
+    [Parameter]
+    public string? County { set; get; } = null;
+    [Parameter]
+    public string? Landmark { set; get; } = "";
+    [Parameter]
+    public decimal? Longitude { set; get; } = 0;
+    [Parameter]
+    public decimal? Latitude { set; get; } = 0;
+
+    [Parameter]
+    public string CompleteDate { set; get; } = null;
+    [Parameter]
+    public string? DNE { set; get; } = (string)"";
+    [Parameter]
+    public string? Tasks { set; get; } = (string)"";
+
+
+
+    [Parameter]
+    [EditorRequired]
+    public string? DueDateDaysAgo { set; get; } = (string)"";
+
+    [Parameter]
+    [EditorRequired]
+    public string? DispatchNumber { set; get; } = (string)"";
+
+    [Parameter]
+    [EditorRequired]
+    public EventCallback OnMapButtonClick { set; get; }
+
+    // [Parameter]
+    // [EditorRequired]
+    // public Dictionary<string, string>? Contacts { set; get; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+
+
+    }
+
+    public string FormatDateAllPrettyTheWayILikeIt(DateTimeOffset? dt, string sepchar = "@")
+    {
+        if (!dt.HasValue) return " ";
+        DateTime d = dt.Value.DateTime.ToUniversalTime().ToLocalTime();
+        return $"{d.ToString("M/dd")} {sepchar} {d.ToString("h:mmtt")}";
+    }
+
+}

@@ -1,0 +1,49 @@
+﻿@using ICS.Portal.Data.Enumerations
+
+<div class="DispatchListPageTabs">
+
+    <button class="Tab @Selected(DispatchListPageTabs.Current)" @onclick="() => Click(DispatchListPageTabs.Current)">
+        CURRENT
+    </button>
+    <button class="Tab @Selected(DispatchListPageTabs.Today)" @onclick="() => Click(DispatchListPageTabs.Today)">
+        TODAY
+    </button>
+    <button class="Tab @Selected(DispatchListPageTabs.Recent)" @onclick="() => Click(DispatchListPageTabs.Recent)">
+        RECENT
+    </button>
+</div>
+
+@code {
+
+    public DispatchListPageTabs SelectedTab = DispatchListPageTabs.Current;
+    
+    private string Selected(DispatchListPageTabs tab)
+    {
+        if (tab == SelectedTab)
+        {
+            return "Selected";
+        }
+        return string.Empty;
+    }
+
+    [Parameter]
+    public EventCallback<DispatchListPageTabs> OnTabClick { set; get; }
+
+    [Parameter]
+    public EventCallback<DispatchListPageTabs> OnRefreshClick { set; get; }
+
+    public void SetTab(DispatchListPageTabs tab)
+    {
+        SelectedTab = tab;
+    }
+
+    private void Click(DispatchListPageTabs tab)
+    {
+        if (tab != SelectedTab)
+        {
+            SelectedTab = tab;
+            if (OnTabClick.HasDelegate)
+                OnTabClick.InvokeAsync(SelectedTab);
+        }
+    }
+}

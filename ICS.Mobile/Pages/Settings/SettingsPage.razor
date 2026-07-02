@@ -1,0 +1,203 @@
+@page "/settings";
+@inherits ICS.Mobile.Pages.PageBase
+@using ICS.Mobile.Helpers;
+@using ICS.Mobile.Components
+@using ICS.Mobile.Pages.Home.Components
+@using ICS.Mobile.Services
+@inject SettingsService Settings
+<CSSSettings />
+
+<PageHeaderBasic Title="SETTINGS" Icon="bi-gear">
+    <RoundButtonGreen Icon="bi-arrow-left" OnClick="OnCloseClick" />
+</PageHeaderBasic>
+
+<ICSDialogBox @ref="DialogBox" />
+
+<ICSDialogBox @ref="LogoutDialog"
+              OkButtonText="Logout" CancelButtonText="Cancel" HeaderText="Log out of App?">
+    <h4>YOU HAVE UNSYNCED ITEMS!</h4>
+    <p>
+        It's recommend you tap cancel and go to SYNC option in SETTINGS and push unsynced data before logout! &nbsp;
+        <i>You risk losing pictures and answers of in-process checklists not yet synced to the Cloud.</i>
+    </p>
+    <h3>Are you sure?</h3>
+</ICSDialogBox>
+
+<div class="SettingsItemContainer">
+    <div class="Title">Version &nbsp;</div>
+    <div class="Content">
+        <div class="Line">@Settings.AppVersion<span> - </span>@Settings.AppDisplayName</div>
+    </div>
+</div>
+
+<div class="SettingsItemContainer">
+    <div class="Title">Theme</div>
+    <div class="Content">
+        <div class="ThemeChoices" role="radiogroup" aria-label="App theme">
+            <button type="button" role="radio" aria-checked="@AriaChecked(ThemeService.Light)"
+                    class="ThemeChoice @SelectedCss(ThemeService.Light)"
+                    @onclick="() => SetThemeAsync(ThemeService.Light)">
+                <i class="bi bi-sun" aria-hidden="true"></i><span>Light</span>
+            </button>
+            <button type="button" role="radio" aria-checked="@AriaChecked(ThemeService.Dark)"
+                    class="ThemeChoice @SelectedCss(ThemeService.Dark)"
+                    @onclick="() => SetThemeAsync(ThemeService.Dark)">
+                <i class="bi bi-moon-stars" aria-hidden="true"></i><span>Dark</span>
+            </button>
+            <button type="button" role="radio" aria-checked="@AriaChecked(ThemeService.System)"
+                    class="ThemeChoice @SelectedCss(ThemeService.System)"
+                    @onclick="() => SetThemeAsync(ThemeService.System)">
+                <i class="bi bi-circle-half" aria-hidden="true"></i><span>Auto</span>
+            </button>
+        </div>
+        <button type="button" class="CardRow" role="switch" aria-checked="@(WaveBg ? "true" : "false")"
+                @onclick="ToggleWaveBg">
+            <span>Classic wave background (light theme)</span>
+            <i class="bi @(WaveBg ? "bi-toggle-on ToggleOn" : "bi-toggle-off")" aria-hidden="true"></i>
+        </button>
+    </div>
+</div>
+
+<div class="SettingsItemContainer">
+    <div class="Title">Navigation</div>
+    <div class="Content">
+        <button type="button" class="CardRow" role="switch" aria-checked="@(TabBarAutoHide ? "true" : "false")"
+                @onclick="ToggleTabBarAutoHide">
+            <span>Hide bottom menu while scrolling</span>
+            <i class="bi @(TabBarAutoHide ? "bi-toggle-on ToggleOn" : "bi-toggle-off")" aria-hidden="true"></i>
+        </button>
+    </div>
+</div>
+
+@if (ShowDevTools)
+{
+    <div class="SettingsItemContainer">
+        <div class="Title">Developer &mdash; View As Technician</div>
+        <div class="Content">
+            @if (DevTechList is null)
+            {
+                <div class="DevOverrideRow">
+                    <button type="button" class="DevBtn Apply Wide" disabled="@DevTechLoading" @onclick="LoadTechListAsync">
+                        @(DevTechLoading ? "Loading technicians…" : "Load Technician List")
+                    </button>
+                    @if (Settings.UserOverrideId != 0)
+                    {
+                        <button type="button" class="DevBtn" @onclick="ClearTechOverride">Clear</button>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="DevOverrideRow">
+                    <select aria-label="Technician to view as" @bind="DevTechIdInput">
+                        <option value="">&mdash; choose technician &mdash;</option>
+                        @foreach (var t in DevTechList)
+                        {
+                            <option value="@t.Id">@t.EmpName (#@t.Id)</option>
+                        }
+                    </select>
+                    <button type="button" class="DevBtn Apply" @onclick="ApplyTechOverride">Apply</button>
+                    <button type="button" class="DevBtn" @onclick="ClearTechOverride">Clear</button>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(DevTechLoadError))
+            {
+                <div class="DevOverrideRow">
+                    <input type="number" inputmode="numeric" min="1" placeholder="Employee Id (manual fallback)"
+                           aria-label="Technician employee id to view as" @bind="DevTechIdInput" />
+                    <button type="button" class="DevBtn Apply" @onclick="ApplyTechOverride">Apply</button>
+                </div>
+                <div class="Line"><small>@DevTechLoadError</small></div>
+            }
+            <div class="Line"><small>@DevOverrideStatus</small></div>
+        </div>
+    </div>
+}
+
+<div class="SettingsItemContainer">
+    <div class="Title">Geolocation Settings</div>
+    <div class="Content" @onclick="GetPositions">
+        <div class="Line">
+            @if (Latitude.Equals(0) || Longitude.Equals(0))
+            {
+                <i class="bi-geo-alt"></i>
+                <span>Get Current Location</span>
+            }
+            else
+            {
+                <i class="bi-geo-alt"></i>
+                <span class="csscopy">@Latitude.ToString("N6"), @Longitude.ToString("N6")</span>
+            }
+        </div>
+    </div>
+</div>
+<div class="SettingsItemContainer">
+    <div class="Title">Security</div>
+    <div class="Content">
+        <a class="CardRow" href="https://icsportal.azurewebsites.net/login" target="_blank">
+            <span>Change Password</span>
+            <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+        </a>
+        <hr />
+        <div class="CardRow Static">
+            <span>2 Step Verification</span>
+            <i class="bi bi-shield-check" aria-hidden="true"></i>
+        </div>
+    </div>
+</div>
+
+<div class="SettingsItemContainer">
+
+    <UpdateComponent ShowUpdateButton="true" AutoCheck="false" Strategy="UpdateComponent.UpdateStrategy.Smart" />
+
+
+    @* <div class="Title">Check for Updates</div>
+    <div class="Content">
+        <div class="LineWithButton">
+            <div class="Line">Update this App</div>
+            <button class="Button Transparent" @onclick="ClearServiceWorkerCache">
+                <i class="bi-recycle"></i>
+            </button>
+        </div>
+    </div> *@
+</div>
+
+<div class="SettingsItemContainer">
+    <div class="Title">Reset Internal Database</div>
+    <div class="Content">
+        <button type="button" class="CardRow" @onclick="ClearLocalData">
+            <span>Clear All Data</span>
+            <i class="bi bi-trash3" aria-hidden="true"></i>
+        </button>
+    </div>
+</div>
+
+<div class="SettingsItemContainer">
+    <div class="Title">Log Out</div>
+    <div class="Content">
+        <button type="button" class="CardRow" @onclick="()=>Logout()">
+            <span>Log Out of ICSMobile</span>
+            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+        </button>
+    </div>
+</div>
+
+<div class="SettingsItemContainer">
+    <div class="Title">Sync Events</div>
+    <div class="Content">
+        <a class="CardRow" href="/sync">
+            <span>Sync Page</span>
+            <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </a>
+    </div>
+</div>
+
+<div class="SettingsItemContainer">
+    <div class="Title">Error Messages</div>
+    <div class="Content">
+        <a class="CardRow" href="/errors">
+            <span>View Errors</span>
+            <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </a>
+    </div>
+</div>

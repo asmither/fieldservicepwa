@@ -1,0 +1,235 @@
+﻿@if (Initialized)
+{
+    <div class="TimeOnlyInput">
+        <div class="Display">
+            <div class="Time">@display</div>
+            <div class="TimeZone">@TimeZoneInfo.Local.StandardName</div>
+        </div>
+        <div class="Buttons">
+            <button type="button" class="Button" @onclick='() => HandleInput("7")'>7</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("8")'>8</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("9")'>9</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("4")'>4</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("5")'>5</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("6")'>6</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("1")'>1</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("2")'>2</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("3")'>3</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("C")'>C</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("0")'>0</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("Now")'>Now</button>
+        </div>
+    </div>
+}
+
+@code {
+
+    private string display = "hh:mm";
+    private string enteredValues = string.Empty;
+    private bool Initialized = false;
+
+    [Parameter]
+    public TimeOnly? Value { set; get; }
+
+    [Parameter]
+    public EventCallback<TimeOnly?> ValueChanged { get; set; }
+
+    private bool IgnoreChange = false;
+
+    private void HandleChange()
+    {
+        if (display == string.Empty || display.Contains("h") || display.Contains("m"))
+        {
+            if (Value != null)
+            {
+                Value = null;
+                IgnoreChange = true;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+        else
+        {
+            if (TryConvertToUTC(display, out TimeOnly timeAtUTC))
+            {
+                if (Value != timeAtUTC)
+                {
+                    Value = timeAtUTC;
+                    IgnoreChange = true;
+                    ValueChanged.InvokeAsync(timeAtUTC);
+                }
+            }
+        }
+    }
+
+    private void HandleInput(string value)
+    {
+        string hour = "hh";
+        string minute = "mm";
+
+        if (value == "C")
+        {
+            if (enteredValues.Length > 0)
+            {
+                if (enteredValues.Length == 6)
+                {
+                    enteredValues = enteredValues.Substring(0, 4);
+                }
+                else
+                {
+                    enteredValues = enteredValues.Substring(0, (enteredValues.Length - 1));
+                }
+            }
+
+            switch (enteredValues.Length)
+            {
+                case 0:
+                    hour = "hh";
+                    break;
+                case 1:
+                    hour = enteredValues.Substring(0, 1) + "h";
+                    break;
+                case 2:
+                    hour = enteredValues.Substring(0, 2);
+                    break;
+                case 3:
+                    hour = enteredValues.Substring(0, 2);
+                    minute = enteredValues.Substring(2, 1) + "m";
+                    break;
+                case 4:
+                    hour = enteredValues.Substring(0, 2);
+                    minute = enteredValues.Substring(2, 2);
+                    break;
+            }
+
+            display = $"{hour}:{minute}";
+
+            HandleChange();
+
+            return;
+        }
+
+
+        if (value == "Now")
+        {
+            var now = DateTime.Now;
+            hour = now.Hour.ToString();
+            minute = now.Minute.ToString();
+            if (hour.Length == 1)
+            {
+                hour = "0" + hour;
+            }
+            if (minute.Length == 1)
+            {
+                minute = "0" + minute;
+            }
+
+            enteredValues = hour + minute;
+        }
+
+        switch (enteredValues.Length)
+        {
+            case 0:
+                if (ValueIn(value, "012"))
+                {
+                    enteredValues += value;
+                    hour = value + "h";
+                }
+                break;
+            case 1:
+                hour = enteredValues.Substring(0, 1) + "h";
+                enteredValues += value;
+                hour = enteredValues;
+                break;
+            case 2:
+                hour = enteredValues.Substring(0, 2);
+                if (ValueIn(value, "012345"))
+                {
+                    enteredValues += value;
+                    minute = value + "m";
+                }
+                break;
+            case 3:
+                hour = enteredValues.Substring(0, 2);
+                enteredValues += value;
+                minute = enteredValues.Substring(2, 2);
+                break;
+            case 4:
+                hour = enteredValues.Substring(0, 2);
+                minute = enteredValues.Substring(2, 2);
+                break;
+        }
+
+
+        display = $"{hour}:{minute}";
+
+        HandleChange();
+
+    }
+
+    private bool TryConvertFromUTC(string value, out TimeOnly result)
+    {
+        result = new TimeOnly();
+
+        if (TimeOnly.TryParse(value, out TimeOnly timeOnly))
+        {
+            DateTime utcDateTime = DateTime.Parse($"1/1/2000 {value}");
+            DateTime localDateTime = TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, TimeZoneInfo.Local);
+            result = TimeOnly.FromDateTime(localDateTime);
+            return true;
+        }
+        return false;
+    }
+
+    private bool TryConvertToUTC(string value, out TimeOnly result)
+    {
+        result = new TimeOnly();
+
+        if (TimeOnly.TryParse(value, out TimeOnly timeOnly))
+        {
+            DateTime localDateTime = DateTime.Parse($"1/1/2000 {value}");
+            DateTime utcDateTime = TimeZoneInfo.ConvertTimeToUtc(localDateTime);
+            result = TimeOnly.FromDateTime(utcDateTime);
+            return true;
+        }
+
+        return false;
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if (!IgnoreChange)
+        {
+            if (Value.HasValue)
+            {
+                string utcTimeOnlyString = Value.Value.ToString();
+
+                if (TryConvertFromUTC(utcTimeOnlyString, out TimeOnly result))
+                {
+                    string militaryTime = result.ToString("HH:mm");
+                    enteredValues += militaryTime.Substring(0, 2);
+                    enteredValues += militaryTime.Substring(3, 2);
+                    display = militaryTime;
+                }
+            }
+            else
+            {
+                display = "hh:mm";
+                enteredValues = string.Empty;
+            }
+        }
+
+        IgnoreChange = false;
+
+        if (!Initialized)
+        {
+            Initialized = true;
+        }
+    }
+
+    protected bool ValueIn(string value, string set)
+    {
+        return set.Contains(value);
+    }
+}

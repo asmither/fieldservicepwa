@@ -1,0 +1,76 @@
+﻿@if (Initialized)
+{
+    <div class="Option @CSSTrueSelected" @onclick="() => SetValue(true)">
+        <div class="Name">@TruePrompt</div>
+        <i class="Image Selected bi-check2-square"></i>
+    </div>
+
+    <div class="Option @CSSFalseSelected" @onclick="() => SetValue(false)">
+        <div class="Name">@FalsePrompt</div>
+        <i class="Image Selected bi-check2-square"></i>
+    </div>
+}
+
+@code {
+
+    private bool Initialized = false;
+
+    private string CSSTrueSelected
+    {
+        get
+        {
+            if (Value.HasValue && Value == true)
+            {
+                return "Selected";
+            }
+            return string.Empty;
+        }
+    }
+
+    private string CSSFalseSelected
+    {
+        get
+        {
+            if (Value.HasValue && Value == false)
+            {
+                return "Selected";
+            }
+            return string.Empty;
+        }
+    }
+
+    private void SetValue(bool value)
+    {
+        if(Value == value)
+        {
+            Value = null;
+            ValueChanged.InvokeAsync(Value);
+        }
+        else
+        {
+            Value = value;
+            ValueChanged.InvokeAsync(Value);
+        }
+    }
+
+    [Parameter]
+    [EditorRequired]
+    public string? TruePrompt { set; get; } = "True";
+
+    [Parameter]
+    [EditorRequired]
+    public string? FalsePrompt { set; get; } = "False";
+
+    [Parameter]
+    public EventCallback<bool?> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool? Value { set; get; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        Initialized = true;
+    }
+}

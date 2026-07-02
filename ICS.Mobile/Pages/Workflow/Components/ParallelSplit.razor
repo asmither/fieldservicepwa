@@ -1,0 +1,107 @@
+﻿@using ICS.Mobile.Components
+@inherits WorkflowComponentsBasePage
+@layout EmptyLayout
+
+@if (Initialized)
+{
+    @foreach (var option in Options!)
+    {
+        if (option.Name == Value)
+        {
+            <div class="Option Selected" @onclick="() => SetValue(option.Name)">
+                @if(PreviouslySelected(option.Name))
+                {
+                    <div class="Name"><i class="Image bi-check2-square"></i> @option.Name</div>
+                }
+                else
+                {
+                    <div class="Name">
+                        @if(option.Required)
+                        {
+                            <span class="oi oi-warning text-warning px-2">&nbsp;&nbsp;</span>
+                        }
+                        @option.Name
+                    </div>
+                }
+                <i class="Image Selected bi-check2-square"></i>
+            </div>
+        }
+        else
+        {
+            <div class="Option" @onclick="() => SetValue(option.Name)">
+                @if (PreviouslySelected(option.Name))
+                {
+                    <div class="Name"><i class="Image bi-check2-square"></i> @option.Name</div>
+                }
+                else
+                {
+                    <div class="Name">
+                        @if (option.Required)
+                        {
+                            <span class="oi oi-warning text-warning px-2">&nbsp;&nbsp;</span>
+                        }
+                        @option.Name
+                    </div>
+                }
+                <i class="Image Selected bi-square"></i>
+            </div>
+        }
+        
+    }
+    
+    if (AllowExit)
+    {
+        if (TerminatingOption == Value)
+        {
+            <div class="Option Selected" @onclick="() => SetValue(TerminatingOption)">
+                @if (PreviouslySelected(TerminatingOption))
+                {
+                    <div class="Name"><i class="Image bi-check2-square"></i> @TerminatingOption</div>
+                }
+                else
+                {
+                    <div class="Name">@TerminatingOption</div>
+                }
+                <i class="Image Selected bi-check2-square"></i>
+            </div>
+        }
+        else
+        {
+            <div class="Option" @onclick="() => SetValue(TerminatingOption)">
+                @if (PreviouslySelected(TerminatingOption))
+                {
+                    <div class="Name"><i class="Image bi-check2-square"></i> @TerminatingOption</div>
+                }
+                else
+                {
+                    <div class="Name">@TerminatingOption</div>
+                }
+                <i class="Image Selected bi-square"></i>
+            </div>
+        }
+    }
+
+
+    <CommonError Message="@ErrorMessage"></CommonError>
+
+    @if (WorkflowStep!.ImageRequirementId != 0 || WorkflowStep.NoteRequirementId != 0)
+    {
+        @if (WorkflowStep.NoteRequirementId != 0)
+        {
+            <NoteMedia Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" NoteChanged="NoteChanged" NoteLabel="@WorkflowStep!.NoteLabel"></NoteMedia>
+        }
+
+        @if (WorkflowStep.ImageRequirementId != 0)
+        {
+            <ImageMedia Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" ImageChanged="ImageChanged" ImageLabel="@WorkflowStep!.ImageLabel" OnWorkingStateChange="OnImageWorkingStateChanged"></ImageMedia>
+        }
+    }
+
+    <Navigation NextDisabled="NextDisabled" PreviousDisabled="PreviousDisabled" OnNextClick="OnMoveNext" OnPreviousClick="OnMovePrevious"></Navigation>
+}
+else
+{
+    <ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICSLoadingSpinner>
+}

@@ -1,0 +1,334 @@
+﻿@namespace ICS.Mobile.Pages.BluonBrowse.Components
+@using ICS.Portal.Data.Custom
+@* @using ICS.Mobile.Components.ScratchPad; *@
+
+<div class="part-details-container">
+    @if (Part != null)
+    {
+        <div class="part-info-card">
+            <div class="part-header">
+                <h5 class="part-number">@Part.Number</h5>
+                @* <button class="btn btn-success btn-sm" @onclick="() => AddToProject(Part)">
+                    <i class="bi bi-plus"></i> Add to Project
+                </button> *@
+                <button class="btn btn-success btn-sm" @onclick="() => AddToProject(Part)">
+                    <i class="bi bi-clipboard-data"></i> + ScratchPad
+                </button>
+            </div>
+
+            <p class="part-description">
+                @(string.IsNullOrWhiteSpace(Part.Description) ? Part.Type : Part.Description)
+            </p>
+
+            <div class="part-details-grid">
+                <div class="ddetail-item">
+                    <span class="ddetail-label">Type:</span>
+                    <span class="ddetail-value">@Part.Type</span>
+                </div>
+                @if (!string.IsNullOrEmpty(Part.Subtype))
+                {
+                    <div class="ddetail-item">
+                        <span class="ddetail-label">Subtype:</span>
+                        <span class="ddetail-value">@Part.Subtype</span>
+                    </div>
+                }
+                <div class="ddetail-item">
+                    <span class="ddetail-label">Brand:</span>
+                    <span class="ddetail-value">@Part.Brand</span>
+                </div>
+                <div class="ddetail-item">
+                    <span class="ddetail-label">Category:</span>
+                    <span class="ddetail-value">@Part.Subcategory</span>
+                </div>
+                @if (Part.ReplacementsCount > 0)
+                {
+                    <div class="ddetail-item">
+                        <span class="ddetail-label">Replacements:</span>
+                        <span class="ddetail-value">
+                            <span class="replacements-badge">@Part.ReplacementsCount total</span>
+                            @if (Part.ReplacementsAftermarketCount > 0)
+                            {
+                                <span class="replacements-badge aftermarket">@Part.ReplacementsAftermarketCount aftermarket</span>
+                            }
+                        </span>
+                    </div>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(Part.Notes))
+            {
+                <div class="part-notes">
+                    <i class="bi bi-info-circle"></i> @Part.Notes
+                </div>
+            }
+        </div>
+
+        <!-- Alternatives Section -->
+        <div class="alternatives-section">
+            <div class="section-header" @onclick="ToggleAlternatives">
+                <h6><i class="bi bi-arrow-repeat"></i> Alternative Parts (@(Alternatives?.Count ?? 0))</h6>
+                <i class="bi @(ShowAlternatives ? "bi-chevron-up" : "bi-chevron-down")"></i>
+            </div>
+
+            @if (IsLoadingAlternatives)
+            {
+                <div class="loading-indicator">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                        <span class="visually-hidden">Loading alternatives...</span>
+                    </div>
+                </div>
+            }
+            else if (ShowAlternatives && Alternatives?.Any() == true)
+            {
+                <MobileAlternativesList Alternatives="@Alternatives"
+                OriginalPart="@Part"
+                OnAddToProject="@AddAlternativeToProject" />
+            }
+            else if (ShowAlternatives && (Alternatives?.Count ?? 0) == 0)
+            {
+                <div class="no-alternatives">
+                    <i class="bi bi-info-circle"></i>
+                    No alternative parts found for this item.
+                </div>
+            }
+        </div>
+
+        @if (!HideSpecs)
+        {
+            <div>&nbsp;</div>
+
+
+            @if (PartInfo is not null && PartInfo.Data is not null && PartInfo.Data.Specifications != null && PartInfo.Data.Specifications.ToDictionary().Count > 0)
+            {
+                <div class="specifications-section">
+                    <div class="section-header" @onclick="ToggleSpecifications">
+                        <h6><i class="bi bi-gear-fill"></i> Specifications</h6>
+                        <i class="bi @(ShowSpecifications ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                    </div>
+                    @if (ShowSpecifications)
+                    {
+                        <MobileSpecificationsViewer Specifications="@PartInfo.Data.Specifications" />
+                    }
+                </div>
+            }
+
+        }
+
+
+
+    }
+</div>
+
+<style>
+    .part-details-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    @*      -webkit-user-select: all;
+        -moz-user-select: all;
+        -ms-user-select: element;
+        user-select: all; *@
+    }
+
+    .part-info-card {
+    border-radius: 10px;
+    padding: 0.5rem;
+    border: 1px solid #e9ecef;
+    margin-bottom: .75rem;
+    background: steelblue;
+    @* -webkit-user-select: all;
+        -moz-user-select: all;
+        -ms-user-select: element;
+        user-select: all; *@
+    }
+
+    .part-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    }
+
+    .part-number {
+    font-family: monospace;
+    margin: 0;
+    }
+
+    .part-description {
+    font-size: 1.1rem;
+    }
+
+    .part-details-grid {
+    display: grid;
+    }
+
+    .ddetail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f8f9fa;
+    }
+
+    .ddetail-label {
+    font-weight: 600;
+    color: var(--bluon-dark);
+    font-size: 0.875rem;
+    min-width: 80px;
+    }
+
+    .ddetail-value {
+    color: black;
+    font-size: 1.1rem;
+    text-align: right;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    }
+
+    .replacements-badge {
+    background: var(--bluon-success);
+    color: white;
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 10px;
+    font-weight: 600;
+    }
+
+    .replacements-badge.aftermarket {
+    background: var(--bluon-info);
+    }
+
+    .part-notes {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #e7f3ff;
+    border-left: 4px solid var(--bluon-info);
+    border-radius: 0 6px 6px 0;
+    font-size: 0.875rem;
+    color: #495057;
+    display: flex;
+    align-items: start;
+    gap: 0.5rem;
+    }
+
+    .specifications-section,
+    .alternatives-section {
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+    }
+
+    .section-header {
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+    }
+
+    .section-header:hover {
+    background: #e9ecef;
+    }
+
+    .section-header:active {
+    background: #dee2e6;
+    transform: scale(0.99);
+    }
+
+    .section-header h6 {
+    margin: 0;
+    color: var(--bluon-dark);
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    }
+
+    .loading-indicator {
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    justify-content: center;
+    color: #6c757d;
+    }
+
+    .no-alternatives {
+    padding: 1rem;
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    }
+
+    .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    }
+</style>
+
+@code {
+    
+    [Parameter] public BluonBrands.BrandPartsAndOem.Datum? Part { get; set; }
+    [Parameter] public BluonParts.PartInfo.Root? PartInfo { get; set; }
+    [Parameter] public List<BluonParts.PartAlternatives.Datum>? Alternatives { get; set; }
+    [Parameter] public EventCallback<BluonBrands.BrandPartsAndOem.Datum> OnAddToProject { get; set; }
+    [Parameter] public bool IsLoadingAlternatives { get; set; }
+    [Parameter] public bool HideSpecs { get; set; } = false;
+    private bool ShowSpecifications = true;
+    private bool ShowAlternatives = false; // Show alternatives by default
+
+    private async Task AddToProject(BluonBrands.BrandPartsAndOem.Datum part)
+    {
+        
+        await OnAddToProject.InvokeAsync(part);
+    }
+
+    private async Task AddAlternativeToProject(BluonParts.PartAlternatives.Datum alt)
+    {
+        if (alt.Details != null)
+        {
+            var part = new BluonBrands.BrandPartsAndOem.Datum
+                {
+                    Id = alt.Details.Id,
+                    Number = alt.Details.Number,
+                    Description = alt.Details.Description,
+                    Type = alt.Details.Type,
+                    Subtype = alt.Details.Subtype,
+                    Brand = alt.Details.Brand,
+                    Subcategory = alt.Details.Subcategory,
+                    ReplacementsCount = alt.Details.ReplacementsCount ?? 0,
+                    ReplacementsAftermarketCount = alt.Details.ReplacementsAftermarketCount ?? 0
+                };
+            await OnAddToProject.InvokeAsync(part);
+
+            
+
+        }
+    }
+
+    private void ToggleSpecifications()
+    {
+        ShowSpecifications = !ShowSpecifications;
+    }
+
+    private void ToggleAlternatives()
+    {
+        ShowAlternatives = !ShowAlternatives;
+    }
+}

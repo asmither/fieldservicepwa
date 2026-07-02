@@ -1,0 +1,147 @@
+﻿@using Microsoft.AspNetCore.Components.QuickGrid
+@if (consumableLists is not null) { 
+    <style>
+        .ConsumablesGrid {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            /* Style for table rows */
+            .ConsumablesGrid tr {
+                border-bottom: 1px solid #ccc;
+            }
+
+            /* Style for table cells */
+            .ConsumablesGrid td {
+                padding: 8px;
+                text-align: left;
+            }
+
+            /* Style for headers */
+            .ConsumablesGrid th {
+                background-color: #f4f4f4;
+                padding: 8px;
+                text-align: left;
+                border-bottom: 2px solid #ccc;
+            }
+
+            /* Additional styling based on specific columns */
+            .ConsumablesGrid .NameColumn {
+                font-weight: bold;
+                color: deeppink;
+            }
+
+            .ConsumablesGrid .DescColumn {
+                color: #555;
+                text-align: right;
+            }
+    </style>
+<QuickGrid Items="@consumableLists" TGridItem="ConsumableList" @ref="dataPickerGrid" Pagination="@dataPickerPagination"
+           Class="ConsumablesGrid">
+        <PropertyColumn Property="@(p => p.Name)" Class="NameColumn" Align="Align.Left" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Ascending" />
+    @if (twoColumnMode) {
+            <PropertyColumn Property="@(p => p.Desc)" Class="DescColumn" Align="Align.Right" Sortable="true" IsDefaultSortColumn="false" />
+    }
+</QuickGrid>
+<Paginator State="@dataPickerPagination" />
+}
+
+@code {
+
+
+
+    [Parameter]
+    public string? Value { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public string? ListId { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public List<string>? DataPickerList { set; get; }
+
+    [Parameter]
+    public string? Title { set; get; } = "Select";
+
+    [Parameter]
+    public bool AllowAdditions { set; get; } = false;
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    private void SetSelectedValue(ChangeEventArgs e)
+    {
+        string? value = null;
+
+        if (e is not null && e.Value is not null)
+        {
+            value = e.Value.ToString();
+        }
+
+        Console.WriteLine($"Selected: {value}");
+
+        InternalValue = value;
+    }
+
+    private bool Adding = false;
+    private string? AddedValue = null;
+    private bool twoColumnMode=false;
+
+    public class ConsumableList
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Desc { get; set; } = string.Empty;
+    }
+
+    // Grid
+    public IQueryable<ConsumableList>? consumableLists { set; get; } = null;
+    public QuickGrid<ConsumableList>? dataPickerGrid { set; get; } = null;
+    PaginationState dataPickerPagination = new PaginationState { ItemsPerPage = 25 };
+
+    private string? InternalValue
+    {
+        set
+        {
+            if (value != Value)
+            {
+                Value = value;
+                if (ValueChanged.HasDelegate)
+                    ValueChanged.InvokeAsync(Value);
+            }
+        }
+        get
+        {
+            return Value;
+        }
+    }
+
+
+
+    private async Task LoadData()
+    {
+        if (DataPickerList is not null)
+        {
+            consumableLists = DataPickerList.Select((x, i) =>
+            {
+                var parts = x.Split('~');
+                if (parts.Length > 1) twoColumnMode = true;
+                return new ConsumableList
+                {
+                    Id = i.ToString(),
+                    Name = parts.Length > 0 ? parts[0] : x,
+                    Desc = parts.Length > 1 ? parts[1] : ""
+                    };
+            }).AsQueryable();
+
+        }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+}

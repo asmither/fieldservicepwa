@@ -1,0 +1,110 @@
+﻿@namespace ICS.Mobile.Pages.BluonBrowse.Components
+@using ICS.Portal.Data.Custom
+
+<div class="search-results-container">
+    <div class="results-header">
+        @* <h5>Part Search Results</h5> *@
+        <h5 class="results-count">Found @(Parts?.Count ?? 0) parts for "@SearchTerm"</h5>
+    </div>
+
+    @if (IsLoading)
+    {
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Searching parts...</p>
+        </div>
+    }
+    else if (Parts?.Any() == true)
+    {
+        <div class="part-list">
+            @foreach (var part in Parts)
+            {
+                <div class="part-result-card" @onclick="() => SelectPart(part)">
+                    <div class="part-header">
+                        <span class="part-number">@part.Number</span>
+                        @if (part.ReplacementsCount > 0)
+                        {
+                            <span class="replacements-badge">
+                                @part.ReplacementsCount alt
+                            </span>
+                        }
+                    </div>
+
+                    <div class="part-description">
+                        @(string.IsNullOrWhiteSpace(part.Description) ? part.Type : part.Description)
+                    </div>
+
+                    <div class="part-meta">
+                        <span class="meta-tag">@part.Brand</span>
+                        <span class="meta-tag">@part.Type</span>
+                        @if (!string.IsNullOrEmpty(part.Subtype))
+                        {
+                            <span class="meta-tag">@part.Subtype</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-search"></i>
+            <p>No parts found matching "@SearchTerm"</p>
+            <p class="text-muted">Try different search terms</p>
+        </div>
+    }
+</div>
+
+<style>
+    .search-results-container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .results-header {
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+        .results-header h5 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1rem;
+        }
+
+    .results-count {
+        margin: 0;
+        /* font-size: 0.875rem; */
+        
+    }
+
+    .part-result-card {
+        background-color: #2a2a2a;
+        border-radius: 10px;
+        padding: 0.5rem;
+        /* margin-bottom: 1rem; */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .part-result-card:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+        }
+</style>
+
+@code {
+    [Parameter] public List<BluonBrands.BrandPartsAndOem.Datum>? Parts { get; set; }
+    [Parameter] public string SearchTerm { get; set; } = "";
+    [Parameter] public EventCallback<BluonBrands.BrandPartsAndOem.Datum> OnPartSelected { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+
+    private async Task SelectPart(BluonBrands.BrandPartsAndOem.Datum part)
+    {
+        await OnPartSelected.InvokeAsync(part);
+    }
+}

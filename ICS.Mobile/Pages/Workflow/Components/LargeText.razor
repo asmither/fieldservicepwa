@@ -1,0 +1,23 @@
+﻿@using ICS.Mobile.Components
+@inherits WorkflowComponentsBasePage
+@layout EmptyLayout
+
+@if (Initialized)
+{
+    <LargeTextInput @bind-Value="Value" PlaceHolder="@PlaceHolder"></LargeTextInput>
+
+    <CommonError Message="@ErrorMessage" />
+
+    @if (WorkflowStep!.ImageRequirementId != 0)
+    {
+        <ImageMedia Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" ImageChanged="ImageChanged" ImageLabel="@WorkflowStep!.ImageLabel" OnWorkingStateChange="OnImageWorkingStateChanged"></ImageMedia>
+    }
+
+    <Navigation NextDisabled="NextDisabled" PreviousDisabled="PreviousDisabled" OnNextClick="OnMoveNext" OnPreviousClick="OnMovePrevious"></Navigation>
+}
+else
+{
+    <ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICSLoadingSpinner>
+}

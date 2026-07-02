@@ -1,0 +1,44 @@
+﻿@using ICS.Portal.Data.Custom
+<div style="display:@CSSSpinnerDisplay">
+    <center>
+        <div class="loaderlabel"><i class="bi-clock-fill"></i></div>
+        <div class="loader"></div>
+
+    </center>
+</div>
+
+<div id="stepContainer" class="WorkflowStepContainer" style="display:@CSSControlDisplay">
+    <div class="WorkflowPrompt">@Prompt</div>
+    @if (!string.IsNullOrEmpty(Caption))
+    {
+        <div class="WorkflowCaption"><div>@((MarkupString)PageBase.TextToHtml(Caption))</div></div>
+    }
+
+    
+    <div class="Content">
+        @ChildContent
+    </div>
+
+</div>
+
+
+
+@code {
+
+    [Parameter]
+    [EditorRequired]
+    public string? Prompt { set; get; }
+
+    [Parameter]
+    public string? Caption { set; get; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { set; get; }
+
+    [Parameter]
+    public string CSSControlDisplay { set; get; } = "block";
+
+    [Parameter]
+    public string CSSSpinnerDisplay { set; get; } = "none";
+
+}

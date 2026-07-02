@@ -1,0 +1,788 @@
+@using Microsoft.AspNetCore.Components.QuickGrid
+@inject IJSRuntime JS
+@if (Initialized)
+{
+    <script suppress-error="BL9992">
+        window.scrollElementToTop = (element) => {
+            if (element) {
+                element.scrollTop = 0;
+                console.log('JS: scrollElementToTop executed');
+            } else {
+                console.log('JS: scrollElementToTop - element is null');
+            }
+        };
+    </script>
+    <style>
+        /* ===== MINIMAL MOBILE-FIRST DATA PICKER ===== */
+        .dp-wrapper {
+            position: relative;
+            width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* ADD MODE - Clean overlay */
+        .dp-add-overlay {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .dp-add-input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 17px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            background: #fafafa;
+            color: #333;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .dp-add-input:focus {
+            outline: none;
+            border-color: #007AFF;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+            background: #fff;
+        }
+
+        .dp-add-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .dp-btn {
+            flex: 1;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .dp-btn:active {
+            transform: scale(0.97);
+        }
+
+        .dp-btn-cancel {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .dp-btn-save {
+            background: #a8610b;
+            color: white;
+        }
+
+        /* SEARCH - Floating pill style */
+        .dp-search-wrap {
+            padding: 12px 12px 8px 12px;
+            background: linear-gradient(180deg, var(--ThemeColor, #3a5a7c) 0%, var(--ThemeColor, #3a5a7c) 100%);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .dp-search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .dp-search-icon {
+            position: absolute;
+            left: 14px;
+            font-size: 16px;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .dp-search {
+            width: 100%;
+            padding: 12px 16px 12px 42px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            box-sizing: border-box;
+            transition: box-shadow 0.2s;
+        }
+
+        .dp-search:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+        }
+
+        .dp-search::placeholder {
+            color: #999;
+        }
+
+        .dp-clear-btn {
+            position: absolute;
+            right: 8px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .dp-clear-btn:active {
+            background: #ccc;
+        }
+
+        /* FILTER STATUS - Subtle inline */
+        .dp-filter-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 4px 0 4px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .dp-filter-status strong {
+            color: #C5F467;
+            font-weight: 700;
+        }
+
+        /* LIST CONTAINER - Full scroll, no pagination */
+        .dp-list-container {
+            background: var(--ThemeColor, #3a5a7c);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .dp-list {
+            max-height: 45vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        /* Hide scrollbar on mobile for cleaner look */
+        .dp-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .dp-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .dp-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+
+        /* LIST ITEMS - Touch optimized */
+        .dp-item {
+            display: block;
+            padding: 14px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            transition: background 0.15s;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+        }
+
+        .dp-item:last-child {
+            border-bottom: none;
+        }
+
+        .dp-item:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .dp-item-name {
+            font-size: 18px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .dp-item-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 2px;
+        }
+
+        /* SELECTED STATE - Clean highlight */
+        .dp-item.dp-selected {
+            background: #C5F467;
+        }
+
+        .dp-item.dp-selected .dp-item-name {
+            color: #1a1a1a;
+            font-weight: 700;
+        }
+
+        .dp-item.dp-selected .dp-item-desc {
+            color: #444;
+        }
+
+        /* Check indicator for selected */
+        .dp-item.dp-selected::after {
+            content: "✓";
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        /* EMPTY STATE */
+        .dp-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 15px;
+        }
+
+        .dp-empty-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            opacity: 0.5;
+        }
+
+        /* ADD NEW BUTTON - Floating action style */
+        .dp-add-trigger {
+            display: block;
+            width: 100%;
+            margin-top: 12px;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            color: white;
+            background: #a8610b;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .dp-add-trigger:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        /* SCROLL HINT - Shows there's more content */
+        .dp-scroll-hint {
+            text-align: center;
+            padding: 8px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.1) 100%);
+        }
+
+        /* Loading placeholder */
+        .dp-loading {
+            padding: 20px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+        }
+    </style>
+
+    <div class="dp-wrapper">
+        @if (Adding)
+        {
+            <!-- ADD NEW ITEM MODE -->
+            <div class="dp-add-overlay">
+                <input type="text"
+                       class="dp-add-input"
+                       @bind-value="InternalValue"
+                       placeholder="Enter new @(Title ?? "item")..."
+                       autofocus />
+                <div class="dp-add-actions">
+                    <button class="dp-btn dp-btn-cancel" @onclick="Cancel">Cancel</button>
+                    <button class="dp-btn dp-btn-save" @onclick="Add">Save</button>
+                </div>
+            </div>
+        }
+        else if (DataList is not null)
+        {
+            <div class="dp-list-container">
+                <!-- SEARCH BAR (only if > 5 items) -->
+                @if ((dataLists?.Count() ?? 0) > 5)
+                {
+                    <div class="dp-search-wrap">
+                        <div class="dp-search-box">
+                            <span class="dp-search-icon"><i class="bi bi-search" aria-hidden="true"></i></span>
+                            <input type="text"
+                                   @ref="InputControl"
+                                   class="dp-search"
+                                   placeholder="Search @(Title ?? "items")..."
+                                   @bind="searchTerm"
+                                   @bind:event="oninput"
+                                   @bind:after="@(() => FilterGridData())" />
+                            @if (!string.IsNullOrEmpty(searchTerm))
+                            {
+                                <button type="button" class="dp-clear-btn" @onclick="FilterReset" @onclick:preventDefault><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+                            }
+                        </div>
+                        @if (!string.IsNullOrEmpty(searchTerm))
+                        {
+                            <div class="dp-filter-status">
+                                <span>Filtered to <strong>@(filteredDataList?.Count() ?? 0)</strong> of @(dataLists?.Count() ?? 0)</span>
+                                <span>CLEAR</span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- SCROLLABLE LIST -->
+                <div class="dp-list" @ref="listContainer">
+                    @if (filteredDataList != null && filteredDataList.Any())
+                    {
+                        @foreach (var item in DisplayList)
+                        {
+                            <div class="dp-item @(IsSelected(item) ? "dp-selected" : "")"
+                                 @onclick="() => OnRowClick(item)"
+                                 @onclick:preventDefault>
+                                <span class="dp-item-name">
+                                    @if (SuppressText != null && SuppressText.Any())
+                                    {
+                                        @(SuppressText.Aggregate(item.Name, (current, suppress) => current.Replace(suppress, "")))
+                                    }
+                                    else
+                                    {
+                                        @item.Name
+                                    }
+                                </span>
+                                @if (SuppressColumnTwo == false && twoColumnMode == true && !string.IsNullOrWhiteSpace(item.Desc))
+                                {
+                                    <span class="dp-item-desc">@item.Desc</span>
+                                }
+                            </div>
+                        }
+
+                        @if ((filteredDataList?.Count() ?? 0) > 8)
+                        {
+                            <div class="dp-scroll-hint">
+                                @(filteredDataList.Count()) items • scroll to see all
+                            </div>
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(searchTerm))
+                    {
+                        <div class="dp-empty">
+                            <div class="dp-empty-icon"><i class="bi bi-search" aria-hidden="true"></i></div>
+                            No results for "@searchTerm"
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- ADD NEW BUTTON -->
+            @if (AllowAdditions)
+            {
+                <button class="dp-add-trigger" @onclick="ShowAdd">
+                    + Add New @(Title ?? "Item")
+                </button>
+            }
+        }
+        else
+        {
+            <div class="dp-list-container">
+                <div class="dp-empty">
+                    <div class="dp-empty-icon"><i class="bi bi-clipboard" aria-hidden="true"></i></div>
+                    No items available
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    // ===== PARAMETERS (unchanged) =====
+    [Parameter] public string Value { get; set; }
+    [Parameter] public string Title { get; set; } = "Item";
+    [Parameter] public string ListId { get; set; }
+    [Parameter] public List<string> DataList { get; set; }
+    [Parameter] public List<string> SuppressText { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public char SplitChar { get; set; } = '~';
+    [Parameter] public bool AllowAdditions { get; set; } = false;
+    [Parameter] public bool SuppressColumnTwo { get; set; } = false;
+
+    // ===== INTERNAL STATE =====
+    private string searchTerm = "";
+    private bool Initialized = false;
+    private string AddedValue = null;
+    private bool Adding = false;
+    private ElementReference InputControl;
+    private ElementReference listContainer;
+    private bool twoColumnMode = false;
+    private IQueryable<DataItemsList> dataLists = (new List<DataItemsList>()).AsQueryable();
+    private IQueryable<DataItemsList> filteredDataList = (new List<DataItemsList>()).AsQueryable();
+    private DataItemsList selectedRow;
+
+    // Computed list that floats selected item to top
+    private IEnumerable<DataItemsList> DisplayList
+    {
+        get
+        {
+            if (filteredDataList == null || !filteredDataList.Any())
+            {
+                // Even if filter returns nothing, show selected item if we have one
+                if (!string.IsNullOrEmpty(_internalValue) && dataLists != null)
+                {
+                    string selectedName = _internalValue.Split(SplitChar)[0].ToUpper();
+                    var selectedFromFull = dataLists.Where(x => x.Name.ToUpper() == selectedName);
+                    if (selectedFromFull.Any())
+                        return selectedFromFull;
+                }
+                return Enumerable.Empty<DataItemsList>();
+            }
+
+            // If nothing selected, return normal order
+            if (string.IsNullOrEmpty(_internalValue))
+                return filteredDataList;
+
+            string selName = _internalValue.Split(SplitChar)[0].ToUpper();
+            
+            // Check if selected item is in filtered list
+            var selectedInFiltered = filteredDataList.Where(x => x.Name.ToUpper() == selName);
+            
+            if (selectedInFiltered.Any())
+            {
+                // Selected is in filtered results - float to top
+                var rest = filteredDataList.Where(x => x.Name.ToUpper() != selName);
+                return selectedInFiltered.Concat(rest);
+            }
+            else
+            {
+                // Selected is NOT in filtered results - pull from full list and prepend
+                var selectedFromFull = dataLists?.Where(x => x.Name.ToUpper() == selName) ?? Enumerable.Empty<DataItemsList>();
+                return selectedFromFull.Concat(filteredDataList);
+            }
+        }
+    }
+
+    // InternalValue with proper two-way binding
+    private string _internalValue;
+    private string InternalValue
+    {
+        get => _internalValue;
+        set
+        {
+            if (value != _internalValue)
+            {
+                _internalValue = value;
+                Value = value;
+                if (ValueChanged.HasDelegate)
+                {
+                    ValueChanged.InvokeAsync(Value);
+                }
+            }
+        }
+    }
+
+    // Data item class
+    class DataItemsList
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Desc { get; set; }
+    }
+
+    // ===== LIFECYCLE =====
+    protected override async Task OnParametersSetAsync()
+    {
+        // Only sync Value on first initialization
+        // After that, _internalValue is controlled only by user taps or SelectIfFound()
+        if (!Initialized)
+        {
+            _internalValue = Value;
+            await LoadData();
+            Initialized = true;
+        }
+        
+        await base.OnParametersSetAsync();
+    }
+    
+    // ===== PUBLIC METHOD - Call via @ref =====
+    public bool SelectIfFound(string? searchValue)
+    {
+        if (string.IsNullOrEmpty(searchValue) || dataLists == null || !dataLists.Any())
+        {
+            Console.WriteLine($"DataPicker: SelectIfFound('{searchValue}') - empty or no list");
+            return false;
+        }
+        
+        string searchName = searchValue.Split(SplitChar)[0].ToUpper();
+        var match = dataLists.FirstOrDefault(x => x.Name.ToUpper() == searchName);
+        
+        if (match != null)
+        {
+            // Found - select it
+            selectedRow = match;
+            
+            string newValue;
+            if (SuppressColumnTwo == false && twoColumnMode && !string.IsNullOrEmpty(match.Desc))
+                newValue = string.Concat(match.Name, SplitChar, match.Desc);
+            else
+                newValue = match.Name;
+            
+            // Set backing field and Value directly
+            _internalValue = newValue;
+            Value = newValue;
+            
+            // Fire callback (fire and forget is ok here)
+            if (ValueChanged.HasDelegate)
+            {
+                _ = ValueChanged.InvokeAsync(Value);
+            }
+            
+            Console.WriteLine($"DataPicker: SelectIfFound('{searchValue}') matched to '{_internalValue}'");
+            
+            StateHasChanged();
+            _ = ScrollListToTop();
+            return true;
+        }
+        else
+        {
+            Console.WriteLine($"DataPicker: SelectIfFound('{searchValue}') not found in list");
+            return false;
+        }
+    }
+    
+    // ===== PUBLIC METHOD - Clear selection =====
+    public void ClearSelection()
+    {
+        selectedRow = null;
+        _internalValue = null;
+        Value = null;
+        
+        if (ValueChanged.HasDelegate)
+        {
+            _ = ValueChanged.InvokeAsync(Value);
+        }
+        
+        StateHasChanged();
+        Console.WriteLine("DataPicker: ClearSelection called");
+    }
+    
+    private async Task ScrollListToTop()
+    {
+        try
+        {
+            await Task.Delay(50); // Let render complete
+            Console.WriteLine("DataPicker: ScrollListToTop called");
+            await JS.InvokeVoidAsync("scrollElementToTop", listContainer);
+            Console.WriteLine("DataPicker: ScrollListToTop executed");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"DataPicker: ScrollListToTop error - {ex.Message}");
+        }
+    }
+
+    // ===== SELECTION LOGIC =====
+    private bool IsSelected(DataItemsList item)
+    {
+        string currentValueName = _internalValue?.Split(SplitChar)[0]?.ToUpper() ?? "";
+        return item.Name.ToUpper() == currentValueName;
+    }
+
+    async void OnRowClick(DataItemsList item)
+    {
+        string currentValueName = _internalValue?.Split(SplitChar)[0]?.ToUpper() ?? "";
+        
+        if (item.Name.ToUpper() == currentValueName)
+        {
+            // Deselect if already selected (tap to toggle)
+            selectedRow = null;
+            InternalValue = null;
+        }
+        else
+        {
+            // Select new item
+            selectedRow = item;
+            if (SuppressColumnTwo == false && twoColumnMode == true && !string.IsNullOrEmpty(item.Desc))
+                InternalValue = string.Concat(item.Name, SplitChar, item.Desc);
+            else
+                InternalValue = item.Name;
+            
+            // Scroll list to top so selected item is visible
+            await ScrollListToTop();
+        }
+        
+        // Always re-apply search filter if there's text in the search box
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            ApplySearchFilter();
+        }
+    }
+    
+    // Separate method to apply filter and force UI update
+    private void ApplySearchFilter()
+    {
+        if (dataLists is null || !dataLists.Any())
+            return;
+            
+        var searchTerms = searchTerm.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        
+        if (searchTerms.Length == 0)
+        {
+            filteredDataList = dataLists.AsQueryable();
+        }
+        else if (SuppressColumnTwo == false && twoColumnMode == true)
+        {
+            filteredDataList = dataLists
+                .Where(c => searchTerms.All(term =>
+                    c.Name.Contains(term, StringComparison.InvariantCultureIgnoreCase) ||
+                    c.Desc.Contains(term, StringComparison.InvariantCultureIgnoreCase))
+                ).ToList().AsQueryable();
+        }
+        else
+        {
+            filteredDataList = dataLists
+                .Where(c => searchTerms.All(term =>
+                    c.Name.Contains(term, StringComparison.InvariantCultureIgnoreCase))
+                ).ToList().AsQueryable();
+        }
+        
+        StateHasChanged();
+    }
+
+    // ===== ADD MODE =====
+    private async void Add()
+    {
+        if (!string.IsNullOrEmpty(InternalValue))
+        {
+            if (DataList is null)
+                DataList = new List<string>();
+
+            // Remove previous added value if exists
+            if (!string.IsNullOrEmpty(AddedValue))
+            {
+                DataList.Remove(AddedValue);
+                AddedValue = null;
+            }
+
+            // Add new value
+            DataList.Add(InternalValue);
+            AddedValue = InternalValue;
+
+            await LoadData();
+            StateHasChanged();
+        }
+        Adding = false;
+    }
+
+    private void Cancel()
+    {
+        _internalValue = Value;
+        Adding = false;
+    }
+
+    private void ShowAdd()
+    {
+        Adding = true;
+    }
+
+    // ===== DATA LOADING & FILTERING =====
+    public class FirstElementComparer : IEqualityComparer<string>
+    {
+        public char splitChar = '~';
+
+        public bool Equals(string x, string y)
+        {
+            if (x == null || y == null) return false;
+            var xFirstPart = x.Split(splitChar)[0];
+            var yFirstPart = y.Split(splitChar)[0];
+            return string.Equals(xFirstPart, yFirstPart, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public int GetHashCode(string obj)
+        {
+            if (obj == null) return 0;
+            var firstPart = obj.Split(splitChar)[0];
+            return firstPart.ToLowerInvariant().GetHashCode();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        if (DataList is not null)
+        {
+            dataLists = DataList
+                .Distinct(new FirstElementComparer() { splitChar = SplitChar })
+                .OrderBy(x => x.Split(SplitChar)[0])
+                .Select((x, i) =>
+                {
+                    var parts = x.Split(SplitChar);
+                    if (parts.Length > 1) twoColumnMode = true;
+                    return new DataItemsList
+                    {
+                        Id = i,
+                        Name = parts.Length > 0 ? parts[0] : x,
+                        Desc = parts.Length > 1 ? parts[1] : ""
+                    };
+                }).AsQueryable();
+
+            // Apply current search filter (or show all if no search)
+            FilterGridData();
+        }
+    }
+
+    private void FilterReset()
+    {
+        searchTerm = "";
+        FilterGridData();
+    }
+
+    private void FilterGridData()
+    {
+        if (dataLists is not null && dataLists.Any())
+        {
+            if (string.IsNullOrEmpty(searchTerm))
+            {
+                filteredDataList = dataLists.AsQueryable();
+            }
+            else
+            {
+                // Fuzzy search: split into words, match all terms
+                var searchTerms = searchTerm.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                if (SuppressColumnTwo == false && twoColumnMode == true)
+                {
+                    filteredDataList = dataLists
+                        .Where(c => searchTerms.All(term =>
+                            c.Name.Contains(term, StringComparison.InvariantCultureIgnoreCase) ||
+                            c.Desc.Contains(term, StringComparison.InvariantCultureIgnoreCase))
+                        ).ToList().AsQueryable();
+                }
+                else
+                {
+                    filteredDataList = dataLists
+                        .Where(c => searchTerms.All(term =>
+                            c.Name.Contains(term, StringComparison.InvariantCultureIgnoreCase))
+                        ).ToList().AsQueryable();
+                }
+            }
+
+            // Auto-select if only one result AND nothing currently selected
+            // This prevents re-selecting immediately after user deselects
+            if (filteredDataList is not null && filteredDataList.Count() == 1 && string.IsNullOrEmpty(_internalValue))
+                InternalValue = filteredDataList.FirstOrDefault()?.Name;
+        }
+    }
+}

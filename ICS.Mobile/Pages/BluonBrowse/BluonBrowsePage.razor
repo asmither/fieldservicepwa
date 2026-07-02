@@ -1,0 +1,218 @@
+@page "/bluonbrowse"
+@layout EmptyLayout
+@inherits ICS.Mobile.Pages.PageBase
+@using ICS.Mobile.Components
+@using ICS.Portal.Data.Enumerations
+@using ICS.Portal.Data.Custom
+@using ICS.Mobile.Pages.BluonBrowse.Components
+@* @using ICS.Mobile.Components.ScratchPad; *@
+
+<link href="/css/Bluon.css" rel="stylesheet" />
+
+<PageHeaderBasic Title="Parts & Manuals" Icon="bi-tools">
+    <div class="header-actions">
+        @if (CurrentProject != null)
+        {
+            <span class="project-badge">
+                <i class="bi bi-folder-fill"></i>
+                @CurrentProject.Parts.Count
+            </span>
+        }
+    </div>
+    <RoundButtonGreen Icon="bi-arrow-left" OnClick="HomePageClick" />
+</PageHeaderBasic>
+
+
+@if (Initialized)
+{
+    <SyncIndicator />
+        @* <ScratchPadOverlay @ref="scratchPadRef" CurrentUserId="@CurrentUserId" /> *@
+    @* <ScratchPadFab CurrentUserId="@CurrentUserId" /> *@
+
+    <div class="bluon-container">
+        <!-- Search Bar -->
+        @if (CurrentView == ViewMode.Home || CurrentView == ViewMode.Brands)
+        {
+            <div class="search-section">
+                <div class="search-tabs">
+                    <button class="search-tab @(SearchMode == "part" ? "active" : "")"
+                            @onclick='() => SetSearchMode("part")'>
+                        <i class="bi bi-gear-fill"></i> Parts
+                    </button>
+                    <button class="search-tab @(SearchMode == "model" ? "active" : "")"
+                            @onclick='() => SetSearchMode("model")'>
+                        <i class="bi bi-box-seam"></i> Models
+                    </button>
+                </div>
+
+                <div class="search-bar">
+                    <input type="text"
+                           class="search-input"
+                           placeholder="@($"Search {SearchMode}s by any digits...")"
+                           @bind="SearchTerm"
+                           @bind:event="oninput"
+                           @onkeyup="@(async (e) => { if (e.Key == "Enter") await PerformSearch(); })" />
+                    <button class="search-button" @onclick="PerformSearch" disabled="@IsSearching">
+                        @if (IsSearching)
+                        {
+                            <span class="spinner-small"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-search"></i>
+                        }
+                    </button>
+                </div>
+            </div>
+        }
+
+        <!-- Navigation Breadcrumb -->
+        @if (CurrentView != ViewMode.Home)
+        {
+            @if (CurrentView != ViewMode.Home && CurrentView != ViewMode.Brands)
+            {
+                <div class="breadcrumb-nav">
+
+                    <button class="breadcrumb-item" @onclick="NavigateToHome">
+                        <i class="bi bi-house-fill" style="font-size: 1.5rem;"></i>
+                    </button>
+
+                    @if (SelectedBrand != null)
+                    {
+                        <span class="breadcrumb-separator">/</span>
+                        <button class="breadcrumb-item" @onclick="NavigateToBrand">
+                            @SelectedBrand.Brand
+                        </button>
+                    }
+                    @if (SelectedSeries != null)
+                    {
+                        <span class="breadcrumb-separator">/</span>
+                        <button class="breadcrumb-item" @onclick="NavigateToSeries">
+                            @SelectedSeries.Series
+                        </button>
+                    }
+                    @if (SelectedModel != null)
+                    {
+                        <span class="breadcrumb-separator">/</span>
+                        <span class="breadcrumb-item active">@SelectedModel.Model</span>
+                    }
+                </div>
+            }
+        }
+
+        <!-- Main Content Area -->
+        <div class="content-area">
+            @switch (CurrentView)
+            {
+                case ViewMode.Home:
+                case ViewMode.Brands:
+                    <MobileBrandGrid Brands="@AllBrands"
+                                     OnBrandSelected="@SelectBrand"
+                                     IsLoading="@IsLoadingBrands" />
+                    break;
+
+                case ViewMode.Series:
+                    <MobileSeriesSelector Brand="@SelectedBrand"
+                                          Series="@BrandSeries"
+                                          OnSeriesSelected="@SelectSeries"
+                                          OnShowAllModels="@ShowAllBrandModels"
+                                          IsLoading="@IsLoadingSeries" />
+                    break;
+
+                case ViewMode.Models:
+                    <MobileModelGrid Models="@DisplayModels"
+                                     OnModelSelected="@SelectModel"
+                                     IsLoading="@IsLoadingModels" />
+                    break;
+
+                case ViewMode.ModelDetails:
+                    <MobileModelDetails Model="@SelectedModel"
+                                        Parts="@ModelParts"
+                                        ModelManuals="@ModelManuals"
+                                        OnPartSelected="@SelectPart"
+                                        OnDocumentOpen="@OpenDocument"
+                                        IsLoading="@IsLoadingParts"
+                                        IsLoadingDocs="@IsLoadingManuals" />
+                    break;
+
+                case ViewMode.PartDetails:
+                    <MobilePartDetails Part="@SelectedPart"
+                                       PartInfo="@SelectedPartInfo"
+                                       Alternatives="@PartAlternatives"
+                                       OnAddToProject="@AddPartToProject"
+                                       IsLoadingAlternatives="@IsLoadingAlternatives" />
+                    break;
+
+
+
+                case ViewMode.SearchResults:
+                    @if (SearchMode == "part")
+                    {
+                        <MobilePartSearchResults Parts="@PartSearchResults"
+                                                 SearchTerm="@LastSearchTerm"
+                                                 OnPartSelected="@SelectPartFromSearch"
+                                                 IsLoading="@IsSearching" />
+                    }
+                    else
+                    {
+                        <MobileModelSearchResults Models="@ModelSearchResults"
+                                                  SearchTerm="@LastSearchTerm"
+                                                  OnModelSelected="@SelectModelFromSearch"
+                                                  IsLoading="@IsSearching" />
+                    }
+                    break;
+            }
+        </div>
+
+        @* <!-- Bottom Navigation Bar -->
+        <div class="bottom-nav">
+            <button class="nav-button @(CurrentView == ViewMode.Home || CurrentView == ViewMode.Brands ? "active" : "")"
+                    @onclick="NavigateToHome">
+                <i class="bi bi-grid-3x3-gap-fill"></i>
+                <span>Brands</span>
+            </button>
+
+            @if (RecentModels.Any())
+            {
+                <button class="nav-button" @onclick="ShowRecent">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Recent</span>
+                </button>
+            }
+
+            <button class="nav-button" @onclick="ShowProjects">
+                <i class="bi bi-folder-fill"></i>
+                <span>Projects</span>
+                @if (CurrentProject?.Parts.Any() == true)
+                {
+                    <span class="nav-badge">@CurrentProject.Parts.Count</span>
+                }
+            </button>
+        </div> *@
+    </div>
+
+    <!-- Project Manager Modal -->
+    @if (ShowProjectModal)
+    {
+        <MobileProjectManager Projects="@AllProjects"
+                              CurrentProject="@CurrentProject"
+                              OnProjectSelected="@SelectProject"
+                              OnProjectCreated="@CreateProject"
+                              OnClose="@(() => ShowProjectModal = false)" />
+    }
+
+    <!-- Recent Models Modal -->
+    @if (ShowRecentModal)
+    {
+        <MobileRecentModels RecentModels="@RecentModels"
+                            OnModelSelected="@SelectRecentModel"
+                            OnClose="@(() => ShowRecentModal = false)" />
+    }
+}
+else
+{
+    <ICS.Mobile.Components.ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICS.Mobile.Components.ICSLoadingSpinner>
+}
+

@@ -1,0 +1,288 @@
+/* ============================================================================
+   ICS Design Tokens (ICS.DesignSystem RCL) — single source of truth for
+   color, type, and spacing across ICS.Mobile and ICS.Portal.Web.
+   Consumed via <link href="_content/ICS.DesignSystem/css/tokens.css">,
+   which MUST be linked before all other stylesheets.
+
+   Themes:
+     :root                    → "light" (default field theme: navy brand)
+     :root[data-theme="dark"] → night work (low-glare dark surfaces)
+
+   Legacy variable names (--ThemeColor, --PendingColor, ...) are aliased to
+   these tokens at the bottom of each theme block so the existing stylesheets
+   and <CSSxxx> page styles pick up theme changes without modification.
+   New work should use the semantic tokens directly.
+   ============================================================================ */
+
+:root {
+    /* ------- Brand palette (raw values live here and nowhere else) ------- */
+    --brand-900: #001d4d;
+    --brand-800: #00317e;   /* primary brand navy */
+    --brand-700: #0056b3;
+    --brand-600: #0874b2;
+    --brand-500: #2994d0;
+    --brand-400: #37a1dd;
+    --brand-300: #7fcde6;
+    --brand-200: #89c6e6;
+    --brand-100: #bfe4e8;
+
+    --green-500: #7cb13c;
+    --green-300: #b1f752;
+    --gold-500:  #d3a937;
+    --gold-300:  #ffd155;
+    --orange-500:#ff9200;
+    --purple-500:#9e4fa3;
+    --magenta-500:#d92b7b;
+    --red-600:   #e15539;
+    --red-800:   #831010;
+    --gray-500:  #5b5b5b;
+    --gray-400:  #757575;
+
+    /* ------------------------- Semantic surfaces ------------------------- */
+    /* Apps may override --surface-app to layer a brand background gradient. */
+    --surface-app: var(--brand-800);
+    --surface-app-flat: var(--brand-800);          /* status bar / meta theme-color */
+    --surface-raised: rgba(0, 0, 0, 0.5);          /* legacy containers          */
+    --surface-raised-subtle: rgba(255, 255, 255, 0.1);
+    --surface-card: rgba(255, 255, 255, 0.06);     /* modern card surface        */
+    --surface-input: rgba(0, 0, 0, 0.25);          /* form fields                */
+    --surface-overlay: rgba(0, 8, 30, 0.65);       /* dialog scrim               */
+    --surface-inverse: #ffffff;                    /* light chrome (tab bar)     */
+
+    --border-default: 1px solid #cccccc;
+    --border-subtle: 1px solid rgba(255, 255, 255, 0.5);
+    --border-hairline: 1px solid rgba(255, 255, 255, 0.09);
+    --border-card: 2px solid var(--brand-200);
+
+    /* --------------------------- Semantic text --------------------------- */
+    --text-primary: #ffffff;
+    --text-secondary: #dcdcdc;
+    --text-muted: #bbbbbb;
+    --text-inverse: #1a1a2e;                       /* on light chrome            */
+    --text-on-accent: #ffffff;
+
+    /* ------------------------------ Accent ------------------------------- */
+    --accent: var(--brand-500);
+    --accent-strong: var(--brand-600);
+    --accent-soft: var(--brand-300);
+    /* Legacy name; now a near-flat fill — glossy two-stop gradients are retired. */
+    --accent-gradient: linear-gradient(180deg, #1d84c4 0%, #106da8 100%);
+
+    /* ----------------- Status colors — the canonical set -----------------
+       Never encode a status by color alone: pair with icon + label
+       (see StatusBadge component). Same names in light and dark themes.  */
+    --status-pending: var(--purple-500);
+    --status-traveling: var(--magenta-500);
+    --status-working: var(--orange-500);
+    --status-complete: #585858;
+    --status-success: var(--green-500);            /* approved / synced          */
+    --status-danger: var(--red-600);               /* declined / failed / urgent */
+    --status-danger-text: #f0937e;                 /* danger as TEXT on dark surfaces (4.5:1+) */
+    --status-info: var(--brand-500);               /* review / in progress       */
+    --status-warning: var(--gold-300);             /* attention / waiting        */
+
+    /* --------------------------- Typography ------------------------------
+       Scale tuned for outdoor glanceability: 16px body floor,
+       oversized numerals for at-a-glance data.                            */
+    --font-sans: -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+    --font-serif: "Times New Roman", Times, "Droid Serif", "Noto Serif", "Georgia", serif;
+    --font-mono: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+
+    --text-xs: 0.75rem;      /* 12 — badge/label caps only  */
+    --text-sm: 0.875rem;     /* 14 — secondary metadata     */
+    --text-base: 1rem;       /* 16 — body floor             */
+    --text-lg: 1.25rem;      /* 20 — list row titles        */
+    --text-xl: 1.5rem;       /* 24 — section headers        */
+    --text-2xl: 1.75rem;     /* 28 — page titles            */
+    --text-3xl: 2.25rem;     /* 36 — key figures            */
+    --text-display: 3.75rem; /* 60 — glanceable numerals    */
+
+    --leading-tight: 1.2;
+    --leading-normal: 1.45;
+
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --weight-bold: 700;
+
+    /* ------------------------ Spacing (4pt grid) ------------------------- */
+    --space-1: 0.25rem;   /*  4 */
+    --space-2: 0.5rem;    /*  8 */
+    --space-3: 0.75rem;   /* 12 */
+    --space-4: 1rem;      /* 16 */
+    --space-6: 1.5rem;    /* 24 */
+    --space-8: 2rem;      /* 32 */
+    --space-12: 3rem;     /* 48 */
+
+    /* ------------------------------ Radius ------------------------------- */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-full: 999px;
+
+    /* ---------------------------- Elevation ------------------------------ */
+    --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.2);
+    --elevation-2: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 40px rgba(0, 0, 0, 0.3);
+
+    /* ------------------- Touch & interaction (gloves!) -------------------
+       48px floor everywhere, 56px+ for primary lifecycle actions.        */
+    --touch-target: 48px;
+    --touch-target-primary: 56px;
+    --touch-gap: 8px;
+
+    --focus-ring-color: var(--brand-300);
+    --focus-ring: 3px solid var(--focus-ring-color);
+
+    --motion-fast: 120ms;
+    --motion-base: 200ms;
+
+    /* ------------------------------ Layout ------------------------------- */
+    --tabbar-height: 64px;
+    --tabbar-bg: #ffffff;
+    --tabbar-fg: #5f6672;
+    --tabbar-active-bg: rgba(0, 49, 126, 0.10);
+    --tabbar-active-fg: var(--brand-800);
+
+    /* =====================================================================
+       LEGACY ALIASES — old variable names consumed by existing stylesheets
+       and inline <CSSxxx> page styles. Do not use in new code.
+       ===================================================================== */
+    --PrimaryBackground: var(--surface-app);
+    --PrimaryColor: var(--text-primary);
+    --SecondaryColor: var(--text-secondary);
+    --SelectedColor: var(--status-success);
+    --SelectedColorDim: #7cb13c40;
+    --SelectedColorBorder: #c0de9b;
+    --MultiSelectedColor: var(--gold-500);
+    --MultiSelectedColorBorder: #a98219;
+    --SelectedSecondaryColor: var(--brand-500);
+    --SelectedSecondaryColorBorder: var(--brand-300);
+    --OffsetColor: var(--orange-500);
+    --OffsetColorTrans: #ff92001e;
+    --TertiaryColor: var(--brand-300);
+    --TertiaryColorTrans: #7fcde61e;
+    --ThemeColor: var(--brand-800);
+    --ReversePrimaryColor: black;
+    --ReverseSecondaryColor: #10084e;
+    --ColorGreen: var(--green-300);
+    --ColorLightGreen: #d9ef62;
+    --ColorYellowGreen: #7e930b;
+    --ColorYellow: #f0ea94;
+    --ColorGold: var(--gold-300);
+    --ColorGray: var(--gray-500);
+    --ColorPink: #b43a76;
+    --ColorRed: var(--red-800);
+    --PrimaryBorderRadius: var(--radius-sm);
+    --PrimaryBorder: var(--border-default);
+    --VerticalSpace: var(--space-4);
+    --HomePageCardBorder: var(--border-card);
+    --ChecklistButtonBorder: 2px solid var(--brand-300);
+    --WorkflowBorder: 0px solid var(--brand-300);
+    --PendingColor: var(--status-pending);
+    --TravelingColor: var(--status-traveling);
+    --WorkingColor: var(--status-working);
+    --CompleteColor: var(--status-complete);
+    --CommonErrorBorder: 4px solid var(--status-danger);
+    --CommonErrorBorderRadius: 0.5rem;
+    --CommonErrorColor: #ad3f29;
+    --CommonErrorBackground: var(--text-secondary);
+    --PrimaryFonts: var(--font-sans);
+    --SecondaryFonts: var(--font-serif);
+    --MonospacedFonts: var(--font-mono);
+}
+
+/* ============================================================================
+   DARK THEME — night work / low-glare environments.
+   Dark gray (not black) surfaces to avoid halation; status colors kept in
+   the same hue families but tuned to hold ≥3:1 on dark surfaces.
+   ============================================================================ */
+:root[data-theme="dark"] {
+    --surface-app: #121212;
+    --surface-app-flat: #121212;
+    --surface-raised: #1e1e1e;
+    --surface-raised-subtle: rgba(255, 255, 255, 0.08);
+    --surface-card: #1d1d1f;
+    --surface-input: rgba(255, 255, 255, 0.06);
+    --surface-overlay: rgba(0, 0, 0, 0.7);
+    --surface-inverse: #242424;
+
+    --border-default: 1px solid #3a3a3a;
+    --border-subtle: 1px solid rgba(255, 255, 255, 0.25);
+    --border-hairline: 1px solid rgba(255, 255, 255, 0.1);
+    --border-card: 2px solid #3f5e70;
+
+    --text-primary: #ececec;
+    --text-secondary: #c9c9c9;
+    --text-muted: #9a9a9a;
+    --text-inverse: #ececec;
+
+    --accent: #4da3d6;
+    --accent-strong: #3c86b4;
+    --accent-soft: #86bcd6;
+    --accent-gradient: linear-gradient(180deg, #2a6d94 0%, #1d5f85 100%);
+
+    --status-pending: #b06cb5;
+    --status-traveling: #d95590;
+    --status-working: #e08a1e;
+    --status-complete: #6e6e6e;
+    --status-success: #8dbb56;
+    --status-danger: #e4715a;
+    --status-info: #4da3d6;
+    --status-warning: #e0bc55;
+
+    --elevation-1: 0 0 0 1px rgba(255, 255, 255, 0.06);
+    --elevation-2: 0 0 0 1px rgba(255, 255, 255, 0.1);
+
+    --tabbar-bg: #1b1b1d;
+    --tabbar-fg: #9a9a9a;
+    --tabbar-active-bg: rgba(77, 163, 214, 0.16);
+    --tabbar-active-fg: #86bcd6;
+
+    --focus-ring-color: #86bcd6;
+
+    /* Legacy aliases that carry raw values re-tuned for dark */
+    --SelectedColorDim: #8dbb5640;
+    --SelectedColorBorder: #5d7a3c;
+    --ReverseSecondaryColor: #0d0d1f;
+    --ColorYellow: #cfc97e;
+    --ColorLightGreen: #b5c455;
+    --CommonErrorColor: #e4715a;
+    --CommonErrorBackground: #2a2a2a;
+}
+
+/* ============================================================================
+   Global interaction & accessibility baseline
+   ============================================================================ */
+
+/* Kill double-tap-zoom misfires on rapid gloved taps */
+button, a, [role="button"], input, select, textarea, label {
+    touch-action: manipulation;
+}
+
+/* Visible keyboard/switch-access focus everywhere, without mouse noise */
+:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+/* Screen-reader-only content */
+.visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

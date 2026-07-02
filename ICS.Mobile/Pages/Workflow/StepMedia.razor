@@ -1,0 +1,153 @@
+﻿@using ICS.Mobile.Services
+@using ICS.Portal.Data.Custom
+@if (Initialized)
+{
+    <div class="MediaButtonsContainer">
+
+        @foreach (var item in Media)
+        {
+            <input type="image" src="@item.Base64" class="@ActiveCss(item.GeneratedFileName)" @onclick="() => ToggleImage(item)">
+        }
+    </div>
+
+    @if (ActiveMedia is not null)
+    {
+        <div class="Media">
+            <img class="Image" src="@ActiveMedia.Base64" style="@IfIsIconNotImage(ActiveMedia.GeneratedFileName)" />
+
+            @if (ActiveMedia.GeneratedFileName.Contains("pdf"))
+            {
+                <div>
+                    <a href="@($"{settings.ImageBaseUrl}{ActiveMedia.GeneratedFileName}")" target="_blank" title="@ActiveMedia.Title">
+                        <div class="Title">
+                            @ActiveMedia.Title
+                        </div>
+                    </a>
+                </div>
+            }
+            else
+            {
+                @if (!string.IsNullOrEmpty(ActiveMedia.Title))
+                {
+                    <div class="Title">
+                        @ActiveMedia.Title
+                    </div>
+                }
+            }
+            @if (!string.IsNullOrEmpty(ActiveMedia.Caption))
+            {
+                <div class="Caption">
+                    @((MarkupString)PageBase.TextToHtml(ActiveMedia.Caption))
+                </div>
+            }
+        </div>
+    }
+}
+
+<style>
+    .MediaButtonsContainer {
+        width: 100%;
+        margin: .5rem 0 .5rem 0;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: minmax(5rem,100%);
+        column-gap: .5rem;
+    }
+
+        .MediaButtonsContainer > input {
+            width: 100%;
+            height: 100%;
+            border: 2px solid rgba(255,255,255,.5);
+            border-radius: .25rem;
+            background-size: cover;
+        }
+
+            .MediaButtonsContainer > input.active {
+                border-color: rgba(255,255,255,1);
+            }
+
+    .Media {
+        display: grid;
+        grid-template-rows: auto auto auto;
+    }
+
+        .Media .Image {
+            width: 100%;
+            box-sizing: content-box;
+        }
+
+        .Media  .Title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--OffsetColor);
+        }
+
+        .Media .Caption {
+            font-size: 1.1rem;
+            color: var(--SelectedColor);
+        }
+</style>
+
+@code {
+    [Inject] protected SettingsService settings { set; get; } = default!;
+
+    [Parameter]
+    public List<PresentationMedia> Media { set; get; }
+    private bool Initialized = false;
+    private PresentationMedia ActiveMedia = null;
+
+    private void ToggleImage(PresentationMedia item)
+    {
+        if (ActiveMedia is not null)
+        {
+            if (ActiveMedia.GeneratedFileName == item.GeneratedFileName)
+            {
+                ActiveMedia = null;
+            }
+            else
+            {
+                ActiveMedia = item;
+            }
+        }
+        else
+        {
+            ActiveMedia = item;
+        }
+    }
+
+    private string ActiveCss(string generatedFileName)
+    {
+        if (ActiveMedia is not null && ActiveMedia.GeneratedFileName == generatedFileName)
+        {
+            return "active";
+        }
+        return string.Empty;
+    }
+    private string IfIsIconNotImage(string? filename)
+    {
+        string fname = string.Empty;
+        if (!string.IsNullOrWhiteSpace(filename))
+        {
+            if (filename.Contains("pdf"))
+            {
+                return "width: 64px;";
+            }
+        }
+
+        return fname;
+    }
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        Initialized = false;
+
+        ActiveMedia = null;
+
+        Initialized = true;
+    }
+}

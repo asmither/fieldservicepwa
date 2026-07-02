@@ -1,0 +1,10 @@
+﻿@using Microsoft.AspNetCore.Components.Forms;
+
+@if (Initialized)
+{
+    <div class="WorkflowNoteMedia">
+        <div class="WorkflowPrompt Smaller">@NoteLabelOrDefault</div>
+        <textarea rows="8" class="WorkflowInput" placeholder="@PlaceHolder" @bind-value="Note" @bind-value:event="oninput"></textarea>
+    </div>
+    <ICS.Mobile.Components.ICSDialogBox @ref="DialogBox" />
+}

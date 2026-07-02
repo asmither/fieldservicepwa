@@ -1,0 +1,52 @@
+@page "/dispatch-list"
+@inherits ICS.Mobile.Pages.PageBase
+@using ICS.Mobile.Components
+@using ICS.Mobile.Pages.DispatchList.Components
+@using ICS.Portal.Data.Enumerations
+@* @using ICS.Mobile.Components.ScratchPad; *@
+
+<CSSDispatchList />
+<PageHeaderBasic Title="MY DISPATCHES" Icon="bi-list-task" />
+
+@if (Initialized)
+{
+    <SyncIndicator SuppressClickableCloud=false />
+        @* <ScratchPadOverlay @ref="scratchPadRef" CurrentUserId="@CurrentUserId" /> *@
+    @* <ScratchPadFab CurrentUserId="@CurrentUserId" /> *@
+
+    <Tabs OnTabClick="OnTabClick" OnRefreshClick="RefreshData"></Tabs>
+    @if (DispatchesToDisplay is not null)
+    {
+        @if (!DispatchesToDisplay.Any())
+        {
+            <EmptyState Icon="bi-truck"
+                        Title="No dispatches here"
+                        Message="Dispatches assigned to you will show up in this list. Use the refresh button above to check for new work." />
+        }
+        @foreach (var d in DispatchesToDisplay)
+        {
+            <Item Id="@d.Id"
+                  DispatchNumber="@d.ClientWorkOrder"
+                  CustomerName="@d.LocName"
+                  FullAddress="@d.AddressLine"
+                  IsActive="@(d.Id.Equals(CurrentDispatchTechId) ? true : false)"
+                  Status="@d.Status"
+                  PromissedDate="@GetDispatchDueDate(d.DueDate)"
+                  Area='@string.Concat((!d.Locality.Equals(d.Neighborhood) && !string.IsNullOrEmpty(d.Neighborhood) ? d.Neighborhood : d.Locality), ", ", d.AdminDistrict,"  - ",d.AdminDistrict2," Cnty" )'
+                  PO="@d.PurchaseOrderNumber"
+                  Zone="@d.Zone"
+                  County="@d.AdminDistrict2"
+                  DNE="@d.CalledInBy"
+                  Priority="@d.Priority"
+                  Tasks="@d.TaskNames"
+                  ItemSelected="OnItemSelected">
+            </Item>
+        }
+    }
+}
+else
+{
+    <ICS.Mobile.Components.ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICS.Mobile.Components.ICSLoadingSpinner>
+}

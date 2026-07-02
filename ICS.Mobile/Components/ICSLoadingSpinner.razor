@@ -1,0 +1,12 @@
+﻿<div>
+    <center>
+        <div class="loaderlabel">@ChildContent</div>
+        <div class="loader"></div>
+            
+    </center>
+</div>
+@code {
+
+    [Parameter]
+    public RenderFragment? ChildContent { set; get; }
+}

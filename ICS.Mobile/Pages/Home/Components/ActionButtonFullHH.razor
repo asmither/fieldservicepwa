@@ -1,0 +1,63 @@
+@if (AlwaysShow)
+{
+    <button class="ActionButtonFullHH @GridArea" @onclick="Click">
+        @if (!string.IsNullOrEmpty(Icon))
+        {
+            <i class="Lead bi @Icon" aria-hidden="true"></i>
+        }
+        <div class="Title">
+            @Title
+            @if (!string.IsNullOrEmpty(Tagline))
+            {
+                <span class="Tagline">@Tagline</span>
+            }
+        </div>
+        <i class="Chevron bi bi-chevron-right" aria-hidden="true"></i>
+    </button>
+}
+@code {
+
+    [Parameter]
+    [EditorRequired]
+    public string? Title { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public string? GridArea { set; get; }
+
+    /// <summary>Leading bootstrap-icon class (e.g. "bi-stopwatch").</summary>
+    [Parameter]
+    public string? Icon { set; get; }
+
+    [Parameter]
+    public bool AlwaysShow { set; get; } = false;
+
+    [Parameter]
+    [EditorRequired]
+    public EventCallback OnClick { set; get; }
+
+    [Parameter]
+    public string? Tagline { set; get; } = null;
+
+    private void Click()
+    {
+        OnClick.InvokeAsync();
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        Title ??= string.Empty;
+
+        if (string.IsNullOrEmpty(GridArea))
+        {
+            throw new ArgumentNullException(nameof(GridArea));
+        }
+
+        if (!OnClick.HasDelegate)
+        {
+            throw new ArgumentNullException(nameof(OnClick));
+        }
+    }
+}

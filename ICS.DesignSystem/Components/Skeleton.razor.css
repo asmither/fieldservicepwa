@@ -1,0 +1,32 @@
+.Skeleton {
+    display: block;
+    background: linear-gradient(90deg,
+        var(--surface-raised-subtle) 25%,
+        rgba(255, 255, 255, 0.18) 37%,
+        var(--surface-raised-subtle) 63%);
+    background-size: 400% 100%;
+    animation: skeleton-shimmer 1.4s ease infinite;
+    margin-bottom: var(--space-2);
+}
+
+.Skeleton.Text {
+    border-radius: var(--radius-sm);
+}
+
+.Skeleton.Rect {
+    border-radius: var(--radius-md);
+}
+
+.Skeleton.Circle {
+    border-radius: 50%;
+}
+
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0 50%;
+    }
+}

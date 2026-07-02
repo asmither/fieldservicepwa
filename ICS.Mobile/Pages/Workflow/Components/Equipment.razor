@@ -1,0 +1,1246 @@
+﻿@using ICS.Mobile.Components
+@inherits WorkflowComponentsBasePage
+@layout EmptyLayout
+@using ICS.Portal.Data.Queries.Models
+@using ICS.Portal.Data.Enumerations;
+@using ICS.Portal.Data.Custom
+@if (Initialized)
+{
+
+    @switch (Mode)
+    {
+        case WFEquipmentModes.Selecting:
+
+            @* ===== TOOLBAR: Search, Sort, Multi-Select Toggle ===== *@
+            <div class="EquipmentToolbar">
+                <div class="SearchContainer">
+                    <i class="bi bi-search" @onclick="ToggleEquipmentFilter"></i>
+                    <input type="text"
+                           class="SearchInput"
+                           placeholder="Search make, model, serial, tag..."
+                           value="@SearchFilterText"
+                           @oninput="OnSearchFilterChanged" />
+                    @if (!string.IsNullOrEmpty(SearchFilterText))
+                    {
+                        <button class="ClearSearchBtn" @onclick="ClearSearchFilter">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </button>
+                    }
+                </div>
+                @if (EquipmentFilterMode)
+                {
+                    <div class="ToolbarActions">
+                        @if (!MultiSelectMode)
+                        {
+                            <button class="ToolbarBtn" title="Hide these buttons" @onclick="ToggleEquipmentFilter"><i class="bi bi-x-circle"></i></button>
+                        }
+                        <button class="ToolbarBtn @((CurrentSortMode == EquipmentSortMode.UnitTag || CurrentSortMode == EquipmentSortMode.UnitTagDesc)? "SortByTag" : "")"
+                                @onclick="ToggleSortMode"
+                                title="Sort by @SortModeText">
+                            @if (CurrentSortMode == EquipmentSortMode.ManufacturerDesc || CurrentSortMode == EquipmentSortMode.UnitTagDesc)
+                            {
+                                <i class="bi bi-sort-alpha-down-alt"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-sort-alpha-up"></i>
+                            }
+                            <span class="BtnLabel">@SortModeText</span>
+                        </button>
+                        <button class="ToolbarBtn @(MultiSelectMode ? "Active" : "") MultiSelbtn"
+                                @onclick="ToggleMultiSelectMode"
+                                title="@(MultiSelectMode ? "Exit Multi-Select Mode" : "Multi-Select Equip to Move or Retire")">
+
+                            @if (!MultiSelectMode)
+                            {
+                                <i class="bi bi-check2-square"></i>
+                                <span class="BtnLabel">Move/Retire</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-x-square"></i>
+                                <span class="BtnLabel">Exit Bulk Move/Retire</span>
+                            }
+                        </button>
+                    </div>
+                }
+            </div>
+
+            @* ===== MULTI-SELECT ACTION BAR (shown when in multi-select mode) ===== *@
+            @if (MultiSelectMode)
+            {
+                <div class="MultiSelectBar">
+                    <div class="SelectionInfo">
+                        <span class="SelectCount">
+                            <i>
+                                @if (MultiSelectedEquipment.Count == 0)
+                                {
+                                    <small>Pick Units & Take Action</small>
+                                }
+                                else
+                                {
+                                    <span>@MultiSelectedEquipment.Count</span>
+
+                                    @if (MultiSelectedEquipment.Count > 1)
+                                    {
+                                        <span> Units</span>
+                                    }
+                                    else
+                                    {
+                                        <span> Unit</span>
+                                    }
+                                }
+                            </i>
+                        </span>
+                    </div>
+                    <div class="SelectActions">
+                        <button class="SelectActionBtn" @onclick="SelectAllVisible" title="Select All">
+                            <i class="bi bi-check-all"></i>
+                        </button>
+                        <button class="SelectActionBtn" @onclick="DeselectAll" title="Deselect All">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                        <button class="SelectActionBtn Primary @(MultiSelectedEquipment.Count == 0 ? "Disabled" : "")"
+                                @onclick="ShowBulkActions"
+                                disabled="@(MultiSelectedEquipment.Count == 0)"
+                                title="Move to Group or Retire">
+                            <i class="bi bi-gear-fill"></i>
+                            <span>TAKE ACTION</span>
+                        </button>
+                    </div>
+                </div>
+            }
+
+            @* ===== NO RESULTS MESSAGE ===== *@
+            @if (!string.IsNullOrEmpty(SearchFilterText) && !FilteredEquipmentList.Any())
+            {
+                <div class="NoResultsMessage">
+                    <i class="bi bi-search"></i>
+                    <p>No equipment matches "<strong>@SearchFilterText</strong>"</p>
+                    <button class="Button" @onclick="ClearSearchFilter">Clear Search</button>
+                </div>
+            }
+
+
+            @* ===== UNGROUPED EQUIPMENT ===== *@
+            @foreach (WorkflowEquipment equipment in GetSortedEquipmentForGroup(null))
+            {
+                <div class="EquipmentContainer @EquipmentSelectedStyle(equipment) @EquipmentSelectedAlreadyStyle(equipment) @MultiSelectStyle(equipment)">
+                    <div class="Header" @onclick="() => HandleEquipmentHeaderClick(equipment)">
+                        @if (MultiSelectMode)
+                        {
+                            <div class="MultiSelectCheckbox">
+                                <i class="bi @(IsMultiSelected(equipment) ? "bi-check-square-fill" : "bi-square")"></i>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(equipment.TypeName))
+                        {
+                            <div class="Name">
+                                <strong>
+                                    @if (CurrentSortMode == EquipmentSortMode.Manufacturer || CurrentSortMode == EquipmentSortMode.ManufacturerDesc)
+                                    {
+                                        @equipment.Make
+                                    }
+                                    @if (CurrentSortMode == EquipmentSortMode.UnitTag || CurrentSortMode == EquipmentSortMode.UnitTagDesc)
+                                    {
+                                        @equipment.UnitTag
+                                    }
+                                </strong>
+                                <span class="EqTypeName">
+                                    &nbsp; - &nbsp;
+                                    @equipment.TypeName.ToLowerInvariant()
+                                </span>
+                            </div>
+                        }
+                        <div class="Image">
+                            <i class="icon bi @SelectedEquipmentIcon(equipment)"></i>
+                        </div>
+                    </div>
+                    <div class="Content">
+                        <div class="MultiLineWithButton">
+                            <div class="Text" @onclick="() => HandleEquipmentBodyClick(equipment)">
+                                @RenderEquipmentDetails(equipment)
+                            </div>
+                            @if (AllowEdit && !MultiSelectMode)
+                            {
+                                <div class="Button Transparent" @onclick="() => SetEditEquipment(equipment)">
+                                    <Icon Title="Edit this Equipment" UseIcon="EditClipboard" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @* ===== GROUPED EQUIPMENT ===== *@
+            @foreach (string group in GroupList.Where(g => g != "Retired"))
+            {
+                var filteredCount = FilteredGroupCount(group);
+                if (filteredCount != 0)
+                {
+                    <div class="EquipmentContainer Lighter @GroupSelectedAlreadyStyle(group)">
+                        <div class="Header" @onclick="() => ToggleGroup(group)">
+                            <div class="Name">
+                                @group (@filteredCount)
+                            </div>
+                            <div class="Image">
+                                @if (SelectedGroup == group)
+                                {
+                                    <i class="bi bi-chevron-double-up"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-chevron-double-down"></i>
+                                }
+                            </div>
+                        </div>
+                        @if (SelectedGroup == group)
+                        {
+                            <div class="Content">
+                                @foreach (WorkflowEquipment equipment in GetSortedEquipmentForGroup(group))
+                                {
+                                    <div class="EquipmentContainer Lighter @EquipmentSelectedStyle(equipment) @EquipmentSelectedAlreadyStyle(equipment) @MultiSelectStyle(equipment)">
+                                        @* === HEADER: Tap to select (single or multi) === *@
+                                        <div class="Header" @onclick="() => HandleEquipmentHeaderClick(equipment)">
+                                            @if (MultiSelectMode)
+                                            {
+                                                <div class="MultiSelectCheckbox">
+                                                    <i class="bi @(IsMultiSelected(equipment) ? "bi-check-square-fill" : "bi-square")"></i>
+                                                </div>
+                                            }
+
+                                            <div class="Name">
+                                                <strong>
+                                                    @if (CurrentSortMode == EquipmentSortMode.Manufacturer || CurrentSortMode == EquipmentSortMode.ManufacturerDesc)
+                                                    {
+                                                        @equipment.Make
+                                                    }
+                                                    @if (CurrentSortMode == EquipmentSortMode.UnitTag || CurrentSortMode == EquipmentSortMode.UnitTagDesc)
+                                                    {
+                                                        @equipment.UnitTag
+                                                    }
+                                                    <span class="EqTypeName">
+                                                        &nbsp; - &nbsp;
+                                                        @equipment.TypeName.ToLowerInvariant()
+                                                    </span>
+                                                </strong>
+                                            </div>
+
+                                            <div class="Image"><i class="@SelectedEquipmentIcon(equipment)"></i></div>
+                                        </div>
+
+                                        @* === CONTENT: Tap to edit === *@
+                                        <div class="Content @EquipmentSelectedStyle(equipment) @EquipmentSelectedAlreadyStyle(equipment)">
+                                            <div class="MultiLineWithButton">
+                                                <div class="Text" @onclick="() => HandleEquipmentBodyClick(equipment)">
+                                                    @RenderEquipmentDetails(equipment)
+                                                </div>
+                                                @if (AllowEdit && !MultiSelectMode)
+                                                {
+                                                    <div class="EquipmentEditIcon" @onclick="() => SetEditEquipment(equipment)">
+                                                        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H9M15 5H17C18.1046 5 19 5.89543 19 7V9" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                            <path d="M14.902 20.3343L12.7153 20.7716L13.1526 18.585C13.1914 18.3914 13.2865 18.2136 13.4261 18.074L17.5 14L19.5 12L21.4869 13.9869L19.4869 15.9869L15.413 20.0608C15.2734 20.2004 15.0956 20.2956 14.902 20.3343Z" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                            <path d="M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                        </svg>
+                                                    </div>
+                                                }
+                                            </div>
+                                            @if (equipment.IsRetired)
+                                            {
+                                                <p class="text-bg-danger">** UNIT RETIRED!</p>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="py-1"></div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                <div class="py-1"></div>
+            }
+
+            @* ===== RETIRED GROUP ===== *@
+            @if (RetiredGroupPresent && FilteredGroupCount("Retired") > 0)
+            {
+                <div class="EquipmentContainer">
+                    <div class="Header" @onclick='() => ToggleGroup("Retired")'>
+                        <div class="Name">
+                            Retired (@FilteredGroupCount("Retired"))
+                        </div>
+                        <div class="Image">
+                            @if (SelectedGroup == "Retired")
+                            {
+                                <i class="bi bi-chevron-double-up"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-chevron-double-down"></i>
+                            }
+                        </div>
+                    </div>
+
+                    @if (SelectedGroup == "Retired")
+                    {
+                        <div class="Content">
+                            @foreach (WorkflowEquipment equipment in GetSortedEquipmentForGroup(null, retiredOnly: true))
+                            {
+                                <div class="EquipmentContainer Lighter @EquipmentSelectedStyle(equipment) @EquipmentSelectedAlreadyStyle(equipment) @MultiSelectStyle(equipment)">
+                                    <div class="Header" @onclick="() => HandleEquipmentHeaderClick(equipment)">
+                                        @if (MultiSelectMode)
+                                        {
+                                            <div class="MultiSelectCheckbox">
+                                                <i class="bi @(IsMultiSelected(equipment) ? "bi-check-square-fill" : "bi-square")"></i>
+                                            </div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(equipment.TypeName))
+                                        {
+                                            <div class="Name">
+                                                <strong>
+                                                    @if (CurrentSortMode == EquipmentSortMode.Manufacturer || CurrentSortMode == EquipmentSortMode.ManufacturerDesc)
+                                                    {
+                                                        @equipment.Make
+                                                    }
+                                                    @if (CurrentSortMode == EquipmentSortMode.UnitTag || CurrentSortMode == EquipmentSortMode.UnitTagDesc)
+                                                    {
+                                                        @equipment.UnitTag
+                                                    }
+
+                                                </strong>
+                                                <span class="EqTypeName">
+                                                    &nbsp; - &nbsp;
+                                                    @equipment.TypeName.ToLowerInvariant()
+                                                </span>
+                                            </div>
+                                        }
+                                        <div class="Image"><i class="@SelectedEquipmentIcon(equipment)"></i></div>
+                                    </div>
+                                    <div class="Content @EquipmentSelectedAlreadyStyle(equipment)">
+                                        <div class="MultiLineWithButton">
+                                            <div class="Text" @onclick="() => HandleEquipmentBodyClick(equipment)">
+                                                @RenderEquipmentDetails(equipment)
+                                            </div>
+                                            @if (AllowEdit && !MultiSelectMode)
+                                            {
+                                                <div class="EquipmentEditIcon" @onclick="() => SetEditEquipment(equipment)">
+                                                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H9M15 5H17C18.1046 5 19 5.89543 19 7V9" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                        <path d="M14.902 20.3343L12.7153 20.7716L13.1526 18.585C13.1914 18.3914 13.2865 18.2136 13.4261 18.074L17.5 14L19.5 12L21.4869 13.9869L19.4869 15.9869L15.413 20.0608C15.2734 20.2004 15.0956 20.2956 14.902 20.3343Z" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                        <path d="M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                    </svg>
+                                                </div>
+                                            }
+                                        </div>
+                                        @if (equipment.IsRetired)
+                                        {
+                                            <p class="text-bg-danger">** UNIT RETIRED!</p>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="py-1"></div>
+                            }
+                        </div>
+                    }
+
+                </div>
+                <div class="py-1"></div>
+            }
+
+            @* ===== ADD NEW EQUIPMENT BUTTON ===== *@
+            @if (AllowAdd && AddInProgress == false && !MultiSelectMode)
+            {
+                <div class="CenteredButtonContainer">
+                    <button class="Button" @onclick="AddNewEquipment">
+                        Add new equipment
+                    </button>
+                </div>
+            }
+
+            @* ===== BULK ACTIONS POPUP ===== *@
+            @if (ShowBulkActionsPopup)
+            {
+                <div class="PopupOverlay" @onclick="ClosePopups">
+                    <div class="PopupContainer" @onclick:stopPropagation="true">
+                        <div class="PopupHeader">
+                            <span>Bulk Actions</span>
+                            <button class="PopupCloseBtn" @onclick="ClosePopups">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div class="PopupContent">
+                            <p class="PopupInfo">@MultiSelectedEquipment.Count item(s) selected</p>
+
+                            <button class="PopupActionBtn" @onclick="BulkRetire">
+                                <i class="bi bi-archive-fill"></i>
+                                <span>Retire Selected</span>
+                            </button>
+
+                            <button class="PopupActionBtn" @onclick="BulkUnRetire">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                                <span>Un-Retire Selected</span>
+                            </button>
+
+                            <button class="PopupActionBtn" @onclick="ShowMoveToGroup">
+                                <i class="bi bi-folder-symlink-fill"></i>
+                                <span>Move to Group</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @* ===== MOVE TO GROUP POPUP ===== *@
+            @if (ShowMoveToGroupPopup)
+            {
+                <div class="PopupOverlay" @onclick="()=>ClosePopups()">
+                    <div class="PopupContainer MoveGroupPopup" @onclick:stopPropagation="true">
+                        <div class="PopupHeader">
+                            <span>Move to Group</span>
+                            <button class="PopupCloseBtn" @onclick="()=>ClosePopups()">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div class="PopupContent">
+                            <p class="PopupInfo">Select a group for @MultiSelectedEquipment.Count item(s)</p>
+
+                            <div class="GroupList">
+                                @foreach (var group in GroupList.Where(g => g != "Retired"))
+                                {
+                                    <button class="GroupOption" @onclick="() => MoveToGroup(group)">
+                                        <i class="bi bi-folder2"></i>
+                                        <span>@group</span>
+                                        <span class="GroupCount">(@GroupCount(group))</span>
+                                    </button>
+                                }
+                                <button class="GroupOption Ungrouped" @onclick="() => RemoveFromGroup()">
+                                    <i class="bi bi-folder2-open"></i>
+                                    <span>Remove from Group</span>
+                                </button>
+                            </div>
+
+                            @* Create New Group *@
+                            <div class="NewGroupSection">
+                                <div class="SectionDivider">
+                                    <span>Or create new group</span>
+                                </div>
+                                <div class="NewGroupInput">
+                                    <input type="text"
+                                           class="WorkflowInput"
+                                           placeholder="New group name..."
+                                           @bind="NewGroupName"
+                                           maxlength="36" />
+                                    <button class="CreateGroupBtn"
+                                            @onclick="() => CreateAndMoveToNewGroup()"
+                                            disabled="@string.IsNullOrWhiteSpace(NewGroupName)">
+                                        <i class="bi bi-plus-circle"></i>
+                                        Create & Move
+                                    </button>
+                                </div>
+                                @if (!string.IsNullOrEmpty(ErrorMessage))
+                                {
+                                    <p class="ErrorText">@ErrorMessage</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            break;
+
+        case WFEquipmentModes.None:
+            <p>Loading...</p>
+            break;
+
+        case WFEquipmentModes.UnitImage1:
+
+            @if (UnitImage1!.ContentType is not null)
+            {
+                <div class="WorkflowImageMedia">
+                    <div class="WorkflowPrompt">Unit Image 1:</div>
+                    <div class="Image">
+                        <img src="@UnitImage1.Base64Version()" alt="Image Label">
+                    </div>
+                    <div class="ButtonWrapper">
+                        <button type="button" class="Button" @onclick="() => DeleteImage(WFEquipmentModes.UnitImage1)">
+                            <Icon UseIcon="Trashcan" Title="Remove this Image" />
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="WorkflowEditItem">
+                    <div class="Prompt">Unit Image 1:</div>
+                    <div class="custom-file-upload">
+                        @if (WorkflowStep is not null && WorkflowStep.RequireCamera.Equals(true))
+                        {
+                            <InputFile id="@UnitImage1.Id" OnChange="Unit1FileChanged" accept="image/*" capture="camera"></InputFile>
+                        }
+                        else
+                        {
+                            <InputFile id="@UnitImage1.Id" OnChange="Unit1FileChanged"></InputFile>
+                        }
+                        <label for="@UnitImage1.Id">
+                            <span>
+                                <i>(Required)</i>
+                                <svg width="92px" height="92px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#FFFFFF"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M15 13H9" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"></path> <path d="M12 10L12 16" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"></path> <path d="M9.77778 21H14.2222C17.3433 21 18.9038 21 20.0248 20.2646C20.51 19.9462 20.9267 19.5371 21.251 19.0607C22 17.9601 22 16.4279 22 13.3636C22 10.2994 22 8.76721 21.251 7.6666C20.9267 7.19014 20.51 6.78104 20.0248 6.46268C19.3044 5.99013 18.4027 5.82123 17.022 5.76086C16.3631 5.76086 15.7959 5.27068 15.6667 4.63636C15.4728 3.68489 14.6219 3 13.6337 3H10.3663C9.37805 3 8.52715 3.68489 8.33333 4.63636C8.20412 5.27068 7.63685 5.76086 6.978 5.76086C5.59733 5.82123 4.69555 5.99013 3.97524 6.46268C3.48995 6.78104 3.07328 7.19014 2.74902 7.6666C2 8.76721 2 10.2994 2 13.3636C2 16.4279 2 17.9601 2.74902 19.0607C3.07328 19.5371 3.48995 19.9462 3.97524 20.2646C5.09624 21 6.65675 21 9.77778 21Z" stroke="#FFFFFF" stroke-width="1.5"></path> <path d="M19 10H18" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"></path> </g></svg>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            }
+            break;
+
+        case WFEquipmentModes.UnitImage2:
+
+            @if (UnitImage2!.ContentType is not null)
+            {
+                <div class="WorkflowImageMedia">
+                    <div class="WorkflowPrompt">Unit 2 Image:</div>
+                    <div class="Image">
+                        <img src="@UnitImage2.Base64Version()" alt="Image Label">
+                    </div>
+                    <div class="ButtonWrapper">
+                        <button type="button" class="Button" @onclick="() => DeleteImage(WFEquipmentModes.UnitImage2)">
+                            <Icon UseIcon="Trashcan" Title="Remove this Image" />
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="WorkflowEditItem">
+                    <div class="Prompt">Unit Image 2:</div>
+                    <div class="custom-file-upload">
+                        @if (WorkflowStep is not null && WorkflowStep.RequireCamera.Equals(true))
+                        {
+                            <InputFile id="@UnitImage2.Id" OnChange="Unit2FileChanged" accept="image/*" capture="camera"></InputFile>
+                        }
+                        else
+                        {
+                            <InputFile id="@UnitImage2.Id" OnChange="Unit2FileChanged"></InputFile>
+                        }
+                        <label for="@UnitImage2.Id">
+                            <span>
+                                <i>(Required)</i>
+                                <svg width="92px" height="92px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#FFFFFF"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M15 13H9" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"></path> <path d="M12 10L12 16" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"></path> <path d="M9.77778 21H14.2222C17.3433 21 18.9038 21 20.0248 20.2646C20.51 19.9462 20.9267 19.5371 21.251 19.0607C22 17.9601 22 16.4279 22 13.3636C22 10.2994 22 8.76721 21.251 7.6666C20.9267 7.19014 20.51 6.78104 20.0248 6.46268C19.3044 5.99013 18.4027 5.82123 17.022 5.76086C16.3631 5.76086 15.7959 5.27068 15.6667 4.63636C15.4728 3.68489 14.6219 3 13.6337 3H10.3663C9.37805 3 8.52715 3.68489 8.33333 4.63636C8.20412 5.27068 7.63685 5.76086 6.978 5.76086C5.59733 5.82123 4.69555 5.99013 3.97524 6.46268C3.48995 6.78104 3.07328 7.19014 2.74902 7.6666C2 8.76721 2 10.2994 2 13.3636C2 16.4279 2 17.9601 2.74902 19.0607C3.07328 19.5371 3.48995 19.9462 3.97524 20.2646C5.09624 21 6.65675 21 9.77778 21Z" stroke="#FFFFFF" stroke-width="1.5"></path> <path d="M19 10H18" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"></path> </g></svg>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            }
+            break;
+
+        case WFEquipmentModes.DataPlatePicture:
+
+            @if (DataPlateImage!.ContentType is not null)
+            {
+                <div class="WorkflowImageMedia">
+                    @* <div class="WorkflowPrompt">Data Plate Image:</div> *@
+                    <div class="Image">
+                        <img src="@DataPlateImage.Base64Version()" alt="DataPlate Photo">
+                    </div>
+                    <div class="ButtonWrapper">
+                        <button type="button" class="Button" @onclick="() => DeleteImage(WFEquipmentModes.DataPlatePicture)">
+                            <Icon UseIcon="Trashcan" Title="Remove this Image" />
+                        </button>
+                        <span>&nbsp;&nbsp;&nbsp;</span>
+                        <button type="button" class="Button" @onclick="() => ProcessDPPhoto()">
+                            <Icon UseIcon="Read" Title="Re-Read This DataPlate" />
+                        </button>
+                    </div>
+                    @if (1 == 2 && ((bUseBluon) && DataPlateImage.Data is not null && DataPlateImage.Data.Length > 100))
+                    {
+                        <div>
+                            <center>
+                                <button class="dataplatelookup" @onclick="() => TryBluonNameplate()">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    Try Bluon Data for this @SelectedEquipment.Make
+                                </button>
+                            </center>
+                        </div>
+                    }
+                </div>
+                @if (!string.IsNullOrEmpty(DataPlateText))
+                {
+                    <div class="DataPlateNotes">
+                        <pre class="EqValue">@((MarkupString)PageBase.TextToHtml(DataPlateText))</pre>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="WorkflowEditItem">
+                    <div class="Prompt">Data Plate Image:</div>
+                    <div class="custom-file-upload">
+                        @if (WorkflowStep is not null && WorkflowStep.RequireCamera.Equals(true))
+                        {
+                            <InputFile id="@DataPlateImage.Id" OnChange="DataPlateFileChanged"></InputFile>
+                        }
+                        else
+                        {
+                            <InputFile id="@DataPlateImage.Id" OnChange="DataPlateFileChanged"></InputFile>
+                        }
+                        <label for="@DataPlateImage.Id">
+                            <span>
+                                <i>(Required)</i>
+                                <svg width="92px" height="92px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#FFFFFF"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M15 13H9" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"></path> <path d="M12 10L12 16" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"></path> <path d="M9.77778 21H14.2222C17.3433 21 18.9038 21 20.0248 20.2646C20.51 19.9462 20.9267 19.5371 21.251 19.0607C22 17.9601 22 16.4279 22 13.3636C22 10.2994 22 8.76721 21.251 7.6666C20.9267 7.19014 20.51 6.78104 20.0248 6.46268C19.3044 5.99013 18.4027 5.82123 17.022 5.76086C16.3631 5.76086 15.7959 5.27068 15.6667 4.63636C15.4728 3.68489 14.6219 3 13.6337 3H10.3663C9.37805 3 8.52715 3.68489 8.33333 4.63636C8.20412 5.27068 7.63685 5.76086 6.978 5.76086C5.59733 5.82123 4.69555 5.99013 3.97524 6.46268C3.48995 6.78104 3.07328 7.19014 2.74902 7.6666C2 8.76721 2 10.2994 2 13.3636C2 16.4279 2 17.9601 2.74902 19.0607C3.07328 19.5371 3.48995 19.9462 3.97524 20.2646C5.09624 21 6.65675 21 9.77778 21Z" stroke="#FFFFFF" stroke-width="1.5"></path> <path d="M19 10H18" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"></path> </g></svg>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            }
+            break;
+
+        case WFEquipmentModes.ChooseManufacturer:
+            <div class="WorkflowEditItem">
+                <DataPicker @ref="mfgPicker" DataList="@EquipmentManufacturerList" Title="Mfg" ListId="equipment-manufactures" @bind-value="@EquipmentManufacturer"></DataPicker>
+                @if (EquipmentManufacturerTemp != null)
+                {
+                    <div style="border:2px dashed; padding:6px;">
+                        <br />
+                        <span>Edit this Entry:</span>
+                        <SmallTextInput @bind-value="@EquipmentManufacturerTemp"></SmallTextInput>
+                        <ICSDismissable Message="@ErrorMessage"></ICSDismissable>
+                        <div class="SingleLineWithButton">
+                            <br />
+                            <button class="button" style="padding: 3px; border: 2px solid inset; border-color: darkred; background-color: red; color: white" @onclick="() => SetMfgManuallyEdited(1)">
+                                USE MY EDIT
+                            </button> <span>&nbsp; &nbsp;</span>
+                            <button class="button" style="padding: 3px; border: 2px solid inset; border-color: dimgrey; background-color: lightgrey; color: black;" @onclick="() => EquipmentManufacturer=null">
+                                &nbsp; CANCEL EDITS &nbsp;
+                            </button>
+                        </div>
+                        <br />
+                    </div>
+                }
+                else
+                {
+                    @if (!string.IsNullOrEmpty(DataPlateText))
+                    {
+                        <div class="DataPlateNotes">
+                            <TinyPicker DataList="DataPlateList" Title="Tap to edit plate items" @bind-Value="@EquipmentManufacturerTemp" />
+                            @* <pre class="EqValue">@((MarkupString)PageBase.TextToHtml(DataPlateText))</pre> *@
+                        </div>
+                    }
+                }
+                @if (DataPlateImage?.ContentType is not null)
+                {
+                    <div class="WorkflowImageMedia">
+                        @* <div class="WorkflowPrompt">Data Plate Image:</div> *@
+                        <div class="Image">
+                            <img src="@DataPlateImage.Base64Version()" alt="DataPlate Photo">
+                        </div>
+                        <div class="ButtonWrapper">
+                            <button type="button" class="Button" @onclick="() => ProcessDPPhoto()">
+                                <Icon UseIcon="Read" Title="Re-Read This DataPlate" />
+                            </button>
+                        </div>
+                    </div>
+                    <script defer>
+                        window.scrollToTop();
+                    </script>
+                }
+
+            </div>
+
+            break;
+
+        case WFEquipmentModes.EnterModel:
+            <div class="WorkflowEditItem">
+                <div class="Prompt">Model Number:</div>
+                <div class="Hints">Enter the model from the dataplate.</div>
+                <SmallTextInput @bind-value="@EquipmentModel"></SmallTextInput>
+
+                @if (!string.IsNullOrEmpty(DataPlateText))
+                {
+                    <div class="DataPlateNotes">
+                        <TinyPicker DataList="DataPlateList" Title="Equipment Model" @bind-Value="@EquipmentModel" />
+                        @* <pre class="EqValue">@((MarkupString)PageBase.TextToHtml(DataPlateText))</pre> *@
+                    </div>
+                }
+
+                @if (DataPlateImage?.ContentType is not null)
+                {
+                    <div class="WorkflowImageMedia">
+                        @* <div class="WorkflowPrompt">Data Plate Image:</div> *@
+                        <div class="Image">
+                            <img src="@DataPlateImage.Base64Version()" alt="DataPlate Photo">
+                        </div>
+                        <div class="ButtonWrapper">
+                            <button type="button" class="Button" @onclick="() => ProcessDPPhoto()">
+                                <Icon UseIcon="Read" Title="Re-Read This DataPlate" />
+                            </button>
+                        </div>
+                    </div>
+                    <script defer>
+                        window.scrollToTop();
+                    </script>
+                }
+
+            </div>
+            break;
+
+        case WFEquipmentModes.EnterSerialNumber:
+            <div class="WorkflowEditItem">
+                <div class="Prompt">Serial Number:</div>
+                <div class="Hints">
+                    Enter the unit serial# from dataplate.
+                </div>
+                <SmallTextInput @bind-value="@EquipmentSerial"></SmallTextInput>
+                <ICSDismissable Message="@ErrorMessage"></ICSDismissable>
+                @if (!string.IsNullOrEmpty(DataPlateText))
+                {
+                    <div class="DataPlateNotes">
+                        <TinyPicker DataList="DataPlateListNumericsOnly" Title="Serial#" @bind-Value="@EquipmentSerial" />
+                    </div>
+                }
+                @if (DataPlateImage?.ContentType is not null)
+                {
+                    <div class="WorkflowImageMedia">
+                        @* <div class="WorkflowPrompt">Data Plate Image:</div> *@
+                        <div class="Image">
+                            <img src="@DataPlateImage.Base64Version()" alt="DataPlate Photo">
+                        </div>
+                        <div class="ButtonWrapper">
+                            <button type="button" class="Button" @onclick="() => ProcessDPPhoto()">
+                                <Icon UseIcon="Read" Title="Re-Read This DataPlate" />
+                            </button>
+                        </div>
+
+                    </div>
+                    <script defer>
+                        window.scrollToTop();
+                    </script>
+                }
+            </div>
+            break;
+
+        case WFEquipmentModes.ManufactureDate:
+
+            <div class="WorkflowEditItem">
+                <div class="Prompt">Manufactured On Date:</div>
+                <div class="Hints">
+                    @if (!string.IsNullOrEmpty(SelectedEquipment?.Make) && !string.IsNullOrEmpty(SelectedEquipment?.Serial))
+                    {
+                        @if ((bUseBluon && !bTriedBluon) && !ManufactureDate.HasValue)
+                        {
+                            <center>
+                                <button class="BluonButton" @onclick="() => TryBluonGetMfgDate()">
+                                    Try Bluon Lookup for Mfg Date of @SelectedEquipment.Make  ***@SelectedEquipment.Serial.Right(6)
+                                </button>
+                            </center>
+                        }
+                    }
+                </div>
+                <DateOnlyInput @bind-Value="@ManufactureDate" UserFastPicker="true"></DateOnlyInput>
+                @if (MfgDateTemp != null)
+                {
+                    <div style="border:2px dashed; padding:6px;">
+                        <br />
+                        <span>FIX THIS AS DATE:</span>
+                        <SmallTextInput @bind-value="@MfgDateTemp"></SmallTextInput>
+                        <ICSDismissable Message="@ErrorMessage"></ICSDismissable>
+                        <div class="SingleLineWithButton">
+                            <br />
+                            <button class="button" style="padding: 3px; border: 2px solid inset; border-color: darkred; background-color: red; color: white" @onclick="() => SetDateManuallyEdited(1)">
+                                SAVE/USE MY EDITS
+                            </button> <span>&nbsp; &nbsp;</span>
+                            <button class="button" style="padding: 3px; border: 2px solid inset; border-color: dimgrey; background-color: lightgrey; color: black;" @onclick="() => MfgDateTemp=null">
+                                &nbsp; CANCEL EDITS &nbsp;
+                            </button>
+                        </div>
+                        <br />
+                    </div>
+                }
+                else
+                {
+                    @if (!string.IsNullOrEmpty(DataPlateText))
+                    {
+                        <div class="DataPlateNotes">
+                            <TinyPicker DataList="DataPlateListNumericsOnly" Title="Mfg Date from Plate" @bind-Value="@MfgDateEdit" />
+                        </div>
+                    }
+                }
+                @if (DataPlateImage?.ContentType is not null)
+                {
+                    <div class="WorkflowImageMedia">
+                        @* <div class="WorkflowPrompt">Data Plate Image:</div> *@
+                        <div class="Image">
+                            <img src="@DataPlateImage.Base64Version()" alt="DataPlate Photo">
+                        </div>
+                        <div class="ButtonWrapper">
+                            <button type="button" class="Button" @onclick="() => ProcessDPPhoto()">
+                                <Icon UseIcon="Read" Title="Re-Read This DataPlate" />
+                            </button>
+                        </div>
+
+                    </div>
+                    <script defer>
+                        window.scrollToTop();
+                    </script>
+                }
+
+            </div>
+            break;
+
+        case WFEquipmentModes.InstallDate:
+            <div class="WorkflowEditItem">
+                <div class="Prompt">Install Date:</div>
+                <div class="Hints">Enter installed date known.</div>
+                <DateOnlyInput @bind-Value="@InstallDate"></DateOnlyInput>
+                @if (InstDateTemp != null)
+                {
+                    <div style="border:2px dashed; padding:6px;">
+                        <br />
+                        <span>MAKE THIS A DATE:</span>
+                        <SmallTextInput @bind-value="@InstDateTemp"></SmallTextInput>
+                        <ICSDismissable Message="@ErrorMessage"></ICSDismissable>
+                        <div>
+                            <br />
+                            <button class="button" style="padding: 3px; border: 2px solid inset; border-color: darkred; background-color: red; color: white" @onclick="() => SetDateManuallyEdited(2)">TRY MY EDITS</button>
+                            <span>&nbsp; &nbsp;</span>
+                            <button class="button" style="padding: 3px; border: 2px solid inset; border-color: dimgrey; background-color: lightgrey; color: black;" @onclick="() => InstDateTemp=null">&nbsp; CANCEL &nbsp;</button>
+                        </div>
+                        <br />
+                    </div>
+                }
+                else
+                {
+                    @if (!string.IsNullOrEmpty(DataPlateText))
+                    {
+                        <div class="DataPlateNotes">
+                            <TinyPicker DataList="DataPlateListNumericsOnly" Title="Pick Mfg Date from Plate" @bind-Value="@InstDateEdit" />
+                        </div>
+                    }
+                }
+                @if (DataPlateImage?.ContentType is not null)
+                {
+                    <div class="WorkflowImageMedia">
+                        @* <div class="WorkflowPrompt">Data Plate Image:</div> *@
+                        <div class="Image">
+                            <img src="@DataPlateImage.Base64Version()" alt="DataPlate Photo">
+                        </div>
+                        <div class="ButtonWrapper">
+                            <button type="button" class="Button" @onclick="() => ProcessDPPhoto()">
+                                <Icon UseIcon="Read" Title="Re-Read This DataPlate" />
+                            </button>
+                        </div>
+
+                    </div>
+                    <script defer>
+                        window.scrollToTop();
+                    </script>
+                }
+            </div>
+            break;
+
+        case WFEquipmentModes.EquipmentType:
+            <div class="WorkflowEditItem">
+                <ICSDismissable Message="@ErrorMessage"></ICSDismissable>
+                <DataPicker DataList="@EquipmentTypeList" Title="Unit Type" ListId="equipment-types" @bind-value="@EquipmentType"></DataPicker>
+            </div>
+            break;
+
+        case WFEquipmentModes.UnitTag:
+            <div class="WorkflowEditItem">
+                <div class="Prompt">Equipment Nickname</div>
+                <div class="Hints">What we or our customer "calls" this unit</div>
+                <SmallTextInput @bind-value="@UnitTag"></SmallTextInput>
+                <ICSDismissable Message="@ErrorMessage"></ICSDismissable>
+            </div>
+            break;
+
+        case WFEquipmentModes.EquipmentLocation:
+            <div class="WorkflowEditItem">
+                <ICSDismissable Message="@ErrorMessage"></ICSDismissable>
+                <DataPicker Title="Equipment Location" DataList="@EquipmentLocations" ListId="locationArea" AllowAdditions="true" @bind-value="@EquipmentLocation"></DataPicker>
+            </div>
+            break;
+
+        case WFEquipmentModes.EquipmentGroup:
+            <div class="WorkflowEditItem">
+                <ICSDismissable Message="@ErrorMessage"></ICSDismissable>
+                <DataPicker Title="Group" DataList="@GroupListCopy" ListId="equipmentgroups" AllowAdditions="true" @bind-value="@EquipmentGroup"></DataPicker>
+            </div>
+            break;
+
+        case WFEquipmentModes.IsRetired:
+
+            <div class="WorkflowEditItem">
+                <div class="Prompt">Is this unit now Retired?</div>
+                <div class="Hints">Mark this unit as retired if no longer in active service.</div>
+                <BooleanInput TruePrompt="Yes" FalsePrompt="No" @bind-Value="@IsRetired"></BooleanInput>
+            </div>
+            break;
+
+        case WFEquipmentModes.Note:
+            <div class="WorkflowEditItem">
+                <div class="Prompt">Notes:</div>
+                <div class="Hints">Share insights, access codes, etc.</div>
+                <LargeTextInput @bind-value="@Notes"></LargeTextInput>
+                <TinyPicker DataList="DataPlateList" Title="Add to Notes" @bind-Value="@Notes" AppendMode="true" />
+            </div>
+
+            break;
+
+        case WFEquipmentModes.Consumables:
+
+            if (SelectedConsumable is not null)
+            {
+                <h3>@SelectedConsumable.Name</h3>
+                <div class="WorkflowEditItem">
+                    <DataPicker Title="@SelectedConsumable.Name" ListId="@SelectedConsumable.Uid.ToString()" SuppressColumnTwo=true DataList="@SelectedConsumable.Options" @bind-Value="@SelectedConsumableValue"></DataPicker>
+                </div>
+
+                <div class="WorkflowEditItem">
+                    <div class="Prompt">Quantity:</div>
+                    <NumberInput @bind-Value="@SelectedConsumableQuantity"></NumberInput>
+                </div>
+
+                <div class="WorkflowEditItem">
+                    <div class="Prompt">Optional Note:</div>
+                    <LargeTextInput @bind-Value="@SelectedConsumableNote"></LargeTextInput>
+                </div>
+            }
+            else
+            {
+                <div class="EquipmentContainer">
+                    <div class="Header">
+                        Current Consumables
+                    </div>
+                    <div class="Content">
+                        @if ((SelectedEquipment?.Consumables?.Count ?? 0) != 0)
+                        {
+                            @foreach (var consumable in SelectedEquipment.Consumables)
+                            {
+                                <div class="SingleLineWithButton">
+                                    <div class="Text">
+                                        @consumable.Name<span>: (@consumable.Quantity)</span>@consumable.Value<br />
+                                        Note: <span>@consumable.Notes</span>
+                                    </div>
+                                    <button class="Button Transparent" @onclick="() => DeleteConsumable(consumable)">
+                                        @* <i class="bi bi-trash"></i> *@
+                                        <Icon UseIcon="Trashcan" Title="@(string.Concat("Delete ",consumable.Name))" />
+                                    </button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="EquipmentContentLine">No items yet.</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="EquipmentContainer">
+                    <div class="Header">
+                        Available Consumables
+                    </div>
+                    <div class="Content">
+                        @if (SelectedEquipment.AvailableConsumables.Count != 0)
+                        {
+                            @foreach (var consumable in SelectedEquipment.AvailableConsumables)
+                            {
+                                <div class="SingleLineWithButton">
+                                    <div class="Text">
+                                        @consumable.Name
+                                    </div>
+                                    <button class="Button Transparent" @onclick="() => AddConsumable(consumable)">
+                                        <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Add" Title="@string.Concat("Add new ", consumable.Name)" />
+                                    </button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div>No consumables available.</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            break;
+
+        case WFEquipmentModes.Attributes:
+
+            if (SelectedAttribute is not null)
+            {
+                <div class="WorkflowEditItem">
+                    <div class="Prompt">@SelectedAttribute.Name</div>
+                    @switch ((WorkflowDataTypes)SelectedAttribute.DataTypeId)
+                    {
+                        case WorkflowDataTypes.Choice:
+                            <DataPicker DataList="@SelectedAttribute.Options" Title="@SelectedAttribute.Name" ListId="@SelectedAttribute.Uid.ToString()" @bind-value="@SelectedAttributeValueAsString"></DataPicker>
+                            break;
+                        case WorkflowDataTypes.Numeric:
+                            <NumberInput @bind-Value="@SelectedAttributeValueAsDecimal"></NumberInput>
+                            break;
+                        case WorkflowDataTypes.Date:
+                            <DateOnlyInput @bind-Value="@SelectedAttributeValueAsDateOnly"></DateOnlyInput>
+                            break;
+                        case WorkflowDataTypes.SmallText:
+                            <SmallTextInput @bind-Value="@SelectedAttributeValueAsString"></SmallTextInput>
+                            break;
+                        case WorkflowDataTypes.LargeText:
+                            <LargeTextInput @bind-Value="@SelectedAttributeValueAsString"></LargeTextInput>
+                            break;
+                    }
+                </div>
+            }
+            break;
+
+        case WFEquipmentModes.Confirmation:
+            @if (SelectedEquipment is not null)
+            {
+                <div class="EquipmentContainer">
+                    <div class="Header">
+                        <div class="Name SectionHeader">
+                            Edit Unit Details
+                        </div>
+                        <button class="Button Transparent" @onclick="AutoPlayMissingEquipmentValues">
+                            <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Repeat" Title="Collect Missing Items" />
+                        </button>
+                    </div>
+
+                    <div class="Content">
+
+                        <div class="DataPlateWithButton">
+                            <div class="Text">UI1:</div>
+                            <div class="Image">
+                                @if (SelectedEquipment.UnitImage1FileName is not null)
+                                {
+                                    <img src="@UnitImage1!.Base64Version()" />
+                                }
+                            </div>
+                            <button class="Button Transparent" @onclick="() => EditEquipment(WFEquipmentModes.UnitImage1)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Change Unit Image 1 Photo" />
+                            </button>
+                        </div>
+
+                        <div class="DataPlateWithButton">
+                            <div class="Text">UI2:</div>
+                            <div class="Image">
+                                @if (SelectedEquipment.UnitImage2FileName is not null)
+                                {
+                                    <img src="@UnitImage2!.Base64Version()" />
+                                }
+                            </div>
+                            <button class="Button Transparent" @onclick="() => EditEquipment(WFEquipmentModes.UnitImage2)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Change Unit Image 2 Photo" />
+                            </button>
+                        </div>
+
+                        <div class="DataPlateWithButton">
+                            <div class="Text">DP:</div>
+                            <div class="Image">
+                                @if (SelectedEquipment.DataPlateFileName is not null)
+                                {
+                                    <img src="@DataPlateImage!.Base64Version()" />
+                                }
+                            </div>
+                            <button class="Button Transparent" @onclick="() => EditEquipment(WFEquipmentModes.DataPlatePicture)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Change Dataplate Photo" />
+                            </button>
+                        </div>
+
+                        <div class="SingleLineWithButton">
+                            <div class="Text">
+                                Make: <span class="EqValue">&nbsp;@SelectedEquipment.Make</span>
+                            </div>
+                            <button class="Button Transparent " @onclick="() => EditEquipment(WFEquipmentModes.ChooseManufacturer)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Edit Manufacturer" />
+                            </button>
+                        </div>
+
+                        <div class="SingleLineWithButton">
+                            <div class="Text">
+                                Model: <span class="EqValue">&nbsp;@SelectedEquipment.Model</span>
+                            </div>
+                            <button class="Button Transparent" @onclick="() => EditEquipment(WFEquipmentModes.EnterModel)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Enter Model #" />
+                            </button>
+                        </div>
+
+                        <div class="SingleLineWithButton">
+                            <div class="Text">
+                                Serial: <span class="EqValue">&nbsp;@SelectedEquipment.Serial</span>
+                            </div>
+                            <button class="Button Transparent" @onclick="() => EditEquipment(WFEquipmentModes.EnterSerialNumber)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Update Serial #" />
+                            </button>
+                        </div>
+
+                        <div class="SingleLineWithButton">
+                            <div class="Text">
+                                Date Mfg: <span class="EqValue">&nbsp;@SelectedEquipment.MfgDate?.ToShortDateString()</span>
+                            </div>
+                            <button class="Button Transparent" @onclick="() => EditEquipment(WFEquipmentModes.ManufactureDate)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Set Mfg'd Date" />
+                            </button>
+                        </div>
+
+                        <div class="SingleLineWithButton">
+                            <div class="Text">
+                                Installed: <span class="EqValue">&nbsp;@SelectedEquipment.InstallationDate?.Date.ToShortDateString()</span>
+                            </div>
+                            <button class="Button Transparent" @onclick="() => EditEquipment(WFEquipmentModes.InstallDate)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Set Equip Install Date" />
+                            </button>
+                        </div>
+
+                        <div class="SingleLineWithButton">
+                            <div class="Text">
+                                Type: <span class="EqValue">&nbsp;@SelectedEquipment.TypeName</span>
+                            </div>
+                            <button class="Button Transparent" @onclick="() => EditEquipment(WFEquipmentModes.EquipmentType)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Assign Equipment Type" />
+                            </button>
+                        </div>
+
+                        <div class="SingleLineWithButton">
+                            <div class="Text">
+                                Nickname: <span class="EqValue">&nbsp;@SelectedEquipment.UnitTag</span>
+                            </div>
+                            <button class="Button Transparent" @onclick="() => EditEquipment(WFEquipmentModes.UnitTag)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Edit Unit/Tag" />
+                            </button>
+                        </div>
+
+                        <div class="SingleLineWithButton">
+                            <div class="Text">
+                                Phys Location: <span class="EqValue">&nbsp;@SelectedEquipment.EquipLocArea</span>
+                            </div>
+                            <button class="Button Transparent" @onclick="() => EditEquipment(WFEquipmentModes.EquipmentLocation)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Set a Location/Area" />
+                            </button>
+                        </div>
+
+                        <div class="SingleLineWithButton">
+                            <div class="Text">
+                                Group: <span class="EqValue">&nbsp;@SelectedEquipment.EquipmentGroup</span>
+                            </div>
+                            <button class="Button Transparent" @onclick="() => EditEquipment(WFEquipmentModes.EquipmentGroup)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Assign to Group" />
+                            </button>
+                        </div>
+
+                        <div class="SingleLineWithButton">
+                            <div class="Text">
+                                Retired: <span class="EqValue">&nbsp;@(SelectedEquipment.IsRetired ? "Yes" : "No")</span>
+                            </div>
+                            <button class="Button Transparent" @onclick="() => EditEquipment(WFEquipmentModes.IsRetired)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Set Retired Status" />
+                            </button>
+                        </div>
+
+                        <div class="SingleLineWithButton">
+                            <div class="Text">
+                                Notes:
+                                <pre class="EqValue">@((MarkupString)PageBase.TextToHtml(Notes))</pre>
+                            </div>
+                            <button class="Button Transparent" @onclick="() => EditEquipment(WFEquipmentModes.Note)">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="Add/Edit NOTES" />
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+                @if (SelectedEquipment.HasAvailableConsumables() == true && IgnoreAttributes == false)
+                {
+                    <div class="EquipmentContainer">
+
+                        <div class="Header">
+                            <div class="Name SectionHeader">
+                                Equip Consumables
+                            </div>
+                            <button class="Button Transparent" @onclick="() => { Mode = WFEquipmentModes.Consumables; EditMode= WFEditModes.OpenConsumable; }">
+                                <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Add" Title="Add a Consumable Item" />
+                            </button>
+                        </div>
+                        <div class="Content">
+                            @if (SelectedEquipment.HasAvailableConsumables())
+                            {
+                                @foreach (var consumable in SelectedEquipment.Consumables)
+                                {
+                                    <div class="SingleLineWithButton">
+                                        <div class="Text">
+                                            @consumable.Name: &nbsp; ( <span class="EqValue" style="font-feature-settings: dgsp;">@(consumable.Quantity?.ToString("N2").Replace(".00", "") ?? string.Empty)&nbsp;</span> )
+                                            <span class="EqValue">
+                                                @consumable.Value@if (!string.IsNullOrEmpty(consumable.Notes))
+                                                {
+                                                    @string.Concat(" - ", consumable.Notes)
+                                                }
+                                            </span>
+                                        </div>
+                                        <button class="Button Transparent" @onclick="() => EditConsumable(consumable)">
+                                            <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="@string.Concat("Update ", @consumable.Name)" />
+                                        </button>
+                                    </div>
+                                }
+                            }
+                            <div class="SingleLineInfo">
+                                Use the + button to add consumables.
+                            </div>
+
+                        </div>
+                    </div>
+                }
+
+
+                @if (SelectedEquipment.Attributes.Count != 0 && IgnoreAttributes == false)
+                {
+                    <div class="EquipmentContainer">
+                        <div class="Header">
+                            <div class="Name SectionHeader">
+                                Equip Attributes
+                            </div>
+                            @if (SelectedEquipment.HasMissingAttributesValues())
+                            {
+                                <button class="Button Transparent" @onclick="AutoPlayMissingAttributeValues">
+                                    <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Repeat" Title="Collect Missing Data" />
+                                </button>
+                            }
+                        </div>
+                        <div class="Content">
+                            @foreach (var attrib in SelectedEquipment.Attributes)
+                            {
+                                <div class="SingleLineWithButton">
+                                    <div class="Text">
+                                        @attrib.Name:&nbsp;
+                                        <span class="EqValue">&nbsp;@attrib.Value</span>
+                                    </div>
+                                    <button class="Button Transparent" @onclick="() => EditAttribute(attrib)">
+                                        <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Edit" Title="@string.Concat("Update ",attrib.Name)" />
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="EquipmentContainer">
+                    <div class="InfoText">
+                        Make corrections before proceeding.
+                        <br />
+                        Tap (Right Arrow) to SAVE equipment.
+                    </div>
+
+                </div>
+            }
+
+            break;
+    }
+
+    <Navigation NextDisabled="NextDisabled" PreviousDisabled="PreviousDisabled" OnNextClick="Next" OnPreviousClick="Previous"></Navigation>
+    <ICS.Mobile.Components.ICSDialogBox @ref="DialogBox" />
+}
+else
+{
+    <ICSLoadingSpinner>
+        <i class="bi bi-clock-fill"> </i>
+    </ICSLoadingSpinner>
+}
+

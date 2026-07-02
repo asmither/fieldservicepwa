@@ -1,0 +1,786 @@
+<style>
+
+    body {
+        padding: env(safe-area-inset-top) 1rem 0.6rem 0.6rem;
+        margin: 0;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        font-family: var(--font-sans);
+    }
+
+    a:visited {
+        color: var(--SelectedColor);
+    }
+
+    a:link {
+        color: var(--SelectedColor);
+    }
+
+    .SubDetailSeparator {
+        align-items: center;
+        margin-top: 0.55rem;
+        padding-top: 0.55rem;
+        border-top: var(--border-hairline);
+    }
+
+
+    .DispatchDetailPageHeader {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-rows: auto;
+        grid-template-areas:
+            "BackButton . StatusAndPriority";
+        align-items: center;
+    }
+
+        .DispatchDetailPageHeader .BackButton {
+            grid-area: BackButton;
+            text-align: left;
+            width: 10rem;
+        }
+
+            .DispatchDetailPageHeader .BackButton:active {
+                background: var(--surface-raised-subtle);
+                border-radius: var(--radius-md);
+            }
+
+            .DispatchDetailPageHeader .BackButton > .Image {
+                user-select: none;
+                width: 4rem;
+                padding-top: 1rem;
+            }
+
+            .DispatchDetailPageHeader .BackButton > .DefaulltBack {
+                user-select: none;
+                width: 3rem;
+            }
+
+        .DispatchDetailPageHeader .StatusAndPriority {
+            grid-area: StatusAndPriority;
+            text-align: center;
+            font-size: var(--text-lg);
+            font-weight: var(--weight-bold);
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
+            padding: 1.5rem 1rem 1rem 1rem;
+        }
+
+            .DispatchDetailPageHeader .StatusAndPriority.Pending {
+                background: var(--status-pending);
+            }
+
+            .DispatchDetailPageHeader .StatusAndPriority.Traveling {
+                background: var(--status-traveling);
+            }
+
+            .DispatchDetailPageHeader .StatusAndPriority.Working {
+                background: var(--status-working);
+            }
+
+            .DispatchDetailPageHeader .StatusAndPriority.Complete {
+                background: var(--status-complete);
+            }
+
+            .DispatchDetailPageHeader .StatusAndPriority.Status {
+                padding: 0 .5rem .25rem .5rem;
+            }
+
+            .DispatchDetailPageHeader .StatusAndPriority > .Priority {
+                border-top: 1px solid rgba(255, 255, 255, .5);
+                font-size: var(--text-base);
+                font-weight: var(--weight-regular);
+                padding: 0 .5rem 0 .5rem;
+            }
+
+    .DispatchDetailChecklistHeader {
+        padding: 0.4rem 0 0 0;
+        padding-bottom: 0.8em;
+        display: grid;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        align-items: center;
+        grid-template-columns: 1fr 100px;
+        grid-column-gap: .5rem;
+        grid-template-areas:
+            "CLTitle  CLMode";
+    }
+
+        .DispatchDetailChecklistHeader .Title {
+            grid-area: CLTitle;
+            font-size: var(--text-xl);
+            font-weight: var(--weight-semibold);
+            align-content: center;
+            text-align: left;
+        }
+
+        .DispatchDetailChecklistHeader .Status {
+            grid-area: CLStatus;
+            padding-top: 0.46em;
+            align-content: center;
+            font-size: var(--text-sm);
+            font-style: italic;
+            color: var(--text-muted);
+            text-align: right;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .DispatchDetailChecklistHeader > .AddChecklistBtnBlock {
+            grid-area: CLMode;
+            align-content: center;
+            text-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+        }
+
+            .DispatchDetailChecklistHeader > .AddChecklistBtnBlock > .AddNewCLBtn {
+                cursor: pointer;
+                color: var(--text-on-accent);
+                font-size: 2rem;
+                font-weight: 300;
+                border: none;
+                background: var(--accent-strong);
+                border-radius: var(--radius-full);
+                width: 100px;
+                min-height: var(--touch-target);
+            }
+
+                .DispatchDetailChecklistHeader > .AddChecklistBtnBlock > .AddNewCLBtn:active {
+                    background: var(--accent);
+                }
+
+                .DispatchDetailChecklistHeader > .AddChecklistBtnBlock > .AddNewCLBtn > .AddNewCLCloseAddNew {
+                }
+
+
+
+        .DispatchDetailChecklistHeader .ViewMode {
+            grid-area: CLMode;
+            align-content: center;
+            text-align: right;
+        }
+
+            .DispatchDetailChecklistHeader .ViewMode .Status {
+                grid-area: CLMode;
+                grid-area: CLTitle;
+                font-size: var(--text-lg);
+                font-weight: var(--weight-semibold);
+                align-content: center;
+                text-align: left;
+            }
+
+
+
+    .DispatchDetailDispatch {
+        background: var(--surface-card);
+        border: var(--border-hairline);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--elevation-1);
+        padding: var(--space-4);
+        margin-top: var(--space-2);
+    }
+
+        .DispatchDetailDispatch .CustomerNumber {
+            font-size: var(--text-base);
+            font-weight: var(--weight-bold);
+            color: var(--ColorGold);
+        }
+
+        .DispatchDetailDispatch .CustomerName {
+            font-size: var(--text-xl);
+            font-weight: var(--weight-bold);
+        }
+
+        .DispatchDetailDispatch .DueDate {
+            padding-top: 0.15rem;
+            font-size: var(--text-lg);
+            font-weight: var(--weight-semibold);
+            color: var(--status-success);
+        }
+
+        .DispatchDetailDispatch .DueDateMissed {
+            color: var(--status-warning);
+            font-weight: var(--weight-bold);
+        }
+
+
+        .DispatchDetailDispatch .CustomerLocation {
+            color: var(--ColorGreen);
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            grid-template-areas:
+                "MapButton Location";
+        }
+
+            .DispatchDetailDispatch .CustomerLocation .AddressLine {
+            }
+
+            .DispatchDetailDispatch .CustomerLocation .CityStateZip {
+                padding-bottom: 0.5rem;
+            }
+
+            .DispatchDetailDispatch .CustomerLocation > .Location .Neighborhood {
+                color: var(--text-primary);
+            }
+
+            .DispatchDetailDispatch .CustomerLocation .Location .Neighborhood .NeighborhoodLabel {
+                color: var(--text-muted);
+                font-size: var(--text-sm);
+            }
+
+            .DispatchDetailDispatch .CustomerLocation .Location .Neighborhood > .NeighborhoodValue {
+            }
+
+            .DispatchDetailDispatch .CustomerLocation .Landmark {
+                color: var(--text-primary);
+            }
+
+            .DispatchDetailDispatch .CustomerLocation .Location .Landmark > .LandmarkLabel {
+                color: var(--text-muted);
+                font-size: var(--text-sm);
+            }
+
+            .DispatchDetailDispatch .CustomerLocation .Location .Landmark > .LandmarkValue {
+            }
+
+            .DispatchDetailDispatch .CustomerLocation .MapButton {
+                width: 4rem;
+                min-height: var(--touch-target);
+                cursor: pointer;
+                border-radius: var(--radius-full);
+            }
+
+                .DispatchDetailDispatch .CustomerLocation .MapButton:is(:hover) {
+                    background-color: rgba(0, 0, 0, 0.07);
+                }
+
+                .DispatchDetailDispatch .CustomerLocation .MapButton:active {
+                    background-color: var(--surface-raised-subtle);
+                }
+
+                .DispatchDetailDispatch .CustomerLocation .MapButton .Image {
+                    width: 2rem;
+                }
+
+            .DispatchDetailDispatch .CustomerLocation .Location {
+                font-size: var(--text-lg);
+                color: var(--text-primary);
+                align-self: start;
+                padding-left: 0.5rem;
+            }
+
+                .DispatchDetailDispatch .CustomerLocation .Location > .LocAddressBlock {
+                    -webkit-user-select: all;
+                    -moz-user-select: all;
+                    -ms-user-select: element;
+                    user-select: all;
+                }
+
+
+
+            .DispatchDetailDispatch .CustomerLocation .Contacts {
+                font-size: var(--text-base);
+                width: 90%;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                color: var(--text-secondary);
+                padding-bottom: 0.44rem;
+                display: grid;
+                grid-template-columns: auto auto;
+                grid-template-rows: auto;
+                grid-template-areas:
+                    "ContactName  ContactData";
+            }
+
+                .DispatchDetailDispatch .CustomerLocation .Contacts .ContactName {
+                    font-size: var(--text-base);
+                    width: 100%;
+                    grid-area: ContactName;
+                    -webkit-user-select: all;
+                    -moz-user-select: all;
+                    -ms-user-select: element;
+                    user-select: all;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                    .DispatchDetailDispatch .CustomerLocation .Contacts .ContactName a:visited, .DispatchDetailDispatch .CustomerLocation .Contacts .ContactData a:visited {
+                        color: var(--OffsetColor);
+                    }
+
+                    .DispatchDetailDispatch .CustomerLocation .Contacts .ContactName a:link, .DispatchDetailDispatch .CustomerLocation .Contacts .ContactData a:link {
+                        color: var(--OffsetColor);
+                    }
+
+                    .DispatchDetailDispatch .CustomerLocation .Contacts .ContactName a:hover, .DispatchDetailDispatch .CustomerLocation .Contacts .ContactData a:hover {
+                        color: var(--OffsetColor);
+                    }
+
+                .DispatchDetailDispatch .CustomerLocation .Contacts .ContactData {
+                    font-size: var(--text-base);
+                    grid-area: ContactData;
+                    width: 100%;
+                    -webkit-user-select: all;
+                    -moz-user-select: all;
+                    -ms-user-select: element;
+                    user-select: all;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+
+
+
+        .DispatchDetailDispatch .SubDetail {
+            font-size: var(--text-lg);
+            display: grid;
+            grid-template-columns: auto 1fr;
+            grid-template-rows: auto;
+            grid-template-areas:
+                "Tasks            Tasks"
+                "CustomerFullName  Zone"
+                "CustomerPO         DNE"
+                ".         CompleteDate";
+            align-items: center;
+            grid-column-gap: 0.33rem;
+        }
+
+
+        .DispatchDetailDispatch .Tasks {
+            grid-area: Tasks;
+            font-size: var(--text-base);
+            align-content: start;
+            text-align: left;
+        }
+
+            .DispatchDetailDispatch .Tasks .TasksLabel {
+                grid-area: Tasks;
+                font-size: var(--text-sm);
+                color: var(--text-muted);
+            }
+
+            .DispatchDetailDispatch .Tasks .TasksValue {
+                grid-area: Tasks;
+                color: var(--text-primary);
+            }
+
+
+        .DispatchDetailDispatch .Zone {
+            grid-area: Zone;
+            font-size: var(--text-base);
+            align-content: center;
+            text-align: right;
+        }
+
+            .DispatchDetailDispatch .Zone .ZoneLabel {
+                grid-area: Zone;
+                font-size: var(--text-sm);
+                color: var(--text-muted);
+            }
+
+            .DispatchDetailDispatch .Zone .ZoneValue {
+                grid-area: Zone;
+                color: var(--text-primary);
+            }
+
+        .DispatchDetailDispatch .DNE {
+            grid-area: DNE;
+            align-content: end;
+            text-align: right;
+        }
+
+            .DispatchDetailDispatch .DNE .DNELabel {
+                grid-area: DNE;
+                font-size: var(--text-sm);
+                color: var(--text-muted);
+            }
+
+            .DispatchDetailDispatch .DNE .DNEValue {
+                grid-area: DNE;
+                color: var(--text-primary);
+            }
+
+        .DispatchDetailDispatch .CompleteDate {
+            grid-area: CompleteDate;
+            align-content: center;
+            text-align: right;
+        }
+
+            .DispatchDetailDispatch .CompleteDate .CompleteDateLabel {
+                grid-area: CompleteDate;
+                color: var(--ColorGold);
+                font-weight: var(--weight-bold);
+            }
+
+            .DispatchDetailDispatch .CompleteDate .CompleteDateValue {
+                grid-area: CompleteDate;
+                background-color: var(--ColorGold);
+                color: var(--status-complete);
+                font-weight: var(--weight-bold);
+            }
+
+        .DispatchDetailDispatch .DispatchNumber {
+            grid-area: DispatchNumber;
+            align-content: start;
+            text-align: left;
+        }
+
+            .DispatchDetailDispatch .DispatchNumber .DispatchNumberLabel {
+                grid-area: DispatchNumber;
+                font-size: var(--text-sm);
+                color: var(--text-muted);
+            }
+
+            .DispatchDetailDispatch .DispatchNumber .DispatchNumberValue {
+                grid-area: DispatchNumber;
+                color: var(--text-primary);
+            }
+
+        .DispatchDetailDispatch .CustomerFullName {
+            grid-area: CustomerFullName;
+            align-content: start;
+            text-align: left;
+        }
+
+            .DispatchDetailDispatch .CustomerFullName .CustomerFullNameLabel {
+                grid-area: CustomerFullName;
+                font-size: var(--text-sm);
+            }
+
+            .DispatchDetailDispatch .CustomerFullName .CustomerFullNameValue {
+                grid-area: CustomerFullName;
+                color: var(--text-secondary);
+            }
+
+        .DispatchDetailDispatch .CustomerPO {
+            grid-area: CustomerPO;
+            align-content: start;
+            text-align: left;
+            -webkit-user-select: all;
+            -moz-user-select: all;
+            -ms-user-select: element;
+            user-select: all;
+        }
+
+            .DispatchDetailDispatch .CustomerPO .PONumberLabel {
+                grid-area: CustomerPO;
+                color: var(--text-muted);
+                font-size: var(--text-sm);
+            }
+
+            .DispatchDetailDispatch .CustomerPO .PONumberValue {
+                grid-area: CustomerPO;
+                color: var(--text-primary);
+            }
+
+
+
+    .DispatchDetailCheckListContainer {
+        padding-bottom: var(--space-4);
+    }
+
+    .ChecklistItemDeleteButton {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 52px;
+        height: 50px;
+        border-radius: var(--radius-md);
+        margin-left: -5px;
+        box-shadow: var(--elevation-1);
+        border: var(--border-hairline);
+        background: var(--status-danger);
+        color: var(--text-on-accent);
+        line-height: 50px;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transform: translateX(-75px);
+        transition: transform 0.4s ease, opacity 0.7s ease;
+        visibility: hidden;
+        cursor: pointer;
+    }
+
+        .ChecklistItemDeleteButton:active {
+            filter: brightness(0.85);
+        }
+
+
+    .ChecklistItemMacroButton {
+        position: absolute;
+        right: 0;
+        top: 0;
+        cursor: pointer;
+        width: 52px;
+        height: 50px;
+        border-radius: var(--radius-md);
+        margin-right: -5px;
+        box-shadow: var(--elevation-1);
+        border: var(--border-hairline);
+        background: var(--accent-strong);
+        color: var(--text-on-accent);
+        line-height: 50px;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transform: translateX(75px);
+        transition: transform 0.4s ease, opacity 0.7s ease;
+        visibility: hidden;
+    }
+
+
+        .ChecklistItemMacroButton:active {
+            filter: brightness(0.85);
+        }
+
+
+
+    .ChecklistSwipeContainer {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        padding-bottom: 1em;
+
+    }
+
+        .ChecklistSwipeContainer.Inactive {
+            text-decoration: line-through;
+            color: var(--status-warning);
+        }
+
+
+    .Trashcan {
+        align-content: center;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .DispatchDetailChecklistItem {
+        display: grid;
+        position: relative;
+        grid-template-columns: auto 1fr auto;
+        grid-template-rows: auto auto;
+        grid-template-areas:
+            "Spacer  Prompt   ActionArea"
+            "Spacer  Caption  ActionArea";
+        align-items: center;
+        min-height: var(--touch-target);
+        border-radius: var(--radius-lg);
+        background: var(--surface-card);
+        box-shadow: var(--elevation-1);
+        border: var(--border-hairline);
+        transition: transform 0.4s ease, opacity 0.7s ease;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+        .DispatchDetailChecklistItem.NewItem {
+            background: var(--OffsetColorTrans);
+            border: 1px solid var(--status-working);
+        }
+
+        .DispatchDetailChecklistItem:active {
+            background: var(--surface-raised-subtle);
+        }
+
+
+        .DispatchDetailChecklistItem .Spacer {
+            grid-area: Spacer;
+            padding: 0.35rem;
+        }
+
+        .DispatchDetailChecklistItem .Prompt {
+            grid-area: Prompt;
+            color: var(--text-primary);
+            font-size: var(--text-lg);
+            font-weight: var(--weight-semibold);
+            padding-top: 0.85em;
+        }
+
+        .DispatchDetailChecklistItem .NavigateButton {
+            grid-area: ActionArea;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 2rem;
+            font-weight: 100;
+            background-color: var(--surface-raised-subtle);
+            border: var(--border-hairline);
+            padding: 0 .5rem 0 .5rem;
+            margin-right: 0.465rem;
+            border-radius: var(--radius-md);
+            width: 3.7rem;
+            height: 3.55rem;
+            align-content: center;
+            text-align: justify-all;
+        }
+
+        .DispatchDetailChecklistItem .Svg {
+            padding-top: 7px;
+            padding-left: 7px;
+            align-content: center;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+        }
+
+
+        .DispatchDetailChecklistItem .NavigateButton:active {
+            background-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .DispatchDetailChecklistItem .AddNew {
+            color: var(--text-secondary);
+        }
+
+        .DispatchDetailChecklistItem .Close {
+            color: var(--text-secondary);
+            font-weight: var(--weight-regular);
+        }
+
+
+        .DispatchDetailChecklistItem .Caption {
+            grid-area: Caption;
+            font-size: var(--text-base);
+            font-weight: var(--weight-regular);
+            color: var(--text-muted);
+            padding-bottom: 1rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+
+    .DispatchNotesButtonContainer {
+        align-content: end;
+        text-align: center;
+        margin-top: -1em;
+        margin-bottom: 0.75em;
+    }
+
+    .DispatchDetailNotesAccordion .DispatchNotesButtonContainer .DispatchNote {
+        padding: var(--space-2) var(--space-4);
+        min-height: var(--touch-target);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        color: var(--text-primary);
+        font-size: var(--text-base);
+        font-weight: var(--weight-medium);
+        background-color: var(--surface-raised-subtle);
+        border: var(--border-hairline);
+    }
+
+    .MoreDataButton {
+        padding: var(--space-2) var(--space-4);
+        min-height: var(--touch-target);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        color: var(--text-primary);
+        font-size: var(--text-base);
+        font-weight: var(--weight-medium);
+        background-color: var(--surface-raised-subtle);
+        border: var(--border-hairline);
+    }
+
+    .NotesSeparator {
+        justify-self: center;
+        width: 100%;
+        margin-top: 0.5em;
+        margin-bottom: 0.8em;
+        border-top: var(--border-hairline);
+    }
+
+    .DispatchDetailNotesAccordion {
+        padding: .5rem 0rem .5rem 0rem;
+        align-items: center;
+    }
+
+        .DispatchDetailNotesAccordion .Header {
+            display: grid;
+            color: var(--text-secondary);
+            grid-template-columns: 1fr auto;
+            grid-template-areas:
+                "Title Button";
+        }
+
+            .DispatchDetailNotesAccordion .Header .Title {
+                grid-area: Title;
+                padding-bottom: var(--space-4);
+                font-size: var(--text-xl);
+            }
+
+            .DispatchDetailNotesAccordion .Header .Button {
+                grid-area: Button;
+                padding-left: 2rem;
+                width: 6rem;
+            }
+
+        .DispatchDetailNotesAccordion .Content .Line {
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+            border-radius: var(--radius-sm);
+            background: var(--surface-input);
+            padding: var(--space-2);
+            font-size: var(--text-base);
+        }
+
+        .DispatchDetailNotesAccordion .Content .Border {
+            padding: 0;
+            margin: 0
+        }
+
+
+
+    .ManageDispatch {
+        display: grid;
+        position: relative;
+        grid-template-columns: auto auto;
+        grid-template-rows: auto auto;
+        grid-template-areas:
+            "Txt     Txt";
+        align-items: center;
+    }
+
+        .ManageDispatch > .BeginTxt {
+            grid-area: Txt;
+            background: var(--accent-strong);
+            transition: transform 0.4s ease, opacity 0.7s ease;
+            border-radius: var(--radius-md);
+            border: none;
+            min-height: var(--touch-target-primary);
+            color: var(--text-on-accent);
+            font-size: var(--text-xl);
+            padding: var(--space-4);
+            font-weight: var(--weight-semibold);
+            align-content: center;
+            text-align: center;
+        }
+
+            .ManageDispatch > .BeginTxt:active {
+                background: var(--accent);
+            }
+
+
+        .ManageDispatch > .Icon {
+            grid-area: BeginDispIcon;
+        }
+
+</style>

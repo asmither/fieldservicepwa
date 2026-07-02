@@ -1,0 +1,140 @@
+﻿@namespace ICS.Mobile.Pages.BluonBrowse.Components
+@using ICS.Portal.Data.Custom
+
+<div class="series-container">
+    @if (IsLoading)
+    {
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p class="mt-2"> &nbsp;Loading series...</p>
+        </div>
+    }
+    else
+    {
+        <div class="series-header">
+            <h5>@Brand?.Brand Series</h5>
+            <button class="btn btn-outline" @onclick="OnShowAllModels">
+                <i class="bi bi-grid-3x3-gap"></i> Show All Models
+            </button>
+        </div>
+
+        @if (Series != null && Series.Any())
+        {
+            <div class="series-list">
+                @foreach (var series in Series)
+                {
+                    <div class="series-item" @onclick="() => SelectSeries(series)">
+                        <div class="series-info">
+                            <div class="series-name">@series.Series</div>
+                            @if (series.Image?.Url != null)
+                            {
+                                <div class="series-image">
+                                    <img src="@series.Image.Url" alt="@series.Series" />
+                                </div>
+                            }
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="bi bi-layers"></i>
+                <p>No series available for this brand</p>
+            </div>
+        }
+    }
+</div>
+
+<style>
+    .series-container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .series-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: #ffaaff44;
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+    }
+
+        .series-header h5 {
+            margin: 0;
+            font-size: 1rem;
+            color: white;
+        }
+
+    .series-list {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        background: #12312322;
+    }
+
+    .series-item {
+        background: #00000044;
+        border-radius: 8px;
+        padding: .5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .series-item:active {
+            transform: scale(0.98);
+            background: var(--bluon-dark);
+        }
+
+    .series-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+        font-weight: 700;
+    }
+
+    .series-name {
+        font-weight: 500;
+        color: orange;
+    }
+
+    .series-image {
+        width: 60px;
+        height: 60px;
+    }
+
+        .series-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+    .series-item i {
+        color: #adb5bd;
+    }
+</style>
+
+@code {
+    [Parameter] public BluonBrands.Brands.Data? Brand { get; set; }
+    [Parameter] public List<BluonBrands.BrandSeries.Datum>? Series { get; set; }
+    [Parameter] public EventCallback<BluonBrands.BrandSeries.Datum> OnSeriesSelected { get; set; }
+    [Parameter] public EventCallback OnShowAllModels { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+
+    private async Task SelectSeries(BluonBrands.BrandSeries.Datum series)
+    {
+        await OnSeriesSelected.InvokeAsync(series);
+    }
+}

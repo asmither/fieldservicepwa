@@ -1,0 +1,235 @@
+﻿@page "/login"
+@using ICS.Mobile.Components
+@using ICS.Mobile.Helpers
+@using ICS.Mobile.Services
+@layout ICS.Mobile.Layout.BootstrapEmptyLayout
+@inject SettingsService Settings
+
+<style>
+    /* BootstrapEmptyLayout's reboot resets body; restore the app chrome.
+       Everything else is in LoginPage.razor.css (scoped, token-based). */
+    body {
+        background: var(--PrimaryBackground);
+        background-size: 100%;
+        padding: env(safe-area-inset-top) 1rem 0.6rem 0.6rem;
+        margin: 0;
+        margin-top: 1rem;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        font-family: var(--PrimaryFonts);
+        color: var(--PrimaryColor);
+    }
+</style>
+
+<div class="login-page">
+    @if (!OnLoginStep)
+    {
+        <div class="login-back">
+            <RoundButtonGreen Icon="bi-arrow-left" OnClick="BackToLogin" />
+        </div>
+    }
+    <div class="login-card">
+        @if (!string.IsNullOrEmpty(UnauthorizedMessage))
+        {
+            <ICSDismissable Message="@UnauthorizedMessage" />
+        }
+        @if (userLoginInput is not null)
+        {
+            <div class="login-header">
+                <img src="/images/icon-300-trans.png" class="logo" />
+                <h1>@Settings.AppDisplayName @Settings.AppVersion</h1>
+                <h4>Please log in to continue</h4>
+            </div>
+            <div class="login-body">
+                <ICSDismissable Message="@FormErrorMessage" OnDismissClick="() => FormErrorMessage = null" />
+                <EditForm Model="userLoginInput" OnValidSubmit="UserLoginSubmit">
+                    <DataAnnotationsValidator />
+                    <ICSTextBox Label="Tech Code:" PlaceHolder="Enter Username" ValidationFor="() => userLoginInput.UserName" @bind-Value="userLoginInput.UserName" AutoComplete="true"></ICSTextBox>
+                    <ICSPassword Label="Password: " PlaceHolder="Enter Password" ValidationFor="() => userLoginInput.Password" @bind-Value="userLoginInput.Password" AutoComplete="true" />
+                    <ICSSubmitButton Text="Log In" IsBusy="IsBusy" />
+                </EditForm>
+            </div>
+            <div class="login-footer">
+                <a href="javascript:void(0)" @onclick="OnForgotPasswordClick">Reset Password</a>
+                @if (ShowDevPreview)
+                {
+                    <AppButton Variant="AppButton.ButtonVariant.Tertiary"
+                               FullWidth="true"
+                               Icon="bi-tools"
+                               OnClick="DevPreviewLogin">
+                        UI Preview (dev build only, no login)
+                    </AppButton>
+                }
+            </div>
+        }
+
+        @if (otpSendInput is not null)
+        {
+            <div class="login-header">
+                <img src="/images/icon-300-trans.png" class="logo" />
+                <h1>One-Time Passcode</h1>
+                <h4>Choose where to receive the code</h4>
+            </div>
+            <div class="login-body">
+                <ICSDismissable Message="@FormErrorMessage" OnDismissClick="() => FormErrorMessage = null" />
+                <EditForm Model="otpSendInput" OnValidSubmit="OtpSendSubmit">
+                    <DataAnnotationsValidator />
+                    @foreach (var option in communicationOptions!)
+                    {
+                        <div class="otp-option">
+                            <div class="form-check">
+                                @if (option.Token == otpSendInput.OtpToken)
+                                {
+                                    <input class="form-check-input" type="radio" id="@option.Token" name="otpOption" checked>
+                                }
+                                else
+                                {
+                                    <input class="form-check-input" type="radio" id="@option.Token" name="otpOption" @onclick="() => SetOtpToken(option.Token!)">
+                                }
+                                <label class="form-check-label" for="@option.Token">
+                                    @option.MaskedData (@communicationType(option.CommunicationTypeId))
+                                </label>
+                            </div>
+                        </div>
+                    }
+                    <ValidationMessage For="() => otpSendInput.OtpToken"></ValidationMessage>
+                    <ICSSubmitButton Text="Send Code" IsBusy="IsBusy" />
+                </EditForm>
+            </div>
+        }
+
+        @if (otpVerifyInput is not null)
+        {
+            <div class="login-header">
+                <img src="/images/icon-300-trans.png" class="logo" />
+                <h1>One-Time Passcode</h1>
+                <h4>Just texted a 6-digit verification code</h4>
+            </div>
+            <div class="login-body">
+                <ICSDismissable Message="@FormErrorMessage" OnDismissClick="() => FormErrorMessage = null" />
+                <EditForm Model="otpVerifyInput" OnValidSubmit="OtpVerifySubmit" autocomplete="off">
+                    <DataAnnotationsValidator />
+                    <ICSTextBox Label="Tap to Paste or Enter Code" PlaceHolder="••••••" ValidationFor="() => otpVerifyInput.OtpValue" @bind-Value="otpVerifyInput.OtpValue" AutoComplete="false" />
+                    <ICSSubmitButton Text="Confirm Login" IsBusy="IsBusy" />
+                </EditForm>
+                <div class="resend-section">
+                    Didn't receive a code? <a href="javascript:void(0)" @onclick="ResendOtp">Resend Otp</a>
+                </div>
+            </div>
+        }
+
+        @if (forgotPasswordInput is not null)
+        {
+            <div class="login-header">
+                <img src="/images/icon-300-trans.png" class="logo" />
+                <h1>Forgot Password?</h1>
+                <h4>Let's help you reset it.</h4>
+            </div>
+            <div class="login-body">
+                <ICSDismissable Message="@FormErrorMessage" OnDismissClick="() => FormErrorMessage = null" />
+                <EditForm Model="forgotPasswordInput" OnValidSubmit="ForgotPasswordSubmit">
+                    <DataAnnotationsValidator />
+                    <ICSTextBox Label="User Name:" PlaceHolder="Enter Username" ValidationFor="() => forgotPasswordInput.UserName" @bind-Value="forgotPasswordInput.UserName" AutoComplete="false"></ICSTextBox>
+                    <ICSSubmitButton Text="Send Reset Code" IsBusy="IsBusy" />
+                </EditForm>
+            </div>
+        }
+
+        @if (forgotPasswordSendOtpInput is not null)
+        {
+            <div class="login-header">
+                <img src="/images/icon-300-trans.png" class="logo" />
+                <h1>Forgot Password?</h1>
+                <h4>Choose where to send code.</h4>
+            </div>
+            <div class="login-body">
+                <ICSDismissable Message="@FormErrorMessage" OnDismissClick="() => FormErrorMessage = null" />
+                <EditForm Model="forgotPasswordSendOtpInput" OnValidSubmit="ForgotPasswordSendOtpSubmit">
+                    <DataAnnotationsValidator />
+                    @foreach (var option in communicationOptions!)
+                    {
+                        <div class="otp-option">
+                            <div class="form-check">
+                                @if (option.Token == forgotPasswordSendOtpInput.OtpToken)
+                                {
+                                    <input class="form-check-input" type="radio" id="@option.Token" name="otpOption" checked>
+                                }
+                                else
+                                {
+                                    <input class="form-check-input" type="radio" id="@option.Token" name="otpOption" @onclick="() => SetPasswordOtpToken(option.Token!)">
+                                }
+                                <label class="form-check-label" for="@option.Token">
+                                    @option.MaskedData (@communicationType(option.CommunicationTypeId))
+                                </label>
+                            </div>
+                        </div>
+                    }
+                    <ValidationMessage For="() => forgotPasswordSendOtpInput.OtpToken"></ValidationMessage>
+                    <ICSSubmitButton Text="Send Code" IsBusy="IsBusy" />
+                </EditForm>
+            </div>
+        }
+
+        @* STEP 3a: Enter OTP Code Only *@
+
+        @if (forgotPasswordChangePasswordInput is not null && !forgotPasswordOtpVerified)
+        {
+            <div class="login-header">
+                <img src="/images/icon-300-trans.png" class="logo" />
+                <h1>Forgot Password</h1>
+                <h4>Enter the code we sent you</h4>
+            </div>
+            <div class="login-body">
+                <ICSDismissable Message="@FormErrorMessage" OnDismissClick="() => FormErrorMessage = null" />
+                <EditForm Model="forgotPasswordChangePasswordInput" OnSubmit="ForgotPasswordVerifyOtpSubmit">
+                    <DataAnnotationsValidator />
+                    <ICSTextBox Label="Enter Code" PlaceHolder="••••••" @bind-Value="forgotPasswordChangePasswordInput.OtpCode" ValidationFor="() =>forgotPasswordChangePasswordInput.OtpCode" AutoComplete=" false" />
+                    <ICSSubmitButton Text="Verify Code" IsBusy="IsBusy" />
+                </EditForm>
+
+
+            </div>
+        }
+
+        @* STEP 3b: Enter New Password (after OTP verified) *@
+
+        @if (forgotPasswordChangePasswordInput is not null && forgotPasswordOtpVerified)
+        {
+            <div class="login-header">
+                <img src="/images/icon-300-trans.png" class="logo" />
+                <h1>Forgot Password</h1>
+                <h4>Enter your new password</h4>
+            </div>
+            <div class="login-body">
+                <ICSDismissable Message="@FormErrorMessage" OnDismissClick="() => FormErrorMessage = null" />
+                <EditForm Model="forgotPasswordChangePasswordInput" OnValidSubmit="ForgotPasswordChangePasswordSubmit">
+                    <DataAnnotationsValidator />
+                    <ICSPassword Label="New Password:" PlaceHolder="Enter New Password" ValidationFor="() => forgotPasswordChangePasswordInput.NewPassword" @bind-Value="forgotPasswordChangePasswordInput.NewPassword" AutoComplete="false" />
+                    <ICSPassword Label="Confirm New Password:" PlaceHolder="Reenter New Password" ValidationFor="() => forgotPasswordChangePasswordInput.ConfirmPassword" @bind-Value="forgotPasswordChangePasswordInput.ConfirmPassword" AutoComplete="false" />
+                    <ICSSubmitButton Text="Reset Password" IsBusy="IsBusy" />
+                </EditForm>
+            </div>
+        }
+
+        @if (changePasswordInput is not null)
+        {
+            <div class="login-header">
+                <img src="/images/icon-300-trans.png" class="logo" />
+                <h1>Change Password</h1>
+                <h4>It's time to change your password.</h4>
+            </div>
+            <div class="login-body">
+                <ICSDismissable Message="@FormErrorMessage" OnDismissClick="() => FormErrorMessage = null" />
+                <EditForm Model="changePasswordInput" OnValidSubmit="ChangePasswordSubmit">
+                    <DataAnnotationsValidator />
+                    <ICSPassword Label="New Password:" PlaceHolder="Enter New Password" ValidationFor="() => changePasswordInput.NewPassword" @bind-Value="changePasswordInput.NewPassword" AutoComplete="false" />
+                    <ICSPassword Label="Confirm New Password:" PlaceHolder="Reenter New Password" ValidationFor="() => changePasswordInput.ConfirmPassword" @bind-Value="changePasswordInput.ConfirmPassword" AutoComplete="false" />
+                    <ICSSubmitButton Text="Change Password" IsBusy="IsBusy" />
+                </EditForm>
+            </div>
+        }
+
+    </div>
+</div>

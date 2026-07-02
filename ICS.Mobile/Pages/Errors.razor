@@ -1,0 +1,124 @@
+@page "/errors"
+@using ICS.Mobile.Components
+@using ICS.Mobile.Pages.Settings
+@using ICS.Portal.Data.Commands.Models
+@inherits ICS.Mobile.Pages.PageBase
+
+<CSSSettings />
+
+<PageHeaderBasic Title="ERRORS" Icon="bi-bug">
+    <RoundButtonGreen Icon="bi-arrow-left" OnClick="OnCloseClick" />
+</PageHeaderBasic>
+
+@if(Initialized)
+{
+    @if (serviceErrors is not null && serviceErrors.Count != 0)
+    {
+        foreach (var err in serviceErrors)
+        {
+            <div class="SettingsItemContainer">
+                <div class="Title">@err.Method </div>
+                <div class="Content">
+                    <div class="Line">@err.DateTimeUTC From: @err.Method Error: @err.Error</div>
+                </div>
+            </div>
+        }
+        <div class="BottomContainer">
+            <AppButton Variant="AppButton.ButtonVariant.Secondary" Icon="bi-trash3"
+                       Disabled="@Publishing" OnClick="() => ClearErrors()">Clear</AppButton>
+            <AppButton Variant="AppButton.ButtonVariant.Primary" Icon="bi-cloud-upload"
+                       Disabled="@Publishing" Busy="@Publishing" OnClick="() => PublishErrors()">Publish</AppButton>
+        </div>
+    }
+    else
+    {
+        <div class="SettingsItemContainer">
+            <div class="Title">No Errors</div>
+            <div class="Content">
+                <div class="Line">There are no errors to display.</div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <ICSLoadingSpinner></ICSLoadingSpinner>
+}
+@code {
+
+    [Inject]
+    protected NavigationManager navManager { set; get; } = default!;
+
+    private List<ServiceErrorInsertInput>? serviceErrors;
+
+    private bool Publishing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await Load();
+        Initialized = true;
+    }
+    private void OnCloseClick()
+    {
+        navManager.NavigateTo("/settings");
+    }
+
+    private async Task ClearErrors()
+    {
+
+        try
+        {
+            Publishing = true;
+
+            await DataService.ClearErrors();
+            await Load();
+        }
+        catch(Exception ex)
+        {
+            await DataService.TryWriteError(ex,nameof(ClearErrors));
+        }
+        finally
+        {
+            Publishing = false;
+        }
+    }
+
+    private async Task PublishErrors()
+    {
+        try
+        {
+            Publishing = true;
+
+            var copy = serviceErrors.ToList();
+
+            foreach (var error in copy)
+            {
+                if(await DataService.SendError(error))
+                {
+                    serviceErrors.Remove(error);
+                }
+                else
+                {
+                     DialogBox.WaitForDialogResultAsync("No internet","Cannot post errors at this time. You have no internet connection","OK");
+                    return;
+                }
+            }
+            await DataService.ClearErrors();
+        }
+        catch(Exception ex)
+        {
+            await DataService.TryWriteError(ex, nameof(PublishErrors));
+        }
+        finally
+        {
+            Publishing = false;
+        }
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        serviceErrors = await DataService.GetErrors();
+    }
+}

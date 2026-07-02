@@ -1,0 +1,19 @@
+﻿@using ICS.Mobile.Components
+@inherits WorkflowComponentsBasePage
+@layout EmptyLayout
+
+<ICSDialogBox @ref="DialogBox" />
+
+<div class="CompleteDialogText">You may edit, see a review summary, or mark your checklist as complete!</div>
+
+<div class="CenteredButtonContainer">
+    <button class="Button" @onclick="Edit">Edit Checklist</button>
+</div>
+
+<div class="CenteredButtonContainer">
+    <button class="Button" @onclick="Review">Review Checklist</button>
+</div>
+
+<div class="CenteredButtonContainer">
+    <button class="Button Default" @onclick="Complete">Complete This Checklist</button>
+</div>

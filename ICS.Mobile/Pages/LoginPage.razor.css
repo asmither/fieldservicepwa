@@ -1,0 +1,224 @@
+/* Full-screen login — fills the viewport, content centered. No floating
+   card/window; the brand page background carries it edge to edge. */
+.login-page {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: calc(var(--space-8) + env(safe-area-inset-top)) var(--space-6)
+             calc(var(--space-8) + env(safe-area-inset-bottom));
+    overflow-y: auto;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 420px;   /* keep fields a readable width on tablets */
+    margin: 0 auto;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* Back-to-login affordance for the OTP / reset sub-steps — uses the app's
+   standard circular back chip (RoundButtonGreen), same as every other page. */
+.login-back {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + var(--space-2));
+    left: var(--space-3);
+    z-index: 5;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+    .login-header .logo {
+        width: 76px;
+        height: 76px;
+        display: block;
+        margin: 0 auto var(--space-3);
+        padding: var(--space-2);
+        box-sizing: border-box;
+        object-fit: contain;
+        background: var(--surface-raised-subtle);
+        border: var(--border-hairline);
+        border-radius: var(--radius-full);
+    }
+
+    .login-header h1 {
+        font-size: var(--text-xl);
+        font-weight: var(--weight-bold);
+        margin: 0 0 var(--space-1);
+        color: var(--text-primary);
+    }
+
+    .login-header h4 {
+        font-size: var(--text-base);
+        font-weight: var(--weight-regular);
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+.login-body {
+    padding: 0;
+}
+
+.login-footer {
+    padding: var(--space-4) 0 0;
+    text-align: center;
+    display: grid;
+    gap: var(--space-2);
+}
+
+    .login-footer a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: var(--touch-target);
+        text-decoration: none;
+        font-size: var(--text-base);
+        color: var(--accent-soft);
+    }
+
+        .login-footer a:hover {
+            color: var(--OffsetColor);
+            text-decoration: underline;
+        }
+
+/* OTP delivery choices — whole row is a 48px+ touch target. Login doesn't
+   load Bootstrap, so lay the radio + label out explicitly (no .form-check
+   float) to avoid the radio overlapping the number. */
+.otp-option {
+    border: var(--border-hairline);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-2);
+    background-color: var(--surface-input);
+    min-height: var(--touch-target);
+    display: flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-4);
+    transition: border-color var(--motion-base) ease, background-color var(--motion-base) ease;
+}
+
+    .otp-option:hover {
+        border-color: var(--accent-soft);
+    }
+
+    .otp-option .form-check {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        margin: 0;
+        padding: 0;
+        width: 100%;
+    }
+
+    /* Show the real native radio (legacy style.css hides it with display:none
+       and fakes one via label pseudo-elements — we override both here). */
+    .otp-option .form-check-input {
+        display: inline-block;
+        flex-shrink: 0;
+        width: 1.25rem;
+        height: 1.25rem;
+        margin: 0;
+        accent-color: var(--accent);
+        cursor: pointer;
+    }
+
+    .otp-option .form-check-label {
+        flex: 1;
+        color: var(--text-primary);
+        min-height: 0;
+        padding: var(--space-2) 0;
+        cursor: pointer;
+    }
+
+        /* Kill the legacy fake-radio pseudo-elements. */
+        .otp-option .form-check-label::before,
+        .otp-option .form-check-label::after {
+            content: none;
+            display: none;
+        }
+
+.resend-section {
+    text-align: center;
+    padding-top: var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+    .resend-section a {
+        color: var(--accent-soft);
+        display: inline-flex;
+        align-items: center;
+        min-height: var(--touch-target);
+    }
+
+/* Inputs are rendered by child components (ICSTextBox/ICSPassword), so they
+   sit outside this file's scope — reach them through ::deep. The !importants
+   here exist only to beat legacy style.css label rules that use !important. */
+.login-body ::deep label,
+.login-body ::deep .form-group label,
+.login-body ::deep .form-group .label {
+    color: var(--text-secondary) !important;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    letter-spacing: 0.02em;
+    margin-bottom: var(--space-1);
+}
+
+.login-body ::deep .form-group .input-wrapper.active .label {
+    color: var(--accent-soft) !important;
+}
+
+.login-body ::deep input.form-control {
+    color: var(--text-primary);
+    font-weight: var(--weight-medium);
+    padding: var(--space-2) var(--space-3);
+    background: var(--surface-input);
+    font-size: var(--text-lg);
+    min-height: var(--touch-target);
+    border: var(--border-hairline);
+    border-radius: var(--radius-md);
+    box-shadow: none;
+}
+
+    .login-body ::deep input.form-control::placeholder {
+        color: var(--text-muted);
+        font-weight: var(--weight-regular);
+    }
+
+    .login-body ::deep input.form-control:focus {
+        border-color: var(--accent);
+        outline: none;
+        box-shadow: none;
+    }
+
+.login-body ::deep .validation-message {
+    color: var(--status-warning);
+    font-size: var(--text-base);
+}
+
+/* The submit button uses legacy .btn-primary (#00317e !important from
+   style.css). Align it to the app's primary button (AppButton = brand-700). */
+.login-body ::deep .btn-primary {
+    background: var(--brand-700) !important;
+    border-color: var(--brand-700) !important;
+    color: var(--text-on-accent) !important;
+    min-height: var(--touch-target-primary);
+    border-radius: var(--radius-md) !important;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+}
+
+    .login-body ::deep .btn-primary:active {
+        background: var(--brand-800) !important;
+    }
+
+.login-body ::deep .form-button-group {
+    position: inherit !important;
+}

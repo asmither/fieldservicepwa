@@ -1,0 +1,148 @@
+﻿@if (Initialized)
+{
+    @if (Adding)
+    {
+        <input class="WorkflowInput" type="text" @bind-value="InternalValue" @bind-value:event="oninput" />
+        <div class="CenteredButtonContainer">
+            <button class="Button" @onclick="Cancel">Cancel</button>
+            <button class="Button Default" @onclick="Add">Save</button>
+        </div>
+    }
+    else
+    {
+        @if (DataList is not null)
+        {
+            <select class="WorkflowInput" @onchange="SetSelectedValue">
+                @if (Value is null)
+                {
+                    <option value="" selected>-- Select Option --</option>
+                }
+
+                @foreach (var item in DataList)
+                {
+                    if (item == Value)
+                    {
+                        <option value="@item" selected>@item</option>
+                    }
+                    else
+                    {
+                        <option value="@item">@item</option>
+                    }
+                }
+            </select>
+
+            <br />
+        }
+
+        @if (AllowAdditions)
+        {
+            <div class="CenteredButtonContainer">
+                <button class="Button Default" @onclick="ShowAdd">Add Option</button>
+            </div>
+        }
+    }
+}
+
+@code {
+
+    private bool Initialized = false;
+    private bool Adding = false;
+    private string? AddedValue = null;
+
+    private string? InternalValue
+    {
+        set
+        {
+            if (value != Value)
+            {
+                Value = value;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+        get
+        {
+            return Value;
+        }
+    }
+
+    [Parameter]
+    public string? Value { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public string? ListId { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public List<string>? DataList { set; get; }
+
+    [Parameter]
+    public bool AllowAdditions { set; get; } = false;
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    private void SetSelectedValue(ChangeEventArgs e)
+    {
+        string? value = null;
+
+        if (e is not null && e.Value is not null)
+        {
+            value = e.Value.ToString();
+        }
+
+        Console.WriteLine($"Selected: {value}");
+
+        InternalValue = value;
+    }
+
+    private void Add()
+    {
+        if (!string.IsNullOrEmpty(InternalValue))
+        {
+            if (DataList is null)
+            {
+                DataList = new List<string>();
+            }
+
+            if (!string.IsNullOrEmpty(AddedValue))
+            {
+                DataList.Remove(AddedValue);
+                AddedValue = null;
+            }
+            DataList.Add(InternalValue);
+            AddedValue = InternalValue;
+        }
+        Adding = false;
+    }
+
+    private void Cancel()
+    {
+        InternalValue = null;
+        Adding = false;
+    }
+
+    private void ShowAdd()
+    {
+        Adding = true;
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (!string.IsNullOrEmpty(Value))
+        {
+            if (DataList is not null)
+            {
+                if (!DataList.Contains(Value))
+                {
+                    DataList.Add(Value);
+                    AddedValue = Value;
+                }
+            }
+        }
+
+        Initialized = true;
+    }
+}

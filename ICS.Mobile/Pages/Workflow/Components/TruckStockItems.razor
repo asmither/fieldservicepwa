@@ -1,0 +1,105 @@
+﻿@using ICS.Mobile.Components
+@using ICS.Portal.Data.Queries.Models
+@inherits WorkflowComponentsBasePage
+@layout EmptyLayout
+@if (Initialized)
+{
+    switch (Mode)
+    {
+        case Modes.ExistingListWithAdd:
+            <div class="EquipmentContainer">
+                <div class="Header">
+                    Current Truck Stock Items
+                    <button class="Button Transparent" @onclick="() => AddTruckStopItemClick()">
+                        <ICS.Mobile.Pages.Workflow.Components.Icon UseIcon="Add" Title="Add" />
+                    </button>
+                </div>
+                <div class="Content">
+                    @if (TruckStockItemsResults?.Count != 0)
+                    {
+                        @foreach (var tsi in TruckStockItemsResults)
+                        {
+                            <div class="SingleLineWithButton">
+                                <div class="Text">
+                                    @tsi.Name<span>: (@tsi.Quantity)</span><br />
+                                    Note: <span>@tsi.Notes</span>
+                                </div>
+                                <button class="Button Transparent" @onclick="() => DeleteTruckStockItem(tsi)">
+                                    <Icon UseIcon="Trashcan" Title="@(string.Concat("Delete ",tsi.Name))" />
+                                </button>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="SingleLineInfo">No Truck Stock Items have been entered.</div>
+                    }
+                </div>
+            </div>
+            break;
+        case Modes.SelectingCategory:
+            @foreach (var attr in Items)
+            {
+                if (SelectedCategory is not null && SelectedCategory.Id == attr.Id)
+                {
+                    <div class="Option Selected" @onclick="() => SetCategory(attr)">
+                        <div class="Name">@attr.Name</div>
+                        <i class="Image Selected bi-check2-square"></i>
+                    </div>
+                }
+                else
+                {
+                    <div class="Option" @onclick="() => SetCategory(attr)">
+                        <div class="Name">@attr.Name</div>
+                        <i class="Image bi-square"></i>
+                    </div>
+                }
+            }
+            break;
+        case Modes.SelectingItem:
+           @*  @foreach (var tsi in TruckStockItemsAvailable)
+            {
+                if (SelectedTruckStockItem?.Id == tsi.Id)
+                {
+                    <div class="Option Selected" @onclick="() => SetItem(tsi)">
+                        <div class="Name">@tsi.Name</div>
+                        <i class="Image Selected bi-check2-square"></i>
+                    </div>
+                }
+                else
+                {
+                    <div class="Option" @onclick="() => SetItem(tsi)">
+                        <div class="Name">@tsi.Name</div>
+                        <i class="Image bi-square"></i>
+                    </div>
+                }
+            } *@
+
+            <DataPicker Title="Select Truck Stock Items" SuppressColumnTwo=false DataList="@TruckStockItemsList" @bind-Value="@SelectedTrkStkValue"></DataPicker>
+            
+            break;
+        case Modes.SettingQuantityAndNotes:
+            <h3>@SelectedTruckStockItem?.Name</h3>
+            <div class="WorkflowEditItem">
+                <div class="Prompt">Quantity:</div>
+                <NumberInput @bind-Value="@Quantity"></NumberInput>
+            </div>
+
+            <div class="WorkflowEditItem">
+                <div class="Prompt">Optional Note:</div>
+                <LargeTextInput @bind-Value="@Notes"></LargeTextInput>
+            </div>
+
+            break;
+    }
+
+    <CommonError Message="@ErrorMessage" />
+
+    <Navigation NextDisabled="NextDisabled" PreviousDisabled="PreviousDisabled" OnNextClick="Next" OnPreviousClick="Previous"></Navigation>
+}
+else
+{
+    <ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICSLoadingSpinner>
+}

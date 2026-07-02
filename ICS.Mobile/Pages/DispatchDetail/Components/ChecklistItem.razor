@@ -1,0 +1,249 @@
+﻿@using ICS.Portal.Data.Enumerations
+@inject IJSRuntime JS
+
+<div class="ChecklistSwipeContainer @IsInactive(IsActive)">
+    <span>
+        @if (WorkflowStatus.Equals(WorkflowStatuses.AddNew) || WorkflowStatus.Equals(WorkflowStatuses.IncludeComplete) || WorkflowStatus.Equals(WorkflowStatuses.Complete) || WorkflowStatus.Equals(WorkflowStatuses.Close) || WorkflowStatus.Equals(WorkflowStatuses.Addon))
+        {
+            <span @ref="DeleteButton" class="Transparent"></span>
+        }
+        else
+        {
+            <button @ref="DeleteButton" class="ChecklistItemDeleteButton" @onclick="() => RemoveClick(WorkflowId)">
+
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="32" width="32" zoomAndPan="magnify" viewBox="0 0 3000 2999.999989" preserveAspectRatio="xMidYMid meet" version="1.0">
+                    <defs><clipPath id="d5445ede05"><path d="M 421.875 491 L 2576 491 L 2576 873 L 421.875 873 Z M 421.875 491 " clip-rule="nonzero" /></clipPath></defs>
+                    <path fill="#FFFFFF" fill-opacity="0.65" fill-rule="nonzero" d="M 2092.933594 2980.6875 L 897.8125 2980.6875 C 814.261719 2980.6875 744.453125 2915.113281 739.167969 2831.558594 L 626 978.585938 L 2364.746094 978.585938 L 2251.578125 2831.558594 C 2246.292969 2915.113281 2176.492188 2980.6875 2092.933594 2980.6875 Z M 1098.761719 1397.40625 C 1097.703125 1367.796875 1074.433594 1343.464844 1043.765625 1345.582031 C 1015.207031 1346.640625 991.941406 1372.023438 993 1400.582031 L 1035.300781 2561.863281 C 1036.359375 2590.417969 1059.632812 2613.683594 1087.128906 2613.683594 C 1088.183594 2613.683594 1089.242188 2613.683594 1089.242188 2613.683594 C 1118.859375 2612.625 1141.066406 2587.242188 1140.011719 2558.691406 Z M 1548.257812 1398.464844 C 1548.257812 1369.90625 1524.988281 1345.582031 1495.375 1345.582031 C 1465.757812 1345.582031 1442.492188 1369.90625 1442.492188 1398.464844 L 1442.492188 2560.804688 C 1442.492188 2589.359375 1465.757812 2613.683594 1495.375 2613.683594 C 1524.984375 2613.683594 1548.257812 2589.359375 1548.257812 2560.804688 Z M 1946.980469 1345.582031 C 1918.429688 1344.523438 1893.046875 1367.796875 1891.988281 1397.40625 L 1850.738281 2558.691406 C 1849.679688 2587.242188 1871.894531 2612.625 1901.503906 2613.683594 C 1901.503906 2613.683594 1902.5625 2613.683594 1903.621094 2613.683594 C 1931.121094 2613.683594 1954.386719 2590.417969 1955.445312 2561.863281 L 1997.75 1400.582031 C 1998.8125 1372.023438 1975.539062 1346.640625 1946.980469 1345.582031 Z M 1946.980469 1345.582031 " />
+                    <g clip-path="url(#d5445ede05)">
+                        <path fill="#FFFFFF" fill-opacity="0.65" fill-rule="nonzero" d="M 415.53125 649.660156 C 415.53125 562.9375 486.390625 491.011719 574.175781 491.011719 L 2416.570312 491.011719 C 2504.355469 491.011719 2575.214844 562.9375 2575.214844 649.660156 L 2575.214844 872.824219 L 415.53125 872.824219 Z M 415.53125 649.660156 " />
+                    </g>
+                    <path fill="#FFFFFF" fill-opacity="0.65" fill-rule="nonzero" d="M 2079.183594 385.25 L 1973.421875 385.25 C 1948.039062 238.242188 1819.011719 125.078125 1664.59375 125.078125 L 1326.152344 125.078125 C 1171.738281 125.078125 1042.707031 238.246094 1017.324219 385.25 L 910.5 385.25 C 936.941406 179.015625 1113.570312 19.3125 1326.152344 19.3125 L 1664.59375 19.3125 C 1877.179688 19.3125 2053.800781 179.015625 2079.183594 385.25 Z M 2079.183594 385.25 " />
+                </svg>
+
+
+            </button>
+
+        }
+        <div @ref="ChecklistButton" class='@(  (WorkflowStatus is not null && (WorkflowStatus.Equals(WorkflowStatuses.AddNew)
+        || WorkflowStatus.Equals(WorkflowStatuses.IncludeComplete) || WorkflowStatus.Equals(WorkflowStatuses.Close))) ? "DispatchDetailChecklistItem NewItem" : "DispatchDetailChecklistItem") @IsInactive(IsActive)'
+             @onclick="@(WorkflowStatus.Equals(WorkflowStatuses.Close) ? AddNewCloseClick : (WorkflowStatus.Equals(WorkflowStatuses.IncludeComplete) ? IncludeMoreClick : null))">
+
+            <span class="Spacer"></span>
+            <div class="Prompt @IsInactive(IsActive)">@Prompt</div>
+            <div class="Caption">@Caption</div>
+            @switch (WorkflowStatus)
+            {
+                case WorkflowStatuses.New:
+                    <button class="NavigateButton" @onclick="GoToWorkflowClick">
+                        <svg class="Svg" width="24" height="24" viewBox="-3 0 28 28" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+                            <title>Begin this Checklist</title>
+                            <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+                                <g id="Icon-Set" sketch:type="MSLayerGroup" transform="translate(-417.000000, -569.000000)" fill="#FFFFFF" fill-opacity="0.75">
+                                    <path d="M418.983,594.247 L418.983,571.722 L436.831,582.984 L418.983,594.247 L418.983,594.247 Z M438.204,581.536 L419.394,569.279 C418.278,568.672 417,568.943 417,570.917 L417,595.052 C417,597.012 418.371,597.361 419.394,596.689 L438.204,584.433 C439.288,583.665 439.258,582.242 438.204,581.536 L438.204,581.536 Z" id="play" sketch:type="MSShapeGroup"></path>
+                                </g>
+                            </g>
+                        </svg>
+                    </button>
+                    break;
+                case WorkflowStatuses.InProgress:
+                    <button class="NavigateButton" @onclick="GoToWorkflowClick">
+                        <svg class="Svg" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <title>Resume this Checklist</title>
+                            <path d="M15 5V19M21 5V19M3 7.20608V16.7939C3 17.7996 3 18.3024 3.19886 18.5352C3.37141 18.7373 3.63025 18.8445 3.89512 18.8236C4.20038 18.7996 4.55593 18.4441 5.26704 17.733L10.061 12.939C10.3897 12.6103 10.554 12.446 10.6156 12.2565C10.6697 12.0898 10.6697 11.9102 10.6156 11.7435C10.554 11.554 10.3897 11.3897 10.061 11.061L5.26704 6.26704C4.55593 5.55593 4.20038 5.20038 3.89512 5.17636C3.63025 5.15551 3.37141 5.26273 3.19886 5.46476C3 5.69759 3 6.20042 3 7.20608Z"
+                                  stroke-width="2" stroke="#FFFFFF" stroke-opacity="0.75" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    break;
+                case WorkflowStatuses.Complete:
+                    <button class="NavigateButton" @onclick="GoToWorkflowClick">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <title>Completed Checklist</title>
+                            <rect width="24" height="24" fill="none" />
+                            <path d="M5 13.3636L8.03559 16.3204C8.42388 16.6986 9.04279 16.6986 9.43108 16.3204L19 7"
+                                  stroke-width="2" stroke="#FFFFFF" stroke-opacity="0.75" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    break;
+                case WorkflowStatuses.Addon:
+                    <button class="NavigateButton" @onclick="AddOnClick">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M6 12H18M12 6V18" stroke="#FFFFFF" stroke-width="2" stroke-opacity="0.85" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    break;
+                case WorkflowStatuses.AddNew:
+                    <button class="NavigateButton AddNew" @onclick="AddNewClick">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <title>Add Additional Checklist to this Dispatch</title>
+                            <path d="M6 12H18M12 6V18" stroke="#FFFFFF" stroke-width="2" stroke-opacity="0.85" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+
+                    </button>
+                    break;
+                case WorkflowStatuses.Close:
+                    <button class="NavigateButton Close" @onclick="AddNewCloseClick">
+                        <svg class="AddNewCLCloseAddNew" width="24" height="24" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#FFFFFF" stroke-opacity="0.9"><line x1="16" y1="16" x2="48" y2="48" /><line x1="48" y1="16" x2="16" y2="48" /></svg>
+                    </button>
+                    break;
+            }
+
+        </div>
+        @if (WorkflowStatus.Equals(WorkflowStatuses.AddNew) || WorkflowStatus.Equals(WorkflowStatuses.Complete) || WorkflowStatus.Equals(WorkflowStatuses.Close) || WorkflowStatus.Equals(WorkflowStatuses.Addon))
+        {
+
+            <span @ref="MacroButton" class="Transparent"></span>
+        }
+        else
+        {
+            <button @ref="MacroButton" class="ChecklistItemMacroButton" @onclick="() => MacroClick(WorkflowId)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-opacity="0.55" fill-rule="evenodd" clip-rule="evenodd" d="M12 4C11.4477 4 11 4.44772 11 5C11 5.55228 11.4477 6 12 6C12.5523 6 13 5.55228 13 5C13 4.44772 12.5523 4 12 4ZM15 5C15 6.65685 13.6569 8 12 8C10.3431 8 9 6.65685 9 5C9 3.34315 10.3431 2 12 2C13.6569 2 15 3.34315 15 5ZM12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11ZM15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12ZM11 19C11 18.4477 11.4477 18 12 18C12.5523 18 13 18.4477 13 19C13 19.5523 12.5523 20 12 20C11.4477 20 11 19.5523 11 19ZM12 22C13.6569 22 15 20.6569 15 19C15 17.3431 13.6569 16 12 16C10.3431 16 9 17.3431 9 19C9 20.6569 10.3431 22 12 22Z"
+                          fill="#FFFFFF" />
+                </svg>
+            </button>
+        }
+    </span>
+</div>
+@code {
+
+    private ElementReference ChecklistButton;
+    private ElementReference DeleteButton;
+    private ElementReference MacroButton;
+
+    bool first = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            @if (WorkflowStatus.Equals(WorkflowStatuses.AddNew) || WorkflowStatus.Equals(WorkflowStatuses.Complete) || WorkflowStatus.Equals(WorkflowStatuses.IncludeComplete) ||
+                                                   WorkflowStatus.Equals(WorkflowStatuses.Close) || WorkflowStatus.Equals(WorkflowStatuses.Addon))
+            {
+                // no swipe handler on these buttons
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("SwipeHandler", ChecklistButton, DeleteButton, MacroButton);
+            }
+
+        }
+    }
+
+
+    private void GoToWorkflowClick()
+    {
+        if (OnGoToWorkflowClick.HasDelegate)
+            OnGoToWorkflowClick.InvokeAsync(WorkflowId!.Value);
+    }
+
+    private void RemoveClick(int? idkey)
+    {
+        if (OnRemoveClick.HasDelegate)
+            OnRemoveClick.InvokeAsync((idkey ?? 0));
+    }
+    private void MacroClick(int? idkey)
+    {
+        if (OnMacroClick.HasDelegate)
+            OnMacroClick.InvokeAsync((idkey ?? 0));
+    }
+
+    private void AddNewClick()
+    {
+        if (OnAddNewClick.HasDelegate) OnAddNewClick.InvokeAsync();
+    }
+    private void AddNewCloseClick()
+    {
+        if (OnAddNewCloseClick.HasDelegate) OnAddNewCloseClick.InvokeAsync();
+    }
+
+    private async Task AddOnClick()
+    {
+        AddNewCloseClick();
+        if (OnAddOnClick.HasDelegate)
+            await OnAddOnClick.InvokeAsync((WorkflowId ?? 0));
+
+    }
+
+    private void IncludeMoreClick()
+    {
+        if (OnIncludeMoreClick.HasDelegate)
+            OnIncludeMoreClick.InvokeAsync();
+    }
+
+    private string IsInactive(bool isActive)
+    {
+        if (!isActive)
+        {
+            return " Inactive ";
+        }
+        return string.Empty;
+    }
+
+
+    [Parameter]
+    [EditorRequired]
+    public string? Prompt { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public string? Caption { set; get; }
+
+    [Parameter]
+    public int? WorkflowId { set; get; }
+
+    [Parameter]
+    public WorkflowStatuses? WorkflowStatus { set; get; }
+
+    [Parameter]
+    public EventCallback<int> OnRemoveClick { set; get; }
+
+    [Parameter]
+    public EventCallback<int> OnMacroClick { set; get; }
+
+    [Parameter]
+    public EventCallback<int> OnGoToWorkflowClick { set; get; }
+
+    [Parameter]
+    public EventCallback<int> OnAddNewClick { set; get; }
+
+    [Parameter]
+    public EventCallback<int> OnAddNewCloseClick { set; get; }
+
+    [Parameter]
+    public EventCallback<int> OnIncludeMoreClick { set; get; }
+
+    [Parameter]
+    public EventCallback<int> OnAddOnClick { set; get; }
+
+    [Parameter]
+    public bool IsActive { set; get; } = true; 
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (string.IsNullOrEmpty(Prompt))
+        {
+            Prompt = "";
+        }
+
+        if (string.IsNullOrEmpty(Caption))
+        {
+            Caption = "";
+        }
+
+        if (!WorkflowId.HasValue)
+        {
+            WorkflowId = 0;
+        }
+
+        if (!WorkflowStatus.HasValue)
+        {
+            WorkflowStatus = WorkflowStatuses.New;
+        }
+
+
+    }
+
+
+}

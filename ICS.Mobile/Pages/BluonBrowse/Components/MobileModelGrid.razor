@@ -1,0 +1,263 @@
+﻿@namespace ICS.Mobile.Pages.BluonBrowse.Components
+@using ICS.Portal.Data.Custom
+
+<div class="model-grid-container">
+    @if (IsLoading)
+    {
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p class="mt-2"> &nbsp;Loading models...</p>
+        </div>
+    }
+    else if (Models != null && Models.Any())
+    {
+        <div class="model-filter">
+            <input type="text"
+                   class="new-filter-input"
+                   placeholder="Filter down models..."
+                   @bind="FilterTerm"
+                   @bind:event="oninput" />
+            <span class="filter-count">@FilteredModels.Count() models</span>
+        </div>
+
+        <div class="model-list">
+            @foreach (var model in FilteredModels.Take(MaxDisplay))
+            {
+                <div class="model-card" @onclick="() => SelectModel(model)"
+                     style="@CheckModelImage(model)">
+                    <div class="model-header">
+                        <div class="model-name">@model.Model</div>
+                        @if (model.ConfidenceScore.HasValue)
+                        {
+                            <span class="confidence-badge @GetConfidenceClass(model.ConfidenceScore.Value)">
+                                @((model.ConfidenceScore.Value * 100).ToString("F0"))%
+                            </span>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(model.ModelNotes))
+                    {
+                        <div class="model-notes">@model.ModelNotes</div>
+                    }
+
+                    <div class="model-meta">
+                        <span class="meta-item">
+                            <i class="bi bi-box"></i> @model.SystemType
+                        </span>
+                        <span class="meta-item">
+                            <i class="bi bi-gear"></i> @model.FunctionalPartsCount parts
+                        </span>
+                        @if (model.ManualsCount > 0)
+                        {
+                            <span class="meta-item">
+                                <i class="bi bi-file-text"></i> @model.ManualsCount docs
+                            </span>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(model.Image))
+                    {
+                        <div class="model-image-indicator">
+                            <i class="bi bi-camera-fill"></i>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (FilteredModels.Count() > MaxDisplay)
+        {
+            <div class="load-more">
+                <button class="btn btn-outline" @onclick="LoadMore">
+                    Load More (@(FilteredModels.Count() - MaxDisplay) remaining)
+                </button>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>No models available</p>
+        </div>
+    }
+</div>
+
+<style>
+    .model-grid-container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .model-filter {
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .new-filter-input {
+        width: 50%;
+        padding: 0.375rem 0.75rem;
+        border: 1px dashed #CCCCCCCC;
+        border-radius: 6px;
+        font-size: 1.15rem;
+        margin-left: 50px;
+        background-color: transparent;
+        align-items: left;
+        text-align: left;
+    }
+
+    .filter-count {
+        font-size: 0.75rem;
+        color: papayawhip;
+        white-space: nowrap;
+    }
+
+    .model-list {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .model-card {
+        background: white;
+        border-radius: 10px;
+        padding: 0.75rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+    }
+
+        .model-card:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+        }
+
+    .model-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 0.5rem;
+    }
+
+    .model-name {
+        font-weight: 600;
+        color: var(--bluon-primary);
+        font-size: 1.1rem;
+        flex: 1;
+    }
+
+    .confidence-badge {
+        font-size: 0.625rem;
+        padding: 0.125rem 0.375rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+        .confidence-badge.high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .confidence-badge.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .confidence-badge.low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+    .model-notes {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+
+    .model-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 1rem;
+        
+    }
+
+        .meta-item i {
+            font-size: 1rem;
+        }
+
+    .model-image-indicator {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        color: var(--bluon-success);
+        font-size: 0.875rem;
+    }
+
+    .load-more {
+        padding: 1rem;
+        text-align: center;
+    }
+</style>
+
+@code {
+    [Parameter] public List<BluonBrands.BrandSeriesOems.Datum>? Models { get; set; }
+    [Parameter] public EventCallback<BluonBrands.BrandSeriesOems.Datum> OnModelSelected { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+
+    private string FilterTerm = "";
+    private int MaxDisplay = 20;
+
+    private IEnumerable<BluonBrands.BrandSeriesOems.Datum> FilteredModels =>
+        string.IsNullOrWhiteSpace(FilterTerm) ? (Models ?? Enumerable.Empty<BluonBrands.BrandSeriesOems.Datum>()) :
+        (Models ?? Enumerable.Empty<BluonBrands.BrandSeriesOems.Datum>())
+            .Where(m =>
+                (m.Model?.Contains(FilterTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (m.ModelNotes?.Contains(FilterTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (m.SystemType?.Contains(FilterTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+
+
+
+    private async Task SelectModel(BluonBrands.BrandSeriesOems.Datum model)
+    {
+        await OnModelSelected.InvokeAsync(model);
+    }
+
+    private string CheckModelImage(BluonBrands.BrandSeriesOems.Datum model)
+    {
+        // if (!string.IsNullOrEmpty(model.Image))
+        //     return $"background-image: url(\"{model.Image}\")";
+        // else
+            return string.Empty;
+    }
+
+    private void LoadMore()
+    {
+        MaxDisplay += 20;
+    }
+
+    private string GetConfidenceClass(float confidence)
+    {
+        return confidence switch
+        {
+            >= 0.8f => "high",
+            >= 0.6f => "medium",
+            _ => "low"
+        };
+    }
+}

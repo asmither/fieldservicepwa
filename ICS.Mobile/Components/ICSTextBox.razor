@@ -1,0 +1,55 @@
+﻿@inherits InputBase<string?>
+@using System.Linq.Expressions
+
+<div class="form-group basic">
+    <div class="input-wrapper">
+        <label class="label">@Label</label>
+        <input type="text" class="form-control" placeholder=@PlaceHolder @bind-value=CurrentValue autocomplete="@AutoCompleteValue">
+        @if(!string.IsNullOrEmpty(CurrentValue ))
+        {
+            <i class="clear-input" @onclick=Clear>
+                <i class="icon bi bi-x-circle-fill"></i>
+            </i>
+        }
+        <div class="form-control-validation">
+            <ValidationMessage For="@ValidationFor" />
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter, EditorRequired]
+    public string? Label { get; set; }
+
+    [Parameter, EditorRequired]
+    public string? PlaceHolder { get; set; }
+
+    [Parameter, EditorRequired]
+    public Expression<Func<string>> ValidationFor { get; set; } = default!;
+
+    [Parameter]
+    public bool AutoComplete {set;get;} = false;
+
+    private string AutoCompleteValue => AutoComplete ? "on": "off";
+    protected override bool TryParseValueFromString(string value, out string result, out string validationErrorMessage)
+    {
+        validationErrorMessage = null;
+
+        if (string.IsNullOrEmpty(value))
+        {
+            result = null;
+        }
+        else
+        {
+            result = value;
+        }
+
+        return true;
+    }
+
+    private void Clear()
+    {
+        CurrentValue = string.Empty;
+    }
+}

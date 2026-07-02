@@ -1,0 +1,511 @@
+@page "/time"
+@inherits ICS.Mobile.Pages.PageBase
+@using ICS.Mobile.Components
+@using ICS.Portal.Data.Queries.Models
+@using ICS.Mobile.Pages.Time.Components
+@using ICS.Portal.Data.Enumerations
+
+<CSSTimeClock />
+
+<PageHeaderBasic Title="Time Tracking" Icon="bi-calendar-week">
+</PageHeaderBasic>
+
+<ICSDialogBox @ref="DialogBox" />
+
+@if (showSpinner)
+{
+    <ICS.Mobile.Components.ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICS.Mobile.Components.ICSLoadingSpinner>
+}
+
+@if (Initialized)
+{
+    <Tabs @ref="TimeTabs" OnTabClick="OnTabClick" SelectedTab="TimeClockPageTabDefault" NumberOfStepsBack="OffsetWeekNumHistory" OnMoveWeekNum="ShiftWeekNum" />
+    @if (!showSpinner)
+    {
+        @if (showGeoSummary && !showDispatchDetail && TimeEvItem is not null) // DialogBox for Geo Summary Details
+        {
+            <div class="GenericBigDeal">
+                <br />
+                <center>
+                    <button type="button" class="MoreDataButton" style="color: white;" @onclick="CloseDayDetails"> - CLOSE LOCATION INFO - </button>
+                </center>
+            </div>
+            <div class="GenericContainer">
+                @if (TimeEvItem.StartOfDay is not null)
+                {
+                    <div class="GenericBasicItem">
+                        <div class="Prompt">Start of Day</div>
+                        <div class="Answer">@TimeEvItem.StartOfDay</div>
+                        @* <div class="NoteLabel">Location:</div> *@
+                        <div class="Note"><small>@TimeEvItem.StartOfDayLatLng</small></div>
+                        <center><img src="@GetImage(TimeEvItem.StartOfDayLatLng!)" alt="Start of Day" title="Start of Day" /></center>
+                    </div>
+                }
+                @if (TimeEvItem.AzugaFirst is not null)
+                {
+                    <div class="GenericBasicItem">
+                        <div class="Prompt">Truck Roll</div>
+                        <div class="Answer">@TimeEvItem.AzugaFirst</div>
+                        @* <div class="NoteLabel">Location:</div> *@
+                        <div class="Note"><small>@TimeEvItem.AzugaLastLatLng</small></div>
+                        <center><img src="@GetImage(TimeEvItem.AzugaLastLatLng!)" alt="@(TimeEvItem.AzugaLastAddress ?? string.Empty)" title="@(TimeEvItem.AzugaLastAddress  ?? string.Empty)" /></center>
+                    </div>
+                }
+                @if (TimeEvItem.AzugaLast is not null)
+                {
+                    <div class="GenericBasicItem">
+                        <div class="Prompt">Truck Stop</div>
+                        <div class="Answer">@TimeEvItem.AzugaLast</div>
+                        @* <div class="NoteLabel">Location:</div> *@
+                        <div class="Note">@TimeEvItem.AzugaLastLatLng</div>
+                        <div class="Note"><small>@TimeEvItem.AzugaLastAddress</small></div>
+                        <center><img src="@GetImage(TimeEvItem.AzugaLastLatLng!)" alt="@(TimeEvItem.AzugaLastAddress ?? string.Empty)" title="@(TimeEvItem.AzugaLastAddress  ?? string.Empty)" /></center>
+                    </div>
+                }
+                @if (TimeEvItem.EndOfDay is not null)
+                {
+                    <div class="GenericBasicItem">
+                        <div class="Prompt">End of Day</div>
+                        <div class="Answer">@TimeEvItem.EndOfDay</div>
+                        @* <div class="NoteLabel">Location:</div> *@
+                        <div class="Note"><small>@TimeEvItem.EndOfDayLatLng</small></div>
+                        <center><img src="@GetImage(TimeEvItem.EndOfDayLatLng!)" alt="End of Day" title="End of Day" /></center>
+                    </div>
+                }
+
+                <br /><center>
+                    <button type="button" class="MoreDataButton" @onclick="CloseDayDetails"> - CLOSE LOCATION INFO - </button>
+                </center>
+
+            </div>
+        }
+
+        @if (!showGeoSummary && !showDispatchDetail && TimeEvList is not null) // Main Display Area
+        {
+            @if (TimeEvList is not null && TimeEvList.Count > 0)
+            {
+                @ResetTally()
+                <div class="timecard">
+                    @foreach (var ev in TimeEvList)
+                    {
+                        @TallyEv(ev)
+                        <div class="day-row">
+                            <div class="date @(DisplayMode == DisplayModes.Today ? "DateToday" : "DateHistory")">
+                                <span class="DateDay">@DateFormatAs(ev.EventDate, "ddd")</span>
+                                <br>
+                                <small class="DateSub">@DateFormatAs(ev.EventDate, "MMM d")</small>
+                                <br />
+                                <table width="100%" align="center">
+                                    <tr>
+                                        @if (TimeEvApprovals is not null && TimeEvApprovals.Any(a => a.Hash == ev.Hash && a.LockStatus > 0))
+                                        {
+                                            @if (TimeEvApprovals.Any(a => a.Hash == ev.Hash && a.LockStatus == 2))
+                                            {
+                                                <td colspan="3" align="center">
+                                                    <span class="ApprovalMark Danger"><i class="bi bi-shield-shaded" aria-hidden="true"></i>PR Decline</span>
+                                                </td>
+                                            }
+                                            else if (TimeEvApprovals.Any(a => a.Hash == ev.Hash && a.LockStatus == 3))
+                                            {
+                                                <td colspan="3" align="center">
+                                                    <span class="ApprovalMark Info"><i class="bi bi-shield-shaded" aria-hidden="true"></i>PR Review</span>
+                                                </td>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (TimeEvApprovals is not null && TimeEvApprovals.Any(a => a.Hash == ev.Hash))
+                                            {
+                                                if (TimeEvApprovals.Any(a => a.Hash == ev.Hash && a.LockStatus == 1))
+                                                {
+                                                    <td colspan="3" align="center">
+                                                        <span class="ApprovalMark Success" role="img" aria-label="Approved and locked"><i class="bi bi-shield-shaded" aria-hidden="true"></i></span>
+                                                    </td>
+                                                }
+                                                else if (TimeEvApprovals.Any(a => a.Hash == ev.Hash && a.ReleaseStatus.Equals(2)))
+                                                {
+                                                    <td colspan="3" align="center">
+                                                        <span class="ApprovalMark Danger"><i class="bi bi-hand-thumbs-down-fill" aria-hidden="true"></i>Mgr Decline</span>
+                                                    </td>
+                                                }
+                                                else if (TimeEvApprovals.Any(a => a.Hash == ev.Hash && a.ReleaseStatus.Equals(3)))
+                                                {
+                                                    <td colspan="3" align="center">
+                                                        <span class="ApprovalMark Info"><i class="bi bi-telephone-forward-fill" aria-hidden="true"></i>Call Mgr</span>
+                                                    </td>
+                                                }
+                                                else if (TimeEvApprovals.Any(a => a.Hash == ev.Hash && a.ApprovalStatus.Equals(1)))
+                                                {
+                                                    <td align="center" width="40%">
+                                                        <button type="button" class="ThumbBtn Down" aria-label="Decline this day's time" @onclick="()=> Thumbs(2,ev.Hash, ev,null)"><i class="bi bi-hand-thumbs-down" aria-hidden="true"></i></button>
+                                                    </td>
+                                                    <td align="center" width="20%">&nbsp;</td>
+                                                    <td align="center" width="40%">
+                                                        <span class="ApprovalMark Success" role="img" aria-label="You approved this day"><i class="bi bi-hand-thumbs-up-fill" aria-hidden="true"></i></span>
+                                                    </td>
+                                                }
+                                                else if (TimeEvApprovals.Any(a => a.Hash == ev.Hash && a.ApprovalStatus.Equals(2)))
+                                                {
+                                                    <td align="center" width="40%">
+                                                        <span class="ApprovalMark Danger" role="img" aria-label="You declined this day"><i class="bi bi-hand-thumbs-down-fill" aria-hidden="true"></i></span>
+                                                    </td>
+                                                    <td align="center" width="20%">&nbsp;</td>
+                                                    <td align="center" width="40%">
+                                                        <button type="button" class="ThumbBtn Up" aria-label="Approve this day's time" @onclick="() => Thumbs(1,ev.Hash, ev, null)"><i class="bi bi-hand-thumbs-up" aria-hidden="true"></i></button>
+                                                    </td>
+                                                }
+                                                else if (TimeEvApprovals.Any(a => a.Hash == ev.Hash && a.LockStatus.Equals(0) && a.ReleaseStatus.Equals(1)))
+                                                {
+                                                    <td align="center" width="40%">
+                                                        <button type="button" class="ThumbBtn Down" aria-label="Decline this day's time" @onclick="()=> Thumbs(2,ev.Hash, ev,null)"><i class="bi bi-hand-thumbs-down" aria-hidden="true"></i></button>
+                                                    </td>
+                                                    <td align="center" width="20%">&nbsp;</td>
+                                                    <td align="center" width="40%">
+                                                        <button type="button" class="ThumbBtn Up" aria-label="Approve this day's time" @onclick="() => Thumbs(1,ev.Hash, ev, null)"><i class="bi bi-hand-thumbs-up" aria-hidden="true"></i></button>
+                                                    </td>
+                                                }
+                                            }
+                                        }
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="details">
+                                <div class="time">
+                                    <div class="time-in-out">
+                                        @if (ev.StartOfDay is not null)
+                                        {
+                                            <div><span class="label">Start</span><br><span @onclick="() => ShowDayDetails(ev)" class="dateOn">@GetDueTime(ev.StartOfDay)</span></div>
+                                        }
+                                        else
+                                        {
+                                            <div>
+                                                <span class="label">Start</span><br />
+                                            </div>
+                                        }
+                                        @if (ev.AzugaFirst is not null)
+                                        {
+                                            <div><span class="label">Roll</span><br><span @onclick="() => ShowDayDetails(ev)" class="dateOn">@GetDueTime(ev.AzugaFirst)</span></div>
+                                        }
+                                        else
+                                        {
+                                            <div>
+                                                <span class="label">Roll</span><br />
+                                            </div>
+                                        }
+                                        @if (ev.AzugaLast is not null)
+                                        {
+                                            <div><span class="label">Rest</span><br><span @onclick="() => ShowDayDetails(ev)" class="dateOff">@GetDueTime(ev.AzugaLast)</span></div>
+                                        }
+                                        else
+                                        {
+                                            <div>
+                                                <span class="label">Rest</span><br />
+                                            </div>
+                                        }
+
+
+                                        @if (ev.EndOfDay is not null)
+                                        {
+                                            <div><span class="label">EndDay</span><br><span @onclick="() => ShowDayDetails(ev)" class="dateOff">@GetDueTime(ev.EndOfDay)</span></div>
+                                        }
+                                        else
+                                        {
+                                            <div>
+                                                <span class="label">EndDay</span><br />
+                                            </div>
+
+                                        }
+                                    </div>
+                                    @if (ev.ESCTotalMins is not null && ev.ESCTotalMins > 0)
+                                    {
+                                        <div class="breakgap" />
+                                        <div class="hours-summary">
+                                            <div><span class="label">Travel</span><br><span @onclick="() => ShowDispatchDetails(ev)" class="hours">@TimeFromDecimal(ev.ESCTravelMins)</span></div>
+                                            <div><span class="label">Working</span><br><span @onclick="() => ShowDispatchDetails(ev)" class="hours">@TimeFromDecimal(ev.ESCWorkMins)</span></div>
+                                            <div><span class="label">Total</span><br><span @onclick="() => ShowDispatchDetails(ev)" class="hours">@TimeFromDecimal(ev.ESCTotalMins)</span></div>
+                                        </div>
+                                    }
+
+
+                                    @if (TimeEvApprovals is not null && TimeEvApprovals.Any(a => a.Hash == ev.Hash && (!string.IsNullOrEmpty(a.ReleaseNotes) || !string.IsNullOrEmpty(a.ApprovalNotes) || !string.IsNullOrEmpty(a.LockNotes))))
+                                    {
+                                        <div class="breakgap" />
+                                        <div style="background-color: var(--ThemeColor); background: radial-gradient(circle at left, rgba(120, 120, 120, 0.13), transparent 90%); color: darkslateblue;">
+
+                                            @if (TimeEvApprovals.Any(a => a.Hash == ev.Hash && !string.IsNullOrEmpty(a.ReleaseNotes)))
+                                            {
+                                                <div class="feedback">
+                                                    <span class="mgrnotelabel" style="@GetColorFromStatus(TimeEvApprovals.Find(a => a.Hash == ev.Hash)?.ReleaseStatus ?? 0)">Mgr:</span>
+                                                    <span class="mgrnotes">@TimeEvApprovals.Find(a => a.Hash == ev.Hash)?.ReleaseNotes</span>
+                                                </div>
+                                            }
+                                            @if (TimeEvApprovals.Any(a => a.Hash == ev.Hash && !string.IsNullOrEmpty(a.ApprovalNotes)))
+                                            {
+                                                <div class="feedback">
+                                                    <span class="mgrnotelabel" style="@GetColorFromStatus(TimeEvApprovals.Find(a => a.Hash == ev.Hash)?.ApprovalStatus ?? 0)">YOU:</span>
+                                                    <span class="mgrnotes">@TimeEvApprovals.Find(a => a.Hash == ev.Hash)?.ApprovalNotes</span>
+                                                </div>
+                                            }
+                                            @if (TimeEvApprovals.Any(a => a.Hash == ev.Hash && !string.IsNullOrEmpty(a.LockNotes)))
+                                            {
+                                                <div class="feedback">
+                                                    <span class="mgrnotelabel" style="@GetColorFromStatus(TimeEvApprovals.Find(a => a.Hash == ev.Hash)?.LockStatus?? 0)"> HR:</span>
+                                                    <span class="mgrnotes">@TimeEvApprovals.Find(a => a.Hash == ev.Hash)?.LockNotes</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="timecard">
+                    @if (TimeEvList is not null && TimeEvList.Count > 1)
+                    {
+                        <div class="day-row">
+                            <div class="date" style="background-color: var(--ThemeColor);">
+
+                                <span style="font-size: larger; color: aliceblue;">@DateFormatAs(TimeEvList.FirstOrDefault().EventDate, "MMM")</span>
+                                <br>
+                                <small style="color: aliceblue;">@DateFormatAs(TimeEvList.FirstOrDefault().EventDate, " d")-@DateFormatAs(TimeEvList.LastOrDefault().EventDate, " d").Trim()</small>
+
+                            </div>
+                            <div class="details">
+                                <div class="time">
+                                    @* <div class="time-in-out"><span class="bonus">Bonus!  $100 for you</span></div> *@
+                                    <div class="hours-summary">
+                                        <div><span class="label">Travel</span> <br><span class="hours" style="cursor: auto;">@TimeFromDecimal(ttm)</span></div>
+                                        <div><span class="label">Working</span><br><span class="hours" style="cursor: auto;">@TimeFromDecimal(twm)</span></div>
+                                        @if (TimeEvList.Count < 8 && CalcOT(1, tm) > 0)
+                                        {
+                                            <div><span class="label">Reg Hrs</span><br><span class="hours" style="color: black; cursor: auto;">@TimeFromDecimal(CalcOT(0, tm))</span></div>
+                                            <div><span class="label">Overtime</span><br><span class="hours" style="color: black; cursor: auto;">@TimeFromDecimal(CalcOT(1, tm))</span></div>
+                                        }
+                                        else
+                                        {
+                                            <div><span class="label">Total</span><br><span class="hours">@TimeFromDecimal(tm)</span></div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+
+        @if (!showGeoSummary && (showDispatchDetail || DisplayMode == DisplayModes.Today) && TimeEvDispatches is not null)  // Dispatch Details View (dialog & main area)
+        {
+
+            @if (DisplayMode != DisplayModes.Today)
+            {
+                <div>
+                    <br />
+                    <center>
+                        <button type="button" class="MoreDataButton" style="color: white;" @onclick="CloseDispatchDetails"> - CLOSE DISPATCHES - </button>
+                        <span>
+                            &nbsp; &nbsp;
+                        </span>
+                        @if (!seeAllIsPushed)
+                        {
+                            <button type="button" class="MoreDataButton" style="color: white; font-weight: 200;" @onclick="SeeAllDispatchesForWeek">&nbsp;week view</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="MoreDataButton" style="color: white; background-color: var(--ThemeColor);" @onclick="SeeAllDispatchesForWeek">week view</button>
+                        }
+                    </center>
+                </div>
+            }
+            <div>
+                @if (TimeEvDispatches is not null && TimeEvDispatches.Count > 0)
+                {
+                    @foreach (var d in TimeEvDispatches)
+                    {
+                        @if (seeAllIsPushed || (TimeEvItem?.EventDate is not null && d.DispatchDate.Equals(TimeEvItem.EventDate)))
+                        {
+                            <div class="timecard">
+                                <div class="day-row">
+                                    <div class="date">
+                                        <span style="font-size: larger; color: aliceblue;">@DateFormatAs(d.DispatchDate, "ddd")</span>
+                                        <br>
+                                        <small>@DateFormatAs(d.DispatchDate, "MMM d")</small>
+                                        <br />
+                                        <div class="dispatchnum">@d.Dispatch</div>
+                                        <br />
+                                        <table width="100%" align="center" border="0">
+                                            <tr>
+                                                @if (TimeEvApprovals is not null && TimeEvApprovals.Any(a => a.Hash == d.Hash && a.LockStatus > 0))
+                                                {
+
+                                                    @if (TimeEvApprovals.Any(a => a.Hash == d.Hash && a.LockStatus == 2))
+                                                    {
+                                                        <td align="center" width="100%">
+                                                            <span class="bi bi-shield-shaded" style="color: #fc0303;"></span>
+                                                            <br />
+                                                            <span><small><i style="color: #fc0303;">PR Decline</i></small></span>
+                                                        </td>
+                                                    }
+                                                    @if (TimeEvApprovals.Any(a => a.Hash == d.Hash && a.LockStatus == 3))
+                                                    {
+                                                        <td align="center" width="100%">
+                                                            <span class="bi bi-shield-shaded" style="color: deepskyblue;"></span>
+                                                            <br />
+                                                            <span style="color: deepskyblue;"><small><i>PR Review</i></small></span>
+                                                        </td>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    @if (TimeEvApprovals is not null && TimeEvApprovals.Any(a => a.Hash == d.Hash))
+                                                    {
+                                                        if (TimeEvApprovals.Any(a => a.Hash == d.Hash && a.LockStatus == 1))
+                                                        {
+                                                            <td align="center" width="100%">
+                                                                <span class="bi bi-shield-shaded" style="color: #4dff54;"></span>
+                                                            </td>
+                                                        }
+                                                        else if (TimeEvApprovals.Any(a => a.Hash == d.Hash && a.ReleaseStatus.Equals(2)))
+                                                        {
+                                                            <td align="center" width="100%">
+                                                                <span class="bi bi-hand-thumbs-down-fill" style="color: #fc0303;"></span>
+                                                                <br />
+                                                                <span><small><i style="color: #fc0303;">Mgr Decline</i></small></span>
+                                                            </td>
+                                                        }
+                                                        else if (TimeEvApprovals.Any(a => a.Hash == d.Hash && a.ReleaseStatus.Equals(3)))
+                                                        {
+                                                            <td align="center" width="100%">
+                                                                <span class="bi bi-telephone-forward-fill" style="color: deepskyblue;"></span>
+                                                                <br />
+                                                                <span><small><i style="color: deepskyblue;">Call Mgr</i></small></span>
+                                                            </td>
+                                                        }
+                                                        else if (TimeEvApprovals.Any(a => a.Hash == d.Hash && a.ApprovalStatus.Equals(1)))
+                                                        {
+                                                            <td align="center" width="40%">
+                                                                <button class="bi bi-hand-thumbs-down" style="color: #a75247b8; background-color:transparent; border: none;" @onclick="()=> Thumbs(2,d.Hash.GetValueOrDefault(0),null,d)"></button>
+                                                            </td>
+                                                            <td align="center" width="20%">&nbsp;</td>
+                                                            <td align="center" width="40%">
+                                                                <span class="bi bi-hand-thumbs-up-fill" style="color: #4dff54;"></span>
+                                                            </td>
+                                                        }
+                                                        else if (TimeEvApprovals.Any(a => a.Hash == d.Hash && a.ApprovalStatus.Equals(2)))
+                                                        {
+                                                            <td align="center" width="40%">
+                                                                <span class="bi bi-hand-thumbs-down-fill" style="color: #fc0303;"></span>
+                                                            </td>
+                                                            <td align="center" width="20%">&nbsp;</td>
+                                                            <td align="center" width="40%">
+                                                                <button class="bi bi-hand-thumbs-up" style="color: #329034; background-color:transparent; border: none;" @onclick="() => Thumbs(1,d.Hash.GetValueOrDefault(0),null,d)"></button>
+                                                            </td>
+                                                        }
+                                                        else if (TimeEvApprovals.Any(a => a.Hash == d.Hash && a.LockStatus.Equals(0) && !a.ReleaseStatus.Equals(2) && !a.ReleaseStatus.Equals(3)))
+                                                        {
+                                                            <td align="center" width="40%">
+                                                                <button class="bi bi-hand-thumbs-down" style="color: #a75247b8; background-color:transparent; border: none;" @onclick="()=> Thumbs(2,d.Hash.GetValueOrDefault(0),null,d)"></button>
+                                                            </td>
+                                                            <td align="center" width="20%">&nbsp;</td>
+                                                            <td align="center" width="40%">
+                                                                <button class="bi bi-hand-thumbs-up" style="color: #329034; background-color:transparent; border: none;" @onclick="() => Thumbs(1,d.Hash.GetValueOrDefault(0),null,d)"></button>
+                                                            </td>
+                                                        }
+
+
+                                                    }
+                                                    else
+                                                    {
+                                                        <td align="center" width="40%">
+                                                            <button class="bi bi-hand-thumbs-down" style="color: #a75247b8; background-color:transparent; border: none;" @onclick="()=> Thumbs(2,d.Hash.GetValueOrDefault(0),null,d)"></button>
+                                                        </td>
+                                                        <td align="center" width="20%">&nbsp;</td>
+                                                        <td align="center" width="40%">
+                                                            <button class="bi bi-hand-thumbs-up" style="color: #329034; background-color:transparent; border: none;" @onclick="() => Thumbs(1,d.Hash.GetValueOrDefault(0),null,d)"></button>
+                                                        </td>
+                                                    }
+                                                }
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div class="details">
+                                        <div class="detailsheader">
+                                            <div class="LocName">@d.LocName</div>
+                                            <div class="Other">@d.PONum</div>
+                                        </div>
+                                        <div class="time">
+                                            <div class="time-in-out">
+                                                <div><span class="label">Prom</span><br><span class="dateOn">@GetDueTime(d.PromiseDate)</span></div>
+                                                <div><span class="label">Travel</span><br><span class="dateOn">@GetDueTime(d.DispatchedDate)</span></div>
+                                                <div><span class="label">Work</span><br><span class="dateOn">@GetDueTime(d.TimeOn)</span></div>
+                                                <div><span class="label">Done</span><br><span class="dateOn">@GetDueTime(d.TimeOff)</span></div>
+                                            </div>
+                                            <div class="breakgap" />
+                                            <div class="hours-summary">
+                                                <div><span class="label">Travel</span><br><span class="hours">@TimeNice(d.TravelHrs)</span></div>
+                                                <div><span class="label">Working</span><br><span class="hours">@TimeNice(d.WorkHrs)</span></div>
+                                                <div><span class="label">Total</span><br><span class="hours">@TimeNice(d.TotalHrs)</span></div>
+                                            </div>
+                                        </div>
+                                        <div class="notesarea">
+                                            @if (TimeEvApprovals is not null && TimeEvApprovals.Any(a => a.Hash == d.Hash))
+                                            {
+                                                @if (TimeEvApprovals.Any(a => a.Hash == d.Hash && !string.IsNullOrEmpty(a.ReleaseNotes)))
+                                                {
+                                                    <div>
+                                                        <span class="mgrnotelabel" style="@GetColorFromStatus(TimeEvApprovals.Find(a => a.Hash == d.Hash)?.ReleaseStatus ?? 0)">Mgr: </span>
+                                                        <span class="mgrnotes">@TimeEvApprovals.Find(a => a.Hash == d.Hash)?.ReleaseNotes</span>
+                                                    </div>
+                                                }
+
+                                                @if (TimeEvApprovals.Any(a => a.Hash == d.Hash && !string.IsNullOrEmpty(a.ApprovalNotes)))
+                                                {
+                                                    <div>
+                                                        <span class="mgrnotelabel" style="@GetColorFromStatus(TimeEvApprovals.Find(a => a.Hash == d.Hash)?.ApprovalStatus ?? 0)">You: </span>
+                                                        <span class="mgrnotes">@TimeEvApprovals.Find(a => a.Hash == d.Hash)?.ApprovalNotes</span>
+                                                    </div>
+                                                }
+
+                                                @if (TimeEvApprovals.Any(a => a.Hash == d.Hash && !string.IsNullOrEmpty(a.LockNotes)))
+                                                {
+                                                    <div>
+                                                        <span class="mgrnotelabel" style="@GetColorFromStatus(TimeEvApprovals.Find(a => a.Hash == d.Hash)?.LockStatus ?? 0)">HR: </span>
+                                                        <span class="mgrnotes">@TimeEvApprovals.Find(a => a.Hash == d.Hash)?.LockNotes</span>
+                                                    </div>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span> &nbsp; </span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                }
+            </div>
+            @if (DisplayMode != DisplayModes.Today)
+            {
+                <br />
+                <center>
+                    <button type="button" class="MoreDataButton" @onclick="CloseDispatchDetails"> - CLOSE DISPATCHES - </button>
+                </center>
+            }
+
+        }
+
+    }
+
+}
+else
+{
+    <ICS.Mobile.Components.ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICS.Mobile.Components.ICSLoadingSpinner>
+}

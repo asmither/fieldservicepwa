@@ -1,0 +1,95 @@
+/* Calculator pages load Bootstrap via a page-level <link>, whose white body
+   background clobbers the app chrome. This sheet loads after Bootstrap on
+   those pages and restores the app surface + text tokens, so the calculators
+   sit on the same brand background as the rest of the app (both themes). */
+
+body {
+    background: var(--PrimaryBackground);
+    background-size: 100%;
+    color: var(--PrimaryColor);
+    font-family: var(--PrimaryFonts);
+    /* Bootstrap's .text-dark resolves through this variable; on our dark
+       surfaces "dark emphasis text" must render as light text (both themes). */
+    --bs-dark-rgb: 236, 236, 236;
+}
+
+/* Bootstrap type utilities that assume a light body. Values chosen to hold
+   >= 4.5:1 on the dark card surfaces in both themes. */
+.text-muted, .text-body-secondary {
+    color: var(--text-muted) !important;
+}
+
+.text-secondary {
+    color: var(--text-secondary) !important;
+}
+
+.text-success {
+    color: var(--green-300) !important;
+}
+
+.text-danger {
+    color: var(--status-danger-text) !important;
+}
+
+.text-primary {
+    color: var(--accent-soft) !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+}
+
+/* Inactive nav pills disappear on dark backgrounds without this */
+.nav-pills .nav-link {
+    color: var(--text-secondary);
+}
+
+.nav-pills {
+    /* brand-700: dark enough for 4.5:1 with white label at small sizes */
+    --bs-nav-pills-link-active-bg: var(--brand-700);
+}
+
+/* Standardize hand-authored contextual cards: Bootstrap's saturated
+   bg-info/bg-success/bg-warning/bg-secondary headers become soft tints on
+   the shared dark card surface, so category hue survives but everything
+   reads as one design language. Badges keep full saturation (status chips). */
+.card-header[class*="bg-"],
+.card[class*="bg-"] {
+    --bs-bg-opacity: 0.22;
+    color: var(--text-primary) !important; /* beats .text-white/.text-dark utilities */
+}
+
+    .card-header[class*="bg-"] i,
+    .card[class*="bg-"] i {
+        color: inherit;
+    }
+
+.card {
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    overflow: hidden;
+}
+
+/* Bootstrap contextual alerts → the app's standard left-accent alert card. */
+.alert {
+    background: var(--surface-card);
+    border: var(--border-hairline);
+    border-left: 4px solid var(--accent);
+    color: var(--text-primary);
+    border-radius: var(--radius-md);
+}
+
+.alert-info {
+    border-left-color: var(--status-info);
+}
+
+.alert-success {
+    border-left-color: var(--status-success);
+}
+
+.alert-warning {
+    border-left-color: var(--status-warning);
+}
+
+.alert-danger {
+    border-left-color: var(--status-danger);
+}

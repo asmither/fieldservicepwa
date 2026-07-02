@@ -1,0 +1,580 @@
+@page "/subcool"
+@inherits SubCoolCalcPage
+@using ICS.Mobile.Components
+@using ICS.Mobile.Pages.Subcool
+@using ICS.Mobile.DataModels.Custom;
+@using static ICS.Mobile.DataModels.Custom.HVACCalculations;
+
+
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/calc-theme.css" rel="stylesheet">
+
+<style>
+    body {
+        padding: env(safe-area-inset-top) 1rem 0.6rem 0.6rem;
+        margin: 0;
+        margin-top: 1rem;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    /* Mobile-First CSS */
+    .bodystyle {
+        font-size: var(--text-sm);
+    }
+
+    /* Token bridge — map Bootstrap onto the ICS design tokens (guide rule 7). */
+    .container-fluid {
+        color: var(--text-primary);
+        --bs-body-color: var(--text-primary);
+        --bs-body-color-rgb: 255, 255, 255;
+        --bs-body-bg: var(--surface-input);
+        --bs-emphasis-color: var(--text-primary);
+        --bs-heading-color: var(--text-primary);
+        --bs-secondary-color: var(--text-muted);
+        --bs-secondary-bg: var(--surface-raised-subtle);
+        --bs-tertiary-color: var(--text-muted);
+        --bs-tertiary-bg: var(--surface-raised-subtle);
+        --bs-border-color: rgba(255, 255, 255, 0.15);
+        --bs-border-color-translucent: rgba(255, 255, 255, 0.09);
+        --bs-link-color: var(--accent-soft);
+        --bs-link-hover-color: var(--accent);
+        --bs-primary-rgb: 41, 148, 208; /* --brand-500 */
+        --bs-box-shadow-sm: var(--elevation-1);
+    }
+
+        .container-fluid .card {
+            --bs-card-bg: var(--surface-card);
+            --bs-card-border-color: rgba(255, 255, 255, 0.09);
+            --bs-card-cap-bg: rgba(255, 255, 255, 0.04);
+            --bs-card-border-radius: var(--radius-md);
+        }
+
+        .container-fluid .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--text-primary);
+            --bs-table-border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .container-fluid .bg-light {
+            --bs-bg-opacity: 0.08;
+        }
+
+
+        .container-fluid .form-select {
+            --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgba(255,255,255,0.75)' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        }
+</style>
+
+<PageHeaderBasic Title="SubCool Calcs" Icon="bi-snow">
+    <RoundButtonGreen Icon="bi-arrow-left" OnClick="HomePageClick" />
+</PageHeaderBasic>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            
+            <!-- Header -->
+            <div class="text-center mb-4">
+     @*            <p class="text-muted">
+                    Professional subcooling analysis for commercial refrigeration systems (2-115+ tons)
+                </p> *@
+                <div class="alert alert-info border-start border-4 border-info">
+                    <small>
+                        <strong>Commercial Refrigerant Analysis:</strong> Calculate subcooling values for commercial systems using
+                        pressure/temperature relationships. Includes charge level assessment and system performance impact analysis.
+                    </small>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Input Section -->
+                <div class="col-md-6">
+                    
+                    <!-- System Information -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <h5 class="card-title mb-0 text-info">Commercial System Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">System Capacity (BTU/hr)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.SystemCapacity" @bind:after="OnInputChanged" 
+                                           min="24000" max="1500000" step="6000" />
+                                    <div class="form-text">Range: 24,000 - 1,500,000+ BTU/hr</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">System Age (Years)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.SystemAge" @bind:after="OnInputChanged" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">System Type</label>
+                                    <select class="form-select" @bind="Inputs.SystemType" @bind:after="OnInputChanged">
+                                        <option value="Packaged Rooftop Unit">Packaged Rooftop Unit</option>
+                                        <option value="Air Cooled Chiller">Air Cooled Chiller</option>
+                                        <option value="Water Cooled Chiller">Water Cooled Chiller</option>
+                                        <option value="Heat Pump">Heat Pump</option>
+                                        <option value="Process Cooling">Process Cooling</option>
+                                        <option value="Data Center Cooling">Data Center Cooling</option>
+                                        <option value="Supermarket Refrigeration">Supermarket Refrigeration</option>
+                                        <option value="Industrial Refrigeration">Industrial Refrigeration</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Application</label>
+                                    <select class="form-select" @bind="Inputs.ApplicationType" @bind:after="OnInputChanged">
+                                        <option value="Office Building">Office Building</option>
+                                        <option value="Retail">Retail</option>
+                                        <option value="Healthcare">Healthcare</option>
+                                        <option value="Manufacturing">Manufacturing</option>
+                                        <option value="Data Center">Data Center</option>
+                                        <option value="Food Service">Food Service</option>
+                                        <option value="Warehouse">Warehouse</option>
+                                        <option value="Industrial">Industrial</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Refrigerant Selection -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary bg-opacity-10">
+                            <h5 class="card-title mb-0 text-primary">Commercial Refrigerant Type</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Refrigerant Type</label>
+                                    <select class="form-select" @bind="Inputs.RefrigerantType" @bind:after="OnInputChanged">
+                                        <option value="R-410A">R-410A (Standard Commercial)</option>
+                                        <option value="R-22">R-22 (Legacy Systems)</option>
+                                        <option value="R-134a">R-134a (Chiller Applications)</option>
+                                        <option value="R-407C">R-407C (R-22 Replacement)</option>
+                                        <option value="R-32">R-32 (High Efficiency)</option>
+                                        <option value="R-454B">R-454B (Low GWP R-410A Replacement)</option>
+                                        <option value="R-513A">R-513A (Low GWP R-134a Replacement)</option>
+                                    </select>
+                                    <div class="form-text">@GetRefrigerantDescription()</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Measurement Method -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success bg-opacity-10">
+                            <h5 class="card-title mb-0 text-success">Measurement Method</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="measurementMethod" value="Pressure and Temperature" 
+                                           checked="@(Inputs.MeasurementMethod == "Pressure and Temperature")" 
+                                           @onchange="@(() => { Inputs.MeasurementMethod = "Pressure and Temperature"; OnInputChanged(); })" 
+                                           id="pressureTemp">
+                                    <label class="form-check-label" for="pressureTemp">
+                                        <strong>Pressure and Temperature</strong> (Recommended for accuracy)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="measurementMethod" value="Temperature Only" 
+                                           checked="@(Inputs.MeasurementMethod == "Temperature Only")" 
+                                           @onchange="@(() => { Inputs.MeasurementMethod = "Temperature Only"; OnInputChanged(); })" 
+                                           id="tempOnly">
+                                    <label class="form-check-label" for="tempOnly">
+                                        <strong>Temperature Only</strong> (When pressure gauge unavailable)
+                                    </label>
+                                </div>
+                            </div>
+
+                            @if (Inputs.MeasurementMethod == "Pressure and Temperature")
+                            {
+                                <div class="row g-3">
+                                    <div class="col-md-8">
+                                        <label class="form-label">Condensing Pressure</label>
+                                        <input type="number" step="0.1" class="form-control" @bind="Inputs.CondensingPressure" @bind:after="OnInputChanged" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Unit</label>
+                                        <select class="form-select" @bind="Inputs.PressureUnit" @bind:after="OnInputChanged">
+                                            <option value="PSIG">PSIG</option>
+                                            <option value="PSIA">PSIA</option>
+                                            <option value="kPa">kPa</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Liquid Line Temperature (°F)</label>
+                                        <input type="number" step="0.1" class="form-control" @bind="Inputs.LiquidLineTemp" @bind:after="OnInputChanged" />
+                                        <div class="form-text">Measured at liquid line leaving condenser</div>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Condensing Temperature (°F)</label>
+                                        <input type="number" step="0.1" class="form-control" @bind="Inputs.CondensingTemp" @bind:after="OnInputChanged" />
+                                        <div class="form-text">Saturated condensing temperature</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Liquid Line Temperature (°F)</label>
+                                        <input type="number" step="0.1" class="form-control" @bind="Inputs.LiquidLineTemp" @bind:after="OnInputChanged" />
+                                        <div class="form-text">Actual liquid temperature</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Environmental Conditions -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-warning bg-opacity-10">
+                            <h5 class="card-title mb-0 text-warning">Operating Conditions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Ambient Temperature (°F)</label>
+                                    <input type="number" step="0.1" class="form-control" @bind="Inputs.AmbientTemp" @bind:after="OnInputChanged" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Indoor Temperature (°F)</label>
+                                    <input type="number" step="0.1" class="form-control" @bind="Inputs.IndoorTemp" @bind:after="OnInputChanged" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Supply Air Temp (°F)</label>
+                                    <input type="number" step="0.1" class="form-control" @bind="Inputs.SupplyAirTemp" @bind:after="OnInputChanged" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Return Air Temp (°F)</label>
+                                    <input type="number" step="0.1" class="form-control" @bind="Inputs.ReturnAirTemp" @bind:after="OnInputChanged" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Characteristics -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-secondary bg-opacity-10">
+                            <h5 class="card-title mb-0 text-secondary">System Characteristics</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Condenser Type</label>
+                                    <select class="form-select" @bind="Inputs.CondenserType" @bind:after="OnInputChanged">
+                                        <option value="Air Cooled">Air Cooled</option>
+                                        <option value="Water Cooled">Water Cooled</option>
+                                        <option value="Evaporative">Evaporative Cooled</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Condenser Approach (°F)</label>
+                                    <input type="number" step="0.1" class="form-control" @bind="Inputs.CondenserApproach" @bind:after="OnInputChanged" />
+                                    <div class="form-text">Temperature difference</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="Inputs.HasReceiver" @bind:after="OnInputChanged" id="hasReceiver">
+                                        <label class="form-check-label" for="hasReceiver">Has Receiver</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="Inputs.IsChillerSystem" @bind:after="OnInputChanged" id="isChiller">
+                                        <label class="form-check-label" for="isChiller">Chiller System</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" @bind="Inputs.IsHeatPumpMode" @bind:after="OnInputChanged" id="heatPump">
+                                        <label class="form-check-label" for="heatPump">Heat Pump Mode</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-info btn-lg w-100 mb-4" @onclick="CalculateSubcool">
+                        <svg class="me-2" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Calculate Commercial Subcooling
+                    </button>
+                </div>
+
+                <!-- Results Section -->
+                <div class="col-md-6">
+                    <div class="position-sticky" style="top: 1rem;">
+                        
+                        @if (Results != null)
+                        {
+                            <!-- Subcool Results Overview -->
+                            <div class="card mb-4">
+                                <div class="card-header @GetSubcoolHeaderClass()">
+                                    <h5 class="card-title mb-0 text-white">
+                                        @GetSubcoolIcon()
+                                        Subcooling: @Results.CalculatedSubcooling.ToString("F1")°F
+                                    </h5>
+                                    <small class="text-white-50">@Results.SystemSizeCategory | @Results.ChargeStatus</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <div class="progress mb-2">
+                                            <div class="progress-bar @GetSubcoolProgressClass()" role="progressbar" 
+                                                 style="width: @Results.SubcoolingEfficiency%"></div>
+                                        </div>
+                                        <small class="text-muted">Subcooling Efficiency: @Results.SubcoolingEfficiency.ToString("F0")%</small>
+                                    </div>
+                                    <div class="row g-2 small">
+                                        <div class="col-7"><strong>System Size:</strong></div>
+                                        <div class="col-5">@Results.SystemTons.ToString("F1") tons</div>
+                                        
+                                        <div class="col-7"><strong>Bubble Point:</strong></div>
+                                        <div class="col-5">@Results.BubblePointTemperature.ToString("F1")°F</div>
+                                        
+                                        <div class="col-7"><strong>Liquid Temp:</strong></div>
+                                        <div class="col-5">@Results.ActualLiquidTemp.ToString("F1")°F</div>
+                                        
+                                        <div class="col-7"><strong>Optimal Range:</strong></div>
+                                        <div class="col-5">@Results.OptimalSubcoolingLow.ToString("F0")-@Results.OptimalSubcoolingHigh.ToString("F0")°F</div>
+                                        
+                                        <div class="col-7"><strong>Charge Level:</strong></div>
+                                        <div class="col-5">@Results.EstimatedChargeLevel.ToString("F0")%</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Primary Diagnostic -->
+                            <div class="card mb-4">
+                                <div class="card-header @GetDiagnosticHeaderClass(Results.PrimaryDiagnostic.Status)">
+                                    <h5 class="card-title mb-0 text-white">
+                                        @GetDiagnosticIcon(Results.PrimaryDiagnostic.Status)
+                                        @Results.PrimaryDiagnostic.Title
+                                    </h5>
+                                    <small class="text-white-50">
+                                        Confidence: @Results.PrimaryDiagnostic.ConfidenceLevel.ToString("F0")% | 
+                                        Severity: @Results.PrimaryDiagnostic.Severity.ToString("F0")/10
+                                    </small>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-3">@Results.PrimaryDiagnostic.Description</p>
+                                    
+                                    @if (!string.IsNullOrEmpty(Results.PrimaryDiagnostic.BusinessImpact))
+                                    {
+                                        <div class="alert alert-warning alert-sm mb-3">
+                                            <strong>Business Impact:</strong> @Results.PrimaryDiagnostic.BusinessImpact
+                                        </div>
+                                    }
+                                    
+                                    @if (Results.PrimaryDiagnostic.Symptoms.Any())
+                                    {
+                                        <div class="mb-3">
+                                            <h6 class="text-muted">Symptoms:</h6>
+                                            <ul class="list-unstyled small">
+                                                @foreach (var symptom in Results.PrimaryDiagnostic.Symptoms)
+                                                {
+                                                    <li>• @symptom</li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Performance Impact -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-warning">
+                                    <h6 class="card-title mb-0 text-dark">Commercial Performance Impact</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-2 small">
+                                        @if (Results.CapacityImpact != 0)
+                                        {
+                                            <div class="col-7"><strong>Capacity Impact:</strong></div>
+                                            <div class="col-5 @(Results.CapacityImpact < 0 ? "text-danger" : "text-success")">
+                                                @Results.CapacityImpact.ToString("+0.0;-0.0")%
+                                            </div>
+                                        }
+                                        
+                                        @if (Results.EfficiencyImpact != 0)
+                                        {
+                                            <div class="col-7"><strong>Efficiency Impact:</strong></div>
+                                            <div class="col-5 @(Results.EfficiencyImpact < 0 ? "text-danger" : "text-success")">
+                                                @Results.EfficiencyImpact.ToString("+0.0;-0.0")%
+                                            </div>
+                                        }
+                                        
+                                        @if (Results.CapacityLoss > 0)
+                                        {
+                                            <div class="col-7"><strong>Capacity Loss:</strong></div>
+                                            <div class="col-5 text-danger">@Results.CapacityLoss.ToString("N0") BTU/hr</div>
+                                        }
+                                        
+                                        <div class="col-7"><strong>System Health:</strong></div>
+                                        <div class="col-5 @GetHealthColorClass()">@Results.SystemHealthScore.ToString("F0")%</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cost Impact -->
+                            @if (Results.AnnualEnergyImpact > 0 || Results.RefrigerantCostImpact > 0)
+                            {
+                                <div class="card mb-4">
+                                    <div class="card-header bg-danger">
+                                        <h6 class="card-title mb-0 text-white">Commercial Cost Impact</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-2 small">
+                                            @if (Results.AnnualEnergyImpact > 0)
+                                            {
+                                                <div class="col-7"><strong>Annual Energy Cost:</strong></div>
+                                                <div class="col-5 text-danger">$@Results.AnnualEnergyImpact.ToString("N0")</div>
+                                            }
+                                            
+                                            @if (Results.RefrigerantCostImpact > 0)
+                                            {
+                                                <div class="col-7"><strong>Refrigerant Cost:</strong></div>
+                                                <div class="col-5">$@Results.RefrigerantCostImpact.ToString("N0")</div>
+                                            }
+                                        </div>
+                                        
+                                        @if (Results.RequiresImmediateAttention)
+                                        {
+                                            <div class="alert alert-danger alert-sm mt-3 mb-0">
+                                                <strong><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Immediate Attention Required</strong>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Recommended Action -->
+                            @if (!string.IsNullOrEmpty(Results.RecommendedAction))
+                            {
+                                <div class="card mb-4">
+                                    <div class="card-header bg-success">
+                                        <h6 class="card-title mb-0 text-white">Recommended Action</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="mb-0">@Results.RecommendedAction</p>
+                                        
+                                        @if (Results.PrimaryDiagnostic.RecommendedActions.Any())
+                                        {
+                                            <hr>
+                                            <h6 class="text-muted">Specific Steps:</h6>
+                                            <ul class="mb-0 small">
+                                                @foreach (var action in Results.PrimaryDiagnostic.RecommendedActions)
+                                                {
+                                                    <li>@action</li>
+                                                }
+                                            </ul>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- System Warnings -->
+                            @if (Results.SystemWarnings.Any())
+                            {
+                                <div class="card">
+                                    <div class="card-header bg-warning">
+                                        <h6 class="card-title mb-0 text-dark">System Warnings</h6>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        @foreach (var warning in Results.SystemWarnings)
+                                        {
+                                            <div class="p-2 border-bottom">
+                                                <small class="text-warning"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> @warning</small>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <!-- No Results State -->
+                            <div class="card">
+                                <div class="card-body text-center py-5">
+                                    <svg class="mb-3 opacity-50" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        <circle cx="12" cy="12" r="10" stroke-dasharray="2,2"></circle>
+                                    </svg>
+                                    <h5 class="text-muted">Subcool Calculator Ready</h5>
+                                    <p class="text-muted">Enter system information and refrigerant measurements for professional subcooling analysis</p>
+                                    <small class="text-muted">Supports all commercial refrigerants and system sizes</small>
+                                </div>
+                            </div>
+                        }
+                        
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reference Guide -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-info">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <h5 class="card-title mb-0 text-info">Commercial Subcooling Reference Guide</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-3">
+                                    <h6 class="text-info">Optimal Subcooling Ranges:</h6>
+                                    <ul class="small mb-0">
+                                        <li><strong>Rooftop Units:</strong> 8-18°F</li>
+                                        <li><strong>Air Chillers:</strong> 5-12°F</li>
+                                        <li><strong>Water Chillers:</strong> 4-10°F</li>
+                                        <li><strong>Heat Pumps:</strong> 6-16°F</li>
+                                        <li><strong>Industrial:</strong> 15-30°F</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-success">Proper Subcooling Benefits:</h6>
+                                    <ul class="small mb-0">
+                                        <li>Optimal system capacity</li>
+                                        <li>Maximum efficiency</li>
+                                        <li>Stable operation</li>
+                                        <li>Proper TXV feeding</li>
+                                        <li>Reduced service calls</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-warning">Low Subcooling Issues:</h6>
+                                    <ul class="small mb-0">
+                                        <li>Undercharged system</li>
+                                        <li>Refrigerant leaks</li>
+                                        <li>TXV hunting</li>
+                                        <li>Capacity loss</li>
+                                        <li>Efficiency reduction</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-danger">High Subcooling Issues:</h6>
+                                    <ul class="small mb-0">
+                                        <li>Overcharged system</li>
+                                        <li>Restricted metering device</li>
+                                        <li>High head pressure</li>
+                                        <li>Reduced capacity</li>
+                                        <li>Equipment damage risk</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>

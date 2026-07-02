@@ -1,0 +1,123 @@
+﻿<style>
+
+    .Switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+        .Switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+    .Slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc; /* Default background color */
+        transition: 0.4s;
+        border-radius: 34px;
+    }
+
+        .Slider.round {
+            border-radius: 34px;
+        }
+
+
+    .Switch input:checked + .Slider {
+        /* switch is in 'off' position */
+        background-color: #ccc;
+    }
+
+
+        .Switch input:checked + .Slider:before {
+            /* Switch 'on' pos */
+            transform: translateX(26px);
+            background-color: var(--CompleteColor);
+        }
+
+    .Slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: var(--WorkingColor);
+        transition: 0.4s;
+        border-radius: 50%;
+    }
+
+    .Slider.round:before {
+        transform: translateX(0); /* Move the thumb to the left when initially 'off' */
+    }
+
+</style>
+
+<div class="DispatchDetailChecklistHeader">
+    <span class="Title">@Title</span>
+    @if (ShowFilter)
+    {
+        <span class="Status">@Status</span>
+        <span class="ViewMode">
+            <label class="Switch">
+            <input type="checkbox" @bind-value="@IsActive" @bind-value:after="SliderSwitched">
+            <span class="Slider round"></span>
+        </label>
+        </span>
+    } 
+    else
+    {
+        <span class="Status"> </span>
+        <span class="ViewMode"> </span>
+    }
+</div>
+
+
+@code {
+
+    public enum ViewMode
+    {
+        Active,
+        Completed
+    }
+
+    public ViewMode CurrentView = ViewMode.Active;
+
+    private void SliderSwitched()
+    {
+        IsActive = !IsActive;
+
+        if (IsActive)
+            CurrentView = ViewMode.Active;
+        else
+            CurrentView = ViewMode.Completed;
+
+        ViewModeClick.InvokeAsync(CurrentView);
+    }
+
+
+    [Parameter]
+    [EditorRequired]
+    public EventCallback<ViewMode> ViewModeClick { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public string Title { set; get; } = "";
+
+    [Parameter]
+    public bool ShowFilter { set; get; }
+    
+    [Parameter]
+    public string Status { set; get; } = "";
+
+    
+    public bool IsActive { set; get; } = true;
+
+}

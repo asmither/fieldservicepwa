@@ -1,0 +1,26 @@
+﻿<div>
+    <center>
+        @if(string.IsNullOrEmpty(Header))
+        {
+            <h5>One moment please...</h5>
+        }
+        else
+        {
+            <h5>@Header</h5>
+        }
+        <div>&nbsp;</div>
+        <div>&nbsp;</div>
+        <br />
+        <div class="d-flex justify-content-center">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </center>
+</div>
+
+@code {
+
+    [Parameter]
+    public string? Header { set; get; }
+}

@@ -1,0 +1,104 @@
+﻿<div class="DispatchDetailChecklistHeader">
+    <span class="Title">@Title</span>
+    @if (ShowFilter)
+    {
+        @if (AddNewCount > 0)
+        {
+            <span class="AddChecklistBtnBlock">
+                <button class="AddNewCLBtn" @onclick="AddNewClick">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M11.25 12.75V18H12.75V12.75H18V11.25H12.75V6H11.25V11.25H6V12.75H11.25Z" fill="#FFFFFF" fill-opacity="0.9" />
+                        <title>Add Additional Checklist to this Job</title>
+                    </svg>
+
+                </button>
+            </span>
+        }
+    }
+    else
+    {
+        @if (AddNewCount > 0)
+        {
+            <span class="AddChecklistBtnBlock">
+                <button class="AddNewCLBtn" @onclick="AddNewCloseClick">
+                    <svg class="AddNewCLCloseAddNew" width="24" height="24" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#FFFFFF" stroke-opacity="0.9">
+                        <title>Close without adding any Checklists.</title>
+                        <line x1="16" y1="16" x2="48" y2="48" />
+                        <line x1="48" y1="16" x2="16" y2="48" />
+                        <title>Cancel/Close Add Checklist</title>
+                    </svg>
+                </button>
+            </span>
+        }
+
+    }
+</div>
+
+
+@code {
+
+    public enum ViewMode
+    {
+        Active,
+        Completed
+    }
+
+    public ViewMode CurrentView = ViewMode.Active;
+
+    private void SliderSwitched()
+    {
+        IsActive = !IsActive;
+
+        if (IsActive)
+            CurrentView = ViewMode.Active;
+        else
+            CurrentView = ViewMode.Completed;
+
+        if (ViewModeClick.HasDelegate)
+            ViewModeClick.InvokeAsync(CurrentView);
+    }
+
+    private void AddNewClick()
+    {
+        if (OnAddNewClick.HasDelegate)
+            OnAddNewClick.InvokeAsync();
+    }
+
+    private async Task AddNewCloseClick()
+    {
+        
+        
+        if (OnAddNewCloseClick.HasDelegate)
+            await OnAddNewCloseClick.InvokeAsync();
+    }
+
+
+
+
+    [Parameter]
+    public EventCallback<ViewMode> ViewModeClick { set; get; }
+
+    [Parameter]
+    public EventCallback OnAddNewClick { set; get; }
+
+    [Parameter]
+    public EventCallback OnAddNewCloseClick { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public string Title { set; get; } = "";
+
+    [Parameter]
+    public bool ShowFilter { set; get; }
+
+    [Parameter]
+    public string Status { set; get; } = "";
+
+
+    [Parameter]
+    [EditorRequired]
+    public int AddNewCount { set; get; } = 0;
+
+    public bool IsActive { set; get; } = true;
+
+}

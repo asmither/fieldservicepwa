@@ -1,0 +1,36 @@
+﻿<div class="DispatchDetailNotesAccordion">
+    <div class="Header">
+        <div class="Title" @onclick="Toggle">@Title</div>
+        <button class="Button Transparent" @onclick="Toggle">
+            <img src="/images/icon-accordian-arrow.png" />
+        </button>
+    </div>
+    @if (IsOpen)
+    {
+        <div class="Content">
+            @ChildContent
+        </div>
+    }
+
+    <hr class="Border" />
+
+</div>
+
+@code {
+
+    private void Toggle()
+    {
+        IsOpen = !IsOpen;
+    }
+
+    [Parameter]
+    public bool IsOpen { set; get; }
+
+    [Parameter]
+    public string? Title { set; get; }
+
+
+    [Parameter]
+    public RenderFragment? ChildContent { set; get; }
+
+}

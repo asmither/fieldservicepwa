@@ -1,0 +1,525 @@
+﻿@namespace ICS.Mobile.Pages.BluonBrowse.Components
+@using ICS.Portal.Data.Custom
+@using static ICS.Portal.Data.Custom.BluonModels
+
+<div class="mobile-documentation-viewer">
+    @if (ModelManuals?.Data?.Manuals != null)
+    {
+        var manuals = ModelManuals.Data.Manuals;
+        var docGroups = GetDocumentationGroups(manuals);
+
+        @if (docGroups.Any())
+        {
+            @foreach (var group in docGroups.Where(g => g.Documents.Any()))
+            {
+                <div class="doc-category">
+                    <div class="doc-category-header" @onclick="() => ToggleCategory(group.CategoryName)">
+                        <span class="category-title">
+                            <i class="bi @group.Icon"></i>
+                            @group.DisplayName
+                            <span class="doc-count">(@group.Documents.Count)</span>
+                        </span>
+                        <i class="bi @(IsCategoryExpanded(group.CategoryName) ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                    </div>
+
+                    @if (IsCategoryExpanded(group.CategoryName))
+                    {
+                        <div class="doc-list">
+                            @foreach (var doc in group.Documents)
+                            {
+                                <div class="doc-item">
+                                    <div class="doc-info">
+                                        <a href="@doc.Url" target="_blank" class="doc-link">
+                                            <i class="bi bi-file-pdf-fill"></i>
+                                            <span class="doc-title">@doc.Title</span>
+                                        </a>
+                                        @if (!string.IsNullOrEmpty(doc.Description))
+                                        {
+                                            <div class="doc-description">@doc.Description</div>
+                                        }
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm"
+                                            @onclick="() => OpenDocument(doc.Url)"
+                                            title="Open document">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="no-documentation">
+                <i class="bi bi-file-text"></i>
+                <span>No documentation available for this model.</span>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="no-documentation">
+            <i class="bi bi-file-text"></i>
+            <span>Documentation not loaded.</span>
+        </div>
+    }
+</div>
+
+<style>
+    .mobile-documentation-viewer {
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .doc-category {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+        background: white;
+    }
+
+    .doc-category-header {
+        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        color: var(--bluon-dark);
+        transition: all 0.2s ease;
+        user-select: none;
+    }
+
+        .doc-category-header:hover {
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+        }
+
+        .doc-category-header:active {
+            transform: scale(0.99);
+            background: #dee2e6;
+        }
+
+    .category-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .doc-count {
+        font-size: 0.75rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .doc-list {
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        background: #fafafa;
+    }
+
+    .doc-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid #e9ecef;
+        transition: all 0.2s ease;
+    }
+
+        .doc-item:hover {
+            border-color: var(--bluon-primary);
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+        }
+
+    .doc-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .doc-link {
+        color: var(--bluon-primary);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+
+        .doc-link:hover {
+            text-decoration: underline;
+            color: #0056b3;
+        }
+
+    .doc-title {
+        flex: 1;
+        min-width: 0;
+        word-break: break-word;
+    }
+
+    .doc-description {
+        font-size: 0.75rem;
+        color: #6c757d;
+        line-height: 1.3;
+        margin-top: 0.25rem;
+    }
+
+    .no-documentation {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 2rem;
+        color: #6c757d;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        min-width: 32px;
+        min-height: 32px;
+    }
+
+    /* Scrollbar styling */
+    .mobile-documentation-viewer::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .mobile-documentation-viewer::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    .mobile-documentation-viewer::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+
+        .mobile-documentation-viewer::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+</style>
+
+@code {
+    [Parameter] public ModelManuals.Root? ModelManuals { get; set; }
+    [Parameter] public EventCallback<string> OnDocumentOpen { get; set; }
+
+    private HashSet<string> ExpandedCategories = new HashSet<string> { "Service Facts", "Parts Manuals" };
+
+    public class DocumentationGroup
+    {
+        public string CategoryName { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public List<DocumentItem> Documents { get; set; } = new();
+    }
+
+    public class DocumentItem
+    {
+        public string Title { get; set; } = "";
+        public string Url { get; set; } = "";
+        public string? Description { get; set; }
+    }
+
+    private List<DocumentationGroup> GetDocumentationGroups(ModelManuals.ManualSets manuals)
+    {
+        var groups = new List<DocumentationGroup>();
+
+        // Service Facts
+        if (manuals.ServiceFacts?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "ServiceFacts",
+                    DisplayName = "Service Facts",
+                    Icon = "bi-gear-fill",
+                    Documents = manuals.ServiceFacts.Select(sf => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(sf.Url) ?? "Service Fact",
+                        Url = sf.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Parts Manuals
+        if (manuals.PartsManuals?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "PartsManuals",
+                    DisplayName = "Parts Manuals",
+                    Icon = "bi-wrench",
+                    Documents = manuals.PartsManuals.Select(pm => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(pm.Url) ?? "Parts Manual",
+                        Url = pm.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Wiring Diagrams
+        if (manuals.WiringDiagram?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "WiringDiagrams",
+                    DisplayName = "Wiring Diagrams",
+                    Icon = "bi-diagram-3-fill",
+                    Documents = manuals.WiringDiagram.Select(wd => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(wd.Url) ?? "Wiring Diagram",
+                        Url = wd.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // IOM (Installation/Operation/Maintenance)
+        if (manuals.Iom?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "IOM",
+                    DisplayName = "Installation/Operation Manuals",
+                    Icon = "bi-tools",
+                    Documents = manuals.Iom.Select(iom => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(iom.Url) ?? "Installation/Operation Manual",
+                        Url = iom.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Product Data
+        if (manuals.ProductData?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "ProductData",
+                    DisplayName = "Product Data",
+                    Icon = "bi-clipboard-data-fill",
+                    Documents = manuals.ProductData.Select(pd => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(pd.Url) ?? "Product Data",
+                        Url = pd.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Nomenclature
+        if (manuals.Nomenclature?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "Nomenclature",
+                    DisplayName = "Nomenclature",
+                    Icon = "bi-card-text",
+                    Documents = manuals.Nomenclature.Select(n => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(n.Url) ?? "Nomenclature",
+                        Url = n.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Product Brochures
+        if (manuals.ProductBrochures?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "ProductBrochures",
+                    DisplayName = "Product Brochures",
+                    Icon = "bi-file-text-fill",
+                    Documents = manuals.ProductBrochures.Select(pb => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(pb.Url) ?? "Product Brochure",
+                        Url = pb.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Controls Manuals
+        if (manuals.ControlsManuals?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "ControlsManuals",
+                    DisplayName = "Controls Manuals",
+                    Icon = "bi-toggles2",
+                    Documents = manuals.ControlsManuals.Select(cm => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(cm.Url) ?? "Controls Manual",
+                        Url = cm.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Schematic Drawings
+        if (manuals.SchematicDrawings?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "SchematicDrawings",
+                    DisplayName = "Schematic Drawings",
+                    Icon = "bi-diagram-2-fill",
+                    Documents = manuals.SchematicDrawings.Select(sd => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(sd.Url) ?? "Schematic Drawing",
+                        Url = sd.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Warranty
+        if (manuals.Warranty?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "Warranty",
+                    DisplayName = "Warranty Information",
+                    Icon = "bi-shield-check-fill",
+                    Documents = manuals.Warranty.Select(w => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(w.Url) ?? "Warranty Information",
+                        Url = w.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Diagnostic
+        if (manuals.Diagnostic?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "Diagnostic",
+                    DisplayName = "Diagnostic Information",
+                    Icon = "bi-search",
+                    Documents = manuals.Diagnostic.Select(d => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(d.Url) ?? "Diagnostic Info",
+                        Url = d.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // BluonGuidelines
+        if (manuals.BluonGuidelines?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "BluonGuidelines",
+                    DisplayName = "Bluon Guidelines",
+                    Icon = "bi-compass",
+                    Documents = manuals.BluonGuidelines.Select(bg => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(bg.Url) ?? "Bluon Guideline",
+                        Url = bg.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Miscellaneous
+        if (manuals.Misc?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "Miscellaneous",
+                    DisplayName = "Miscellaneous",
+                    Icon = "bi-three-dots",
+                    Documents = manuals.Misc.Select(m => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(m.Url) ?? "Document",
+                        Url = m.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        return groups.OrderBy(g => GetCategoryOrder(g.CategoryName)).ToList();
+    }
+
+    private int GetCategoryOrder(string categoryName)
+    {
+        return categoryName switch
+        {
+            "ServiceFacts" => 1,
+            "PartsManuals" => 2,
+            "IOM" => 3,
+            "ProductData" => 4,
+            "WiringDiagrams" => 5,
+            "Nomenclature" => 6,
+            "ProductBrochures" => 7,
+            "ControlsManuals" => 8,
+            "SchematicDrawings" => 9,
+            "Warranty" => 10,
+            "Diagnostic" => 11,
+            "BluonGuidelines" => 12,
+            "Miscellaneous" => 13,
+            _ => 99
+        };
+    }
+
+    private bool IsCategoryExpanded(string categoryName)
+    {
+        return ExpandedCategories.Contains(categoryName);
+    }
+
+    private void ToggleCategory(string categoryName)
+    {
+        if (ExpandedCategories.Contains(categoryName))
+            ExpandedCategories.Remove(categoryName);
+        else
+            ExpandedCategories.Add(categoryName);
+    }
+
+    private async Task OpenDocument(string url)
+    {
+        if (!string.IsNullOrEmpty(url))
+        {
+            await OnDocumentOpen.InvokeAsync(url);
+        }
+    }
+
+    private string? GetDocumentTitle(string? url)
+    {
+        if (string.IsNullOrEmpty(url)) return null;
+
+        try
+        {
+            var uri = new Uri(url);
+            var filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
+            return !string.IsNullOrEmpty(filename) ? filename : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+}

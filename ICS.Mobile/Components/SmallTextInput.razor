@@ -1,0 +1,28 @@
+﻿<input class="WorkflowInput" type="text" @bind-value="@InternalValue" @bind-value:event="oninput" placeholder="@PlaceHolder" />
+
+@code {
+    [Parameter]
+    public string? Value { set; get; }
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter]
+    public string? PlaceHolder{ set; get; }
+
+    private string? InternalValue
+    {
+        set
+        {
+            if (value != Value)
+            {
+                Value = value;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+        get
+        {
+            return Value;
+        }
+    }
+}

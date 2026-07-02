@@ -1,0 +1,65 @@
+﻿@using ICS.Mobile.DataModels.Local
+
+<div class="appBottomMenu">
+
+@* 
+    <a href="/dispatch-list" class="item @DispatchActiveCSS">
+        <div class="col">
+            <i class="icon bi bi-truck-front"></i>
+            <strong>Dispatches</strong>
+        </div>
+    </a>
+ *@
+
+    <a href="/" class="item @HomeActiveCSS">
+        <div class="col">
+            <i class="icon bi bi-house"></i>
+            <strong>Overview</strong>
+        </div>
+    </a>
+
+    <a href="/checklist" class="item @WorkflowsActiveCSS">
+        <div class="col">
+            <i class="icon bi bi-tools"></i>
+            <strong>Activities</strong>
+        </div>
+    </a>
+
+
+    @* <a href="/search" class="item @SearchActiveCSS">
+        <div class="col">
+            <i class="icon bi bi-search"></i>
+            <strong>Search</strong>
+        </div>
+    </a> *@
+
+
+    <a href="/settings" class="item @SettingsActiveCSS">
+        <div class="col">
+            <i class="icon bi bi-gear"></i>
+            <strong>Settings</strong>
+        </div>
+    </a>
+
+
+</div>
+
+@code {
+
+    [Parameter]
+    public PageMenus ActiveMenu { set; get; } = PageMenus.None;
+
+    [Inject]
+    public NavigationManager nm { set; get; } = default!;
+
+    private string HomeActiveCSS => ActiveMenu == PageMenus.Home ? "active" : string.Empty;
+    private string SettingsActiveCSS => ActiveMenu == PageMenus.Settings ? "active" : string.Empty;
+    private string DispatchActiveCSS => ActiveMenu == PageMenus.Dispatches ? "active" : string.Empty;
+    private string WorkflowsActiveCSS => ActiveMenu == PageMenus.Workflows ? "active" : string.Empty;
+    private string SearchActiveCSS => ActiveMenu == PageMenus.Search ? "active" : string.Empty;
+    
+    private void GoBack()
+    {
+        nm.NavigateTo("/");
+    }
+}

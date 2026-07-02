@@ -1,0 +1,527 @@
+@page "/wetbulbenthalpy"
+@inherits WetBulbCalcPage
+@using ICS.Mobile.Components
+@using ICS.Mobile.Pages.WetBulb
+@using ICS.Mobile.DataModels.Custom;
+@using static ICS.Mobile.DataModels.Custom.HVACCalculations;
+
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/calc-theme.css" rel="stylesheet">
+
+
+<PageHeaderBasic Title="Wet Bulb to Enthalpy" Icon="bi-droplet">
+    <RoundButtonGreen Icon="bi-arrow-left" OnClick="HomePageClick" />
+</PageHeaderBasic>
+
+<style>
+
+    body {
+        padding: env(safe-area-inset-top) 0.6rem 0.6rem 0.6rem;
+        margin: 0;
+        margin-top: 1rem;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    /* Mobile-First CSS */
+    .bodystyle {
+        font-size: var(--text-sm);
+    }
+
+    /* Token bridge — map Bootstrap onto the ICS design tokens (guide rule 7). */
+    .container-fluid {
+        color: var(--text-primary);
+        --bs-body-color: var(--text-primary);
+        --bs-body-color-rgb: 255, 255, 255;
+        --bs-body-bg: var(--surface-input);
+        --bs-emphasis-color: var(--text-primary);
+        --bs-heading-color: var(--text-primary);
+        --bs-secondary-color: var(--text-muted);
+        --bs-secondary-bg: var(--surface-raised-subtle);
+        --bs-tertiary-color: var(--text-muted);
+        --bs-tertiary-bg: var(--surface-raised-subtle);
+        --bs-border-color: rgba(255, 255, 255, 0.15);
+        --bs-border-color-translucent: rgba(255, 255, 255, 0.09);
+        --bs-link-color: var(--accent-soft);
+        --bs-link-hover-color: var(--accent);
+        --bs-primary-rgb: 41, 148, 208; /* --brand-500 */
+        --bs-box-shadow-sm: var(--elevation-1);
+    }
+
+        .container-fluid .card {
+            --bs-card-bg: var(--surface-card);
+            --bs-card-border-color: rgba(255, 255, 255, 0.09);
+            --bs-card-cap-bg: rgba(255, 255, 255, 0.04);
+            --bs-card-border-radius: var(--radius-md);
+        }
+
+        .container-fluid .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--text-primary);
+            --bs-table-border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .container-fluid .bg-light {
+            --bs-bg-opacity: 0.08;
+        }
+
+        .container-fluid .bg-warning {
+            color: rgba(0, 0, 0, 0.85); /* keep dark-on-amber in both themes */
+        }
+
+        .container-fluid .form-select {
+            --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgba(255,255,255,0.75)' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        }
+
+    /* Calculator Card Styles */
+    .calc-card {
+        transition: border-color var(--motion-fast) ease;
+        border: 1px solid transparent;
+        cursor: pointer;
+    }
+
+        .calc-card:hover {
+            border-color: var(--accent);
+        }
+
+        .calc-card .card-body {
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+    /* System Category Styling (colored strip retired per anti-slop addendum) */
+    .system-category {
+        border-left: none;
+    }
+
+    /* Cost Highlight */
+    .cost-highlight {
+        background: rgba(255, 255, 255, 0.08);
+        font-weight: var(--weight-semibold);
+    }
+
+    /* Table Responsive */
+    .table-responsive {
+        font-size: var(--text-xs);
+    }
+
+    /* Card Headers */
+    .card-header {
+        font-weight: var(--weight-semibold);
+    }
+
+    /* Navigation Pills */
+    .nav-pills .nav-link {
+        font-size: var(--text-sm);
+        padding: var(--space-2) var(--space-3);
+    }
+
+    /* Badge Positioning */
+    .position-relative .badge {
+        top: 5px;
+        right: 5px;
+    }
+
+
+    /* Link Styling */
+    a.text-decoration-none:hover .card {
+        text-decoration: none;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+
+            <!-- Header -->
+            <div class="text-center mb-4">
+             @*    <div class="d-flex align-items-center justify-content-center mb-3">
+                    <svg class="me-3" width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #0dcaf0;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <h1 class="h2 mb-0">Wet Bulb to Enthalpy Calculator</h1>
+                </div>
+                <p class="text-muted">
+                    Professional psychrometric calculations for commercial HVAC systems
+                </p> *@
+                <div class="alert alert-info border-start border-4 border-info">
+                    <small>
+                        <strong>Precision Data:</strong> Uses verified psychrometric data with 510 data points from 35°F to 85°F.
+                        Convert wet bulb temperature to enthalpy for cooling load calculations, or find wet bulb from known enthalpy.
+                    </small>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Input Section -->
+                <div class="col-md-6">
+
+                    <!-- Calculation Mode -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary bg-opacity-10">
+                            <h5 class="card-title mb-0 text-primary">Calculation Mode</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="calculationMode" value="Wet Bulb to Enthalpy"
+                                           checked="@(Inputs.CalculationMode == @"Wet Bulb to Enthalpy")"
+                                           @onchange="@(() => { Inputs.CalculationMode = @"Wet Bulb to Enthalpy"; OnInputChanged(); })"
+                                           id="wetBulbToEnthalpy">
+                                    <label class="form-check-label" for="wetBulbToEnthalpy">
+                                        <strong>Wet Bulb → Enthalpy</strong> (Field Measurements)
+                                    </label>
+                                    <div class="form-text">Enter wet bulb temperature to calculate air enthalpy</div>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="calculationMode" value="Enthalpy to Wet Bulb"
+                                           checked="@(Inputs.CalculationMode == @"Enthalpy to Wet Bulb")"
+                                           @onchange="@(() => { Inputs.CalculationMode = @"Enthalpy to Wet Bulb"; OnInputChanged(); })"
+                                           id="enthalpyToWetBulb">
+                                    <label class="form-check-label" for="enthalpyToWetBulb">
+                                        <strong>Enthalpy → Wet Bulb</strong> (Design Verification)
+                                    </label>
+                                    <div class="form-text">Enter enthalpy to find corresponding wet bulb temperature</div>
+                                </div>
+                            </div>
+
+                            @if (Inputs.CalculationMode == "Wet Bulb to Enthalpy")
+                            {
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Wet Bulb Temperature (°F)</label>
+                                        <input type="number" step="0.1" class="form-control" @bind="Inputs.InputWetBulb" @bind:event="oninput" @onchange="OnInputChanged" />
+                                        <div class="form-text">Measured wet bulb temperature (35°F to 85°F)</div>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Enthalpy (BTU/lb)</label>
+                                        <input type="number" step="0.01" class="form-control" @bind="Inputs.InputEnthalpy" @bind:event="oninput" @onchange="OnInputChanged" />
+                                        <div class="form-text">Total heat content of air per pound</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Measurement Context -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success bg-opacity-10">
+                            <h5 class="card-title mb-0 text-success">Measurement Context</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Measurement Location</label>
+                                    <select class="form-select" @bind="Inputs.MeasurementLocation">
+                                        <option value="Unknown">Select Location</option>
+                                        <option value="Return Air">Return Air</option>
+                                        <option value="Outside Air">Outside Air</option>
+                                        <option value="Mixed Air">Mixed Air</option>
+                                        <option value="Supply Air">Supply Air</option>
+                                        <option value="Space Condition">Space Condition</option>
+                                        <option value="Cooling Coil Entering">Cooling Coil Entering</option>
+                                        <option value="Cooling Coil Leaving">Cooling Coil Leaving</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Dry Bulb Temp (°F)</label>
+                                    <input type="number" step="0.1" class="form-control" @bind="Inputs.DryBulbTemp" placeholder="Optional" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Relative Humidity (%)</label>
+                                    <input type="number" step="0.1" class="form-control" @bind="Inputs.RelativeHumidity" min="0" max="100" placeholder="Optional" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Altitude (ft)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.Altitude" step="100" placeholder="Sea level = 0" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Information (Optional) -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-secondary bg-opacity-10">
+                            <h5 class="card-title mb-0 text-secondary">System Information (Optional)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Equipment Type</label>
+                                    <select class="form-select" @bind="Inputs.EquipmentType">
+                                        <option value="Unknown">Unknown</option>
+                                        <option value="Rooftop Unit">Rooftop Unit</option>
+                                        <option value="Air Handler">Air Handler</option>
+                                        <option value="Chilled Water AHU">Chilled Water AHU</option>
+                                        <option value="DX Split System">DX Split System</option>
+                                        <option value="DOAS Unit">DOAS Unit</option>
+                                        <option value="Energy Recovery Unit">Energy Recovery Unit</option>
+                                        <option value="Make-up Air Unit">Make-up Air Unit</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">System CFM</label>
+                                    <input type="number" class="form-control" @bind="Inputs.SystemCFM" step="100" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Measurement Notes</label>
+                                    <input type="text" class="form-control" @bind="Inputs.MeasurementNotes" placeholder="e.g., Post-maintenance check, high humidity complaint" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-primary btn-lg w-100 mb-4" @onclick="PerformCalculation">
+                        <svg class="me-2" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        Calculate
+                    </button>
+                </div>
+
+                <!-- Results Section -->
+                <div class="col-md-6">
+                    <div class="position-sticky" style="top: 1rem;">
+
+                        @if (Results != null && Results.IsValidCalculation)
+                        {
+                            <!-- Main Result -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-info">
+                                    <h5 class="card-title mb-0 text-white">
+                                        <svg class="me-2" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                        </svg>
+                                        Psychrometric Results
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    @if (Inputs.CalculationMode == "Wet Bulb to Enthalpy")
+                                    {
+                                        <div class="text-center mb-3">
+                                            <h2 class="display-4 text-info mb-0">@Results.ResultEnthalpy.ToString("F2") BTU/lb</h2>
+                                            <p class="text-muted">Total Enthalpy</p>
+                                        </div>
+                                        <div class="row g-2 small">
+                                            <div class="col-6"><strong>Wet Bulb Input:</strong></div>
+                                            <div class="col-6">@Inputs.InputWetBulb.ToString("F1")°F</div>
+                                            <div class="col-6"><strong>Sensible Heat:</strong></div>
+                                            <div class="col-6">@Results.SensibleHeat.ToString("F2") BTU/lb</div>
+                                            <div class="col-6"><strong>Latent Heat:</strong></div>
+                                            <div class="col-6">@Results.LatentHeat.ToString("F2") BTU/lb</div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center mb-3">
+                                            <h2 class="display-4 text-info mb-0">@Results.ResultWetBulb.ToString("F1")°F</h2>
+                                            <p class="text-muted">Wet Bulb Temperature</p>
+                                        </div>
+                                        <div class="row g-2 small">
+                                            <div class="col-6"><strong>Enthalpy Input:</strong></div>
+                                            <div class="col-6">@Inputs.InputEnthalpy.ToString("F2") BTU/lb</div>
+                                            <div class="col-6"><strong>Moisture Content:</strong></div>
+                                            <div class="col-6">@Results.MoistureContent grains/lb</div>
+                                        </div>
+                                    }
+
+                                    <hr>
+                                    <div class="row g-2 small">
+                                        <div class="col-6"><strong>Calculation Method:</strong></div>
+                                        <div class="col-6">@Results.CalculationMethod</div>
+                                        <div class="col-6"><strong>Data Quality:</strong></div>
+                                        <div class="col-6 @GetDataQualityClass()">@Results.DataQuality</div>
+                                        @if (Results.InterpolationError > 0)
+                                        {
+                                            <div class="col-6"><strong>Est. Uncertainty:</strong></div>
+                                            <div class="col-6">±@Results.InterpolationError.ToString("F3") BTU/lb</div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Psychrometric Properties -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-success">
+                                    <h6 class="card-title mb-0 text-white">Additional Properties</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-2 small">
+                                        @if (Results.DewPointTemp.HasValue)
+                                        {
+                                            <div class="col-6"><strong>Dew Point:</strong></div>
+                                            <div class="col-6">@Results.DewPointTemp.Value.ToString("F1")°F</div>
+                                        }
+                                        @if (Results.SpecificVolume.HasValue)
+                                        {
+                                            <div class="col-6"><strong>Specific Volume:</strong></div>
+                                            <div class="col-6">@Results.SpecificVolume.Value.ToString("F2") ft³/lb</div>
+                                        }
+                                        @if (Results.HumidityRatio.HasValue)
+                                        {
+                                            <div class="col-6"><strong>Humidity Ratio:</strong></div>
+                                            <div class="col-6">@Results.HumidityRatio.Value.ToString("F4") lb/lb</div>
+                                        }
+                                        <div class="col-6"><strong>Air Density:</strong></div>
+                                        <div class="col-6">@Results.AirDensity.ToString("F3") lb/ft³</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Operating Analysis -->
+                            @if (Results.OperatingNotes.Any())
+                            {
+                                <div class="card mb-4">
+                                    <div class="card-header bg-warning">
+                                        <h6 class="card-title mb-0 text-dark">Operating Analysis</h6>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        @foreach (var note in Results.OperatingNotes)
+                                        {
+                                            <div class="p-2 border-bottom">
+                                                <small>• @note</small>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- System Context Results -->
+                            @if (!string.IsNullOrEmpty(Inputs.MeasurementLocation) && Inputs.MeasurementLocation != "Unknown")
+                            {
+                                <div class="card">
+                                    <div class="card-header bg-secondary">
+                                        <h6 class="card-title mb-0 text-white">System Context</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-2 small">
+                                            <div class="col-6"><strong>Location:</strong></div>
+                                            <div class="col-6">@Inputs.MeasurementLocation</div>
+
+                                            @if (Inputs.SystemCFM > 0 && Results.TotalCoolingCapacity > 0)
+                                            {
+                                                <div class="col-6"><strong>Total Cooling:</strong></div>
+                                                <div class="col-6">@((Results.TotalCoolingCapacity / 12000).ToString("F1")) tons</div>
+                                                <div class="col-6"><strong>Sensible/Total:</strong></div>
+                                                <div class="col-6">@Results.SensibleHeatRatio.ToString("F2")</div>
+                                            }
+
+                                            @if (!string.IsNullOrEmpty(Inputs.MeasurementNotes))
+                                            {
+                                                <div class="col-12 mt-2"><strong>Notes:</strong></div>
+                                                <div class="col-12"><small>@Inputs.MeasurementNotes</small></div>
+                                            }
+                                        </div>
+
+                                        <div class="mt-3">
+                                            <small class="text-muted">@GetLocationAdvice()</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else if (Results != null && !Results.IsValidCalculation)
+                        {
+                            <!-- Error State -->
+                            <div class="card">
+                                <div class="card-header bg-danger">
+                                    <h6 class="card-title mb-0 text-white">Calculation Error</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-danger mb-3">@Results.ErrorMessage</p>
+                                    <div class="alert alert-warning">
+                                        <h6 class="alert-heading">Troubleshooting:</h6>
+                                        <ul class="mb-0 small">
+                                            <li>Wet bulb range: 35°F to 85°F</li>
+                                            <li>Enthalpy range: 13 to 44 BTU/lb</li>
+                                            <li>Verify measurement accuracy</li>
+                                            <li>Check for sensor calibration</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- No Results State -->
+                            <div class="card">
+                                <div class="card-body text-center py-5">
+                                    <svg class="mb-3 opacity-50" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                    </svg>
+                                    <h5 class="text-muted">Ready to Calculate</h5>
+                                    <p class="text-muted">Enter wet bulb temperature or enthalpy for psychrometric analysis</p>
+                                    <small class="text-muted">510 verified data points ensure accuracy</small>
+                                </div>
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reference Guide -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-info">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <h5 class="card-title mb-0 text-info">Psychrometric Reference Guide</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-3">
+                                    <h6 class="text-info">Common Conditions:</h6>
+                                    <ul class="small mb-0">
+                                        <li><strong>Summer Design:</strong> 78°F WB (~38 BTU/lb)</li>
+                                        <li><strong>Comfort Zone:</strong> 62-67°F WB</li>
+                                        <li><strong>Data Center:</strong> 59-64°F WB</li>
+                                        <li><strong>Winter Return:</strong> 55-60°F WB</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-success">Key Relationships:</h6>
+                                    <ul class="small mb-0">
+                                        <li><strong>Total Load:</strong> CFM × 4.5 × Δh</li>
+                                        <li><strong>Sensible:</strong> CFM × 1.08 × ΔT</li>
+                                        <li><strong>Latent:</strong> CFM × 0.68 × Δgr</li>
+                                        <li><strong>SHR:</strong> Sensible ÷ Total</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-warning">Critical Values:</h6>
+                                    <ul class="small mb-0">
+                                        <li><strong>55°F WB:</strong> Dehumidification limit</li>
+                                        <li><strong>67°F WB:</strong> Comfort upper limit</li>
+                                        <li><strong>78°F WB:</strong> Typical OA design</li>
+                                        <li><strong>80°F WB:</strong> Extreme conditions</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-primary">Best Practices:</h6>
+                                    <ul class="small mb-0">
+                                        <li>Use sling psychrometer for accuracy</li>
+                                        <li>Allow sensor stabilization time</li>
+                                        <li>Account for altitude effects</li>
+                                        <li>Verify with multiple readings</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>

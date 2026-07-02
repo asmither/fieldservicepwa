@@ -1,0 +1,36 @@
+@* Single source of truth for status presentation. Statuses are always
+   rendered as color + icon + label so meaning survives colorblindness,
+   sunlight glare, and grayscale displays. Pass the domain status string
+   ("Pending", "Traveling", "Working", "Complete", "Approved", "Declined",
+   "Review", "Synced", "Failed"); unknown values fall back to a neutral chip. *@
+<span class="StatusBadge @Meta.Css" role="status">
+    <i class="bi @Meta.Icon" aria-hidden="true"></i>
+    <span>@(Label ?? Meta.Label)</span>
+</span>
+
+@code {
+    [Parameter, EditorRequired] public string Status { get; set; } = string.Empty;
+
+    /// <summary>Optional label override; defaults to the canonical status label.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    private readonly record struct StatusMeta(string Css, string Icon, string Label);
+
+    private static readonly Dictionary<string, StatusMeta> Map = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["pending"] = new("Pending", "bi-hourglass-split", "Pending"),
+        ["traveling"] = new("Traveling", "bi-truck", "Traveling"),
+        ["working"] = new("Working", "bi-wrench-adjustable", "Working"),
+        ["complete"] = new("Complete", "bi-check-circle-fill", "Complete"),
+        ["approved"] = new("Approved", "bi-hand-thumbs-up-fill", "Approved"),
+        ["declined"] = new("Declined", "bi-hand-thumbs-down-fill", "Declined"),
+        ["review"] = new("Review", "bi-shield-shaded", "In Review"),
+        ["synced"] = new("Synced", "bi-cloud-check-fill", "Synced"),
+        ["failed"] = new("Failed", "bi-cloud-slash-fill", "Sync Failed"),
+    };
+
+    private StatusMeta Meta =>
+        Map.TryGetValue(Status?.Trim() ?? string.Empty, out var meta)
+            ? meta
+            : new StatusMeta("Neutral", "bi-circle", Status ?? string.Empty);
+}

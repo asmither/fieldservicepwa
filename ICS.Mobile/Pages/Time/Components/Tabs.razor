@@ -1,0 +1,110 @@
+﻿@using ICS.Portal.Data.Enumerations
+
+<div class="TimeClockPageTabs">
+    <button class="Tab @Selected(TimeClockPageTabs.Today)" @onclick="() => Click(TimeClockPageTabs.Today)">
+        TODAY
+    </button>
+    <button class="Tab @Selected(TimeClockPageTabs.ThisWeek)" @onclick="() => Click(TimeClockPageTabs.ThisWeek)">
+        THIS WEEK
+    </button>
+    @if (SelectedTab.Equals(TimeClockPageTabs.LastWeek))
+    {
+        <div class="bottom-panel TimeClockPageTabsFake">
+            <button @onclick="() => MoveWeek(-1)" class="week-navbtn left-btn">
+                <i class="bi bi-chevron-left"></i>
+                @if (NumberOfStepsBack != 0)
+                {
+                    <span style="font-size: 0.8em;">@(NumberOfStepsBack+1)</span>
+                }
+            </button>
+            LAST
+            @if (AllowForward)
+            {
+                <button @onclick="() => MoveWeek(1)" class="week-navbtn right-btn"><i class="bi bi-chevron-right"></i></button>
+            }
+            else
+            {
+                <span class="week-navbtn right-btn" style="box-shadow: none;">&nbsp;</span>
+            }
+        </div>
+
+    }
+    else
+    {
+        <button class="Tab @Selected(TimeClockPageTabs.LastWeek)" @onclick="() => Click(TimeClockPageTabs.LastWeek)">LAST</button>
+    }
+
+</div>
+
+@code {
+    private bool AllowForward = false;
+
+
+    private async Task MoveWeek(int direction)
+    {
+        if (direction < 0)
+        {
+            AllowForward = true;
+            NumberOfStepsBack++;
+            if (OnMoveWeekNum.HasDelegate)
+                await OnMoveWeekNum.InvokeAsync(NumberOfStepsBack);
+        }
+        else
+        {
+            if (--NumberOfStepsBack <= 0) NumberOfStepsBack = 0;
+
+            if (OnMoveWeekNum.HasDelegate)
+                await OnMoveWeekNum.InvokeAsync(NumberOfStepsBack);
+
+            if (NumberOfStepsBack <= 0)
+            {
+                AllowForward = false;
+            }
+
+        }
+
+    }
+
+    private void Click(TimeClockPageTabs tab)
+    {
+        if (tab != SelectedTab)
+        {
+            SelectedTab = tab;
+            if (OnTabClick.HasDelegate)
+                OnTabClick.InvokeAsync(SelectedTab);
+        }
+    }
+
+    private string Selected(TimeClockPageTabs tab)
+    {
+        if (tab == SelectedTab)
+        {
+            return "Selected";
+        }
+        return string.Empty;
+    }
+
+    [Parameter]
+    public EventCallback<TimeClockPageTabs> OnTabClick { set; get; }
+
+    public void SetTab(TimeClockPageTabs tab)
+    {
+        SelectedTab = tab;
+    }
+
+    [Parameter]
+    public int DefaultHeight { set; get; } = 44;
+
+    [Parameter]
+    public TimeClockPageTabs SelectedTab { set; get; }
+
+    [Parameter]
+    public int NumberOfStepsBack { set; get; } = 0;
+
+    [Parameter]
+    public EventCallback<int> OnMoveWeekNum { set; get; }
+
+    
+
+
+}

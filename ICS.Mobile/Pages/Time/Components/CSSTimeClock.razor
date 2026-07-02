@@ -1,0 +1,224 @@
+<style>
+
+
+    .TimeClockPageTabs {
+        border-bottom: var(--border-hairline);
+        margin-top: var(--space-4);
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        height: 2.75em;
+    }
+
+        .TimeClockPageTabs > .Tab {
+            min-height: var(--touch-target);
+            font-size: var(--text-base);
+            font-weight: var(--weight-medium);
+            letter-spacing: .04em;
+            color: var(--text-muted);
+            border: none;
+            background-color: transparent;
+            border-bottom: 3px solid transparent;
+            padding: 0;
+            margin: 0;
+            transition: color var(--motion-fast) ease, border-color var(--motion-fast) ease;
+        }
+
+        .TimeClockPageTabs .Tab.Selected {
+            font-weight: var(--weight-semibold);
+            border-bottom: 3px solid var(--accent);
+            color: var(--text-primary);
+        }
+
+    .TimeClockPageTabsFake {
+        font-size: var(--text-base);
+        font-weight: var(--weight-semibold);
+        border: none;
+        background-color: transparent;
+        padding: 0;
+        margin: 0;
+        border-bottom: 3px solid var(--accent);
+        color: var(--text-primary);
+    }
+
+
+    .breakgap {
+        height: 5px;
+    }
+
+    .feedback {
+        width: 100%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        display: block;
+    }
+
+    .MoreDataButton {
+        padding: var(--space-2) var(--space-4);
+        min-height: var(--touch-target);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        color: var(--text-primary);
+        font-size: var(--text-base);
+        font-weight: var(--weight-medium);
+        background-color: var(--surface-raised-subtle);
+        border: var(--border-hairline);
+    }
+
+
+    .timecard {
+        margin: .625em auto;
+        overflow: hidden;
+
+    }
+
+    .day-row {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        margin-top: var(--space-2);
+        background: var(--surface-card);
+        border: var(--border-hairline);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--elevation-1);
+        overflow: hidden;
+    }
+
+
+
+    .date {
+        background-color: var(--surface-raised-subtle);
+        width: 80px;
+        text-align: center;
+        align-items: center;
+        justify-content: center;
+        padding-top: 5px;
+        color: var(--text-secondary);
+
+    }
+
+        .date small {
+            display: block;
+            font-size: var(--text-sm);
+            color: var(--text-muted);
+        }
+
+        .date .dispatchnum {
+            color: var(--text-primary);
+            font-weight: var(--weight-bold);
+        }
+
+    .details {
+        padding-left: var(--space-2);
+        color: var(--text-secondary);
+
+    }
+        .details > .detailsheader {
+            background-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .details .LocName {
+            color: var(--text-primary);
+            font-size: var(--text-lg);
+            font-weight: var(--weight-semibold);
+            padding-left: 4px;
+
+        }
+
+        .details .Other {
+            color: var(--text-muted);
+            font-weight: var(--weight-regular);
+            font-size: var(--text-sm);
+            padding-left: 4px;
+        }
+
+    .mgrnotelabel {
+        font-weight: var(--weight-bold);
+        color: var(--status-danger);
+        padding-left: 5px;
+    }
+
+    .mgrnotes {
+        font-style: italic;
+    }
+
+    .time {
+        padding: var(--space-1);
+    }
+
+    .bonus, .absence {
+        padding: var(--space-4);
+        color: var(--status-success);
+    }
+
+    .label {
+        font-size: var(--text-sm);
+        color: var(--text-muted);
+        margin-bottom: 5px;
+    }
+
+    .amount, .hours {
+        font-size: var(--text-xl);
+        font-weight: var(--weight-bold);
+        color: var(--text-primary);
+        cursor: pointer;
+    }
+
+    .dateOn, .dateOff {
+        font-size: var(--text-base);
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-weight: var(--weight-semibold);
+    }
+
+    .time-in-out, .hours-summary {
+        display: flex;
+        justify-content: space-between;
+        font-size: var(--text-sm);
+    }
+
+        .time-in-out div, .hours-summary div {
+            width: 20%;
+            text-align: center;
+        }
+
+
+    .notesarea {
+        cursor: pointer;
+        color: var(--text-secondary);
+        background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    .bottom-panel {
+        display: flex;
+        justify-content: space-between; /* Space between the buttons */
+        align-items: center; /* Center the buttons vertically */
+        position: sticky; /* Keep the panel at the bottom */
+        bottom: 0;
+        width: 100%; /* Full width */
+    }
+
+    .week-navbtn {
+        background-color: var(--surface-raised-subtle);
+        color: var(--text-primary);
+        border-radius: var(--radius-full);
+        border-width: 0px;
+        width: var(--touch-target);
+        height: var(--touch-target);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: var(--text-lg);
+        cursor: pointer;
+        transition: background-color var(--motion-fast) ease;
+    }
+
+        .week-navbtn:hover {
+            background-color: var(--surface-raised-subtle);
+        }
+
+        .week-navbtn:active {
+            background-color: rgba(255, 255, 255, 0.18);
+        }
+
+
+
+</style>

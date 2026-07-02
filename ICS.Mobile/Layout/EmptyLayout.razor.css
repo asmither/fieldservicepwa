@@ -1,0 +1,62 @@
+.LayoutError {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: 20vh;
+    padding: var(--space-6);
+    text-align: center;
+    background: var(--surface-raised);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--elevation-1);
+    color: var(--text-primary);
+}
+
+    .LayoutError > i {
+        font-size: 3rem;
+        color: var(--status-warning);
+        line-height: 1;
+    }
+
+    .LayoutError > h2 {
+        margin: 0;
+        font-size: var(--text-xl);
+    }
+
+    .LayoutError > p {
+        margin: 0;
+        color: var(--text-secondary);
+        line-height: var(--leading-normal);
+        max-width: 30rem;
+    }
+
+    .LayoutError .Actions {
+        display: flex;
+        gap: var(--space-3);
+        margin-top: var(--space-2);
+    }
+
+        .LayoutError .Actions > button,
+        .LayoutError .Actions > a {
+            min-height: var(--touch-target);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-2) var(--space-6);
+            border-radius: var(--radius-md);
+            border: none;
+            font-size: var(--text-base);
+            font-weight: var(--weight-semibold);
+            text-decoration: none;
+        }
+
+        .LayoutError .Actions > button {
+            background: var(--accent);
+            color: var(--text-on-accent);
+        }
+
+        .LayoutError .Actions > a {
+            background: var(--surface-raised-subtle);
+            color: var(--text-primary);
+            border: var(--border-subtle);
+        }

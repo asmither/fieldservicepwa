@@ -1,0 +1,18 @@
+﻿@using ICS.Mobile.Components
+@inherits WorkflowComponentsBasePage
+@layout EmptyLayout
+@if (DataService.SyncCount == 0)
+{
+    <p>We're all Set! &nbsp;<i>@Workflow!.Prompt</i> is published!</p>
+    <div class="CenteredButtonContainer">
+        <button class="Button" @onclick="() => GotoActivities(Workflow.WorkOrderDispatchTechId)">
+            <i class="icon bi-file-earmark-spreadsheet "></i> Go to Dispatch Activities
+        </button>
+    </div>
+}
+else
+{
+    <p><b><i>Your Checklist is publishing to the mothership.</i></b></p>
+    <p>&nbsp; You may leave this screen, but please make sure all remaining items have counted down to zero before ending your day.  Thank you!</p>
+    <p>Steps Remaining: @DataService.SyncCount</p>
+}

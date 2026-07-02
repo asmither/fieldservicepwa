@@ -1,0 +1,130 @@
+﻿@namespace ICS.Mobile.Pages.BluonBrowse.Components
+@using ICS.Mobile.Pages.BluonBrowse
+
+<div class="modal-overlay" @onclick="CloseModal">
+    <div class="modal-content" @onclick:stopPropagation="true">
+        <div class="modal-header">
+            <h5>Recent Models</h5>
+            <button class="close-button" @onclick="OnClose">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            @if (RecentModels?.Any() == true)
+            {
+                <div class="recent-list">
+                    @foreach (var recent in RecentModels)
+                    {
+                        <div class="recent-item" @onclick="() => SelectModel(recent)">
+                            <div class="recent-info">
+                                <div class="model-name">@recent.Model</div>
+                                <div class="model-meta">
+                                    <span>@recent.BrandName</span>
+                                    <span>•</span>
+                                    <span>@recent.SystemType</span>
+                                </div>
+                                <div class="viewed-date">
+                                    Viewed @GetRelativeTime(recent.ViewedDate)
+                                </div>
+                            </div>
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="bi bi-clock-history"></i>
+                    <p>No recent models</p>
+                    <p class="text-muted">Models you view will appear here</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .recent-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .recent-item {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .recent-item:active {
+            background: #e9ecef;
+            transform: scale(0.98);
+        }
+
+    .recent-info {
+        flex: 1;
+    }
+
+    .model-name {
+        font-weight: 600;
+        color: var(--bluon-primary);
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .model-meta {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+
+    .viewed-date {
+        font-size: 0.75rem;
+        color: #adb5bd;
+    }
+
+    .recent-item i {
+        color: #adb5bd;
+    }
+</style>
+
+@code {
+    [Parameter] public List<RecentModel>? RecentModels { get; set; }
+    [Parameter] public EventCallback<RecentModel> OnModelSelected { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private void CloseModal(MouseEventArgs e)
+    {
+        OnClose.InvokeAsync();
+    }
+
+    private async Task SelectModel(RecentModel model)
+    {
+        await OnModelSelected.InvokeAsync(model);
+    }
+
+    private string GetRelativeTime(DateTime date)
+    {
+        var diff = DateTime.Now - date;
+
+        if (diff.TotalMinutes < 1)
+            return "just now";
+        if (diff.TotalMinutes < 60)
+            return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 24)
+            return $"{(int)diff.TotalHours}h ago";
+        if (diff.TotalDays < 7)
+            return $"{(int)diff.TotalDays}d ago";
+
+        return date.ToString("MMM dd");
+    }
+}

@@ -1,0 +1,22 @@
+﻿<div class="HomeGoalsContainer">
+    <div class="CategoryTitle" @onclick="()=>RefreshAll()" style="cursor: pointer;">GOALS</div>
+    @ChildContent
+</div>
+@code {
+    [Parameter]
+    public string Id { set; get; } = "";
+
+    [Parameter]
+    public RenderFragment ChildContent { set; get; }
+
+    [Parameter]
+    public EventCallback RefreshNow { get; set; } // callback for Refresh button click
+
+    public async void RefreshAll()
+    {
+        if (RefreshNow.HasDelegate)
+            await RefreshNow.InvokeAsync();
+
+    }
+
+}

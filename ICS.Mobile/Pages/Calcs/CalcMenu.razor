@@ -1,0 +1,1247 @@
+@page "/calcmenu"
+@inherits ICS.Mobile.Pages.CalcMenu.CalcMenuPage
+@using ICS.Mobile.Pages.CalcMenu
+@using ICS.Mobile.Components
+@using ICS.Portal.Data.Queries.Models
+@using ICS.Mobile.Pages.Time.Components
+@using ICS.Portal.Data.Enumerations
+@using static ICS.Mobile.DataModels.Custom.HVACCalculations;
+
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/calc-theme.css" rel="stylesheet">
+
+<style>
+
+    body {
+        padding: env(safe-area-inset-top) 0.6rem 0.6rem 0.6rem;
+        margin: 0;
+        margin-top: 1rem;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    /* Mobile-First CSS */
+    .bodystyle {
+        font-size: var(--text-sm);
+    }
+
+    /* Token bridge — map Bootstrap onto the ICS design tokens (guide rule 7). */
+    .container-fluid {
+        color: var(--text-primary);
+        --bs-body-color: var(--text-primary);
+        --bs-body-color-rgb: 255, 255, 255;
+        --bs-body-bg: var(--surface-input);
+        --bs-emphasis-color: var(--text-primary);
+        --bs-heading-color: var(--text-primary);
+        --bs-secondary-color: var(--text-muted);
+        --bs-secondary-bg: var(--surface-raised-subtle);
+        --bs-tertiary-color: var(--text-muted);
+        --bs-tertiary-bg: var(--surface-raised-subtle);
+        --bs-border-color: rgba(255, 255, 255, 0.15);
+        --bs-border-color-translucent: rgba(255, 255, 255, 0.09);
+        --bs-link-color: var(--accent-soft);
+        --bs-link-hover-color: var(--accent);
+        --bs-primary-rgb: 41, 148, 208; /* --brand-500 */
+        --bs-box-shadow-sm: var(--elevation-1);
+    }
+
+        .container-fluid .card {
+            --bs-card-bg: var(--surface-card);
+            --bs-card-border-color: rgba(255, 255, 255, 0.09);
+            --bs-card-cap-bg: rgba(255, 255, 255, 0.04);
+            --bs-card-border-radius: var(--radius-md);
+        }
+
+        .container-fluid .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--text-primary);
+            --bs-table-border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .container-fluid .table-light {
+            --bs-table-bg: rgba(255, 255, 255, 0.08);
+            --bs-table-color: var(--text-primary);
+            --bs-table-border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .container-fluid .bg-light {
+            --bs-bg-opacity: 0.08;
+        }
+
+
+        .container-fluid .card-title.text-dark {
+            --bs-dark-rgb: 255, 255, 255; /* titles sit on dark-glass cards now */
+        }
+
+        .container-fluid .nav-pills {
+            --bs-nav-pills-link-active-bg: var(--brand-700); /* 4.5:1 with white at small sizes */
+            --bs-nav-link-color: var(--text-secondary);
+            --bs-nav-pills-border-radius: var(--radius-md);
+        }
+
+    /* Calculator Card Styles */
+    .calc-card {
+        transition: border-color var(--motion-fast) ease;
+        border: 1px solid transparent;
+        cursor: pointer;
+    }
+
+        .calc-card:hover {
+            border-color: var(--accent);
+        }
+
+        .calc-card .card-body {
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+    /* System Category Styling (colored strip retired per anti-slop addendum) */
+    .system-category {
+        border-left: none;
+    }
+
+    /* Cost Highlight */
+    .cost-highlight {
+        background: rgba(255, 255, 255, 0.08);
+        font-weight: var(--weight-semibold);
+    }
+
+    /* Table Responsive */
+    .table-responsive {
+        font-size: var(--text-xs);
+    }
+
+    /* Card Headers */
+    .card-header {
+        font-weight: var(--weight-semibold);
+    }
+
+    /* Navigation Pills */
+    .nav-pills .nav-link {
+        font-size: var(--text-sm);
+        padding: var(--space-2) var(--space-3);
+    }
+
+    /* Badge Positioning */
+    .position-relative .badge {
+        top: 5px;
+        right: 5px;
+    }
+
+
+    /* Link Styling */
+    a.text-decoration-none:hover .card {
+        text-decoration: none;
+    }
+</style>
+
+<PageHeaderBasic Title="ICSNext Pro Calcs" Icon="bi-calculator">
+    <RoundButtonGreen Icon="bi-arrow-left" OnClick="() => NavigateToHome()"/>
+</PageHeaderBasic>
+
+<div class="bodystyle container-fluid px-2 py-3">
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills nav-fill mb-4" id="mainNav" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#calculators">Calculators</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#details">Details</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#categories">Categories</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#standards">Standards</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        
+        <!-- Calculators Tab -->
+        <div class="tab-pane fade show active" id="calculators">
+            <div class="mb-4 text-center">
+                @* <p class="mb-3">ICS HVAC diagnostic and calculation tools designed for systems ranging from <strong>2 to 115+ tons</strong>.</p> *@
+                <span class="badge bg-success fs-6">2-115+ Tons Coverage</span>
+                <p class="small text-muted"><i>Rotate your phone and Tap any calculator below:</i></p>
+            </div>
+            <div class="row g-3 mb-4 calc-grid">
+                <!-- P-T Chart Calculator -->
+                <div class="col-12 col-md-6">
+                    <a href="/rptchart" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm calc-card position-relative">
+                                                        <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="bi bi-graph-up fs-1 text-secondary"></i>
+                                </div>
+                                <h5 class="card-title text-dark">Refrigerant P-T Chart Calculator</h5>
+                                <p class="card-text text-muted small">Professional pressure-temperature lookup for field diagnostics</p>
+                                <div class="row text-center mt-3">
+                                    <div class="col-6">
+                                        <small class="text-muted">Refrigerants</small><br>
+                                        <strong class="text-secondary">14 Types</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Lookup</small><br>
+                                        <strong class="text-secondary">Bidirectional</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Wet Bulb to Enthalpy Calculator -->
+                <div class="col-12 col-md-6">
+                    <a href="/wetbulbenthalpy" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm calc-card position-relative">
+                                                        <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="bi bi-cloud-rain fs-1 text-secondary"></i>
+                                </div>
+                                <h5 class="card-title text-dark">Wet Bulb to Enthalpy Calculator</h5>
+                                <p class="card-text text-muted small">Psychrometric conversions for field measurements and design</p>
+                                <div class="row text-center mt-3">
+                                    <div class="col-6">
+                                        <small class="text-muted">Conversion</small><br>
+                                        <strong class="text-info">Bidirectional</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Range</small><br>
+                                        <strong class="text-info">35°F - 85°F</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <!-- TXV Calculator -->
+                <div class="col-12 col-md-6">
+                    <a href="/txvcalc" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm calc-card">
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="bi bi-calculator fs-1 text-secondary"></i>
+                                </div>
+                                <h5 class="card-title text-dark">TXV Sizing Calculator</h5>
+                                <p class="card-text text-muted small">Verify TXV sizing for commercial refrigeration systems</p>
+                                <div class="row text-center mt-3">
+                                    <div class="col-6">
+                                        <small class="text-muted">Range</small><br>
+                                        <strong class="text-info">2-125+ Tons</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Refrigerants</small><br>
+                                        <strong class="text-info">Multiple Types</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Airflow Calculator -->
+                <div class="col-12 col-md-6">
+                    <a href="/airflow" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm calc-card">
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="bi bi-wind fs-1 text-secondary"></i>
+                                </div>
+                                <h5 class="card-title text-dark">Airflow Calculator</h5>
+                                <p class="card-text text-muted small">Quick airflow estimation for commercial systems</p>
+                                <div class="row text-center mt-3">
+                                    <div class="col-6">
+                                        <small class="text-muted">CFM Range</small><br>
+                                        <strong class="text-success">350-575 CFM/ton</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Analysis</small><br>
+                                        <strong class="text-success">Static Pressure</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Commercial Airflow Diagnostic -->
+                <div class="col-12 col-md-6">
+                    <a href="/airflowdiagnostic" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm calc-card position-relative">
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="bi bi-cpu fs-1 text-secondary"></i>
+                                </div>
+                                <h5 class="card-title text-dark">Airflow Diagnostic</h5>
+                                <p class="card-text text-muted small">Advanced diagnostic engine for comprehensive analysis</p>
+                                <div class="row text-center mt-3">
+                                    <div class="col-6">
+                                        <small class="text-muted">Features</small><br>
+                                        <strong class="text-warning">AI Diagnostics</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Compliance</small><br>
+                                        <strong class="text-warning">ASHRAE 62.1</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Subcool Calculator -->
+                <div class="col-12 col-md-6">
+                    <a href="/subcool" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm calc-card">
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="bi bi-thermometer-half fs-1 text-secondary"></i>
+                                </div>
+                                <h5 class="card-title text-dark">Subcool Calculator</h5>
+                                <p class="card-text text-muted small">Precision refrigerant charge analysis for commercial systems</p>
+                                <div class="row text-center mt-3">
+                                    <div class="col-6">
+                                        <small class="text-muted">Refrigerants</small><br>
+                                        <strong class="text-primary">7 Types</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Analysis</small><br>
+                                        <strong class="text-primary">Charge Level</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Suite Overview Stats -->
+            <div class="row g-2">
+                <div class="col-6 col-md-3">
+                    <div class="card text-center bg-info text-white">
+                        <div class="card-body p-2">
+                            <h6 class="mb-1">Calculators</h6>
+                            <strong>6 Tools</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card text-center bg-success text-white">
+                        <div class="card-body p-2">
+                            <h6 class="mb-1">System Range</h6>
+                            <strong>2-115+ Tons</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card text-center bg-warning">
+                        <div class="card-body p-2">
+                            <h6 class="mb-1">Compliance</h6>
+                            <strong>ASHRAE 62.1</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card text-center bg-danger text-white">
+                        <div class="card-body p-2">
+                            <h6 class="mb-1">Analysis</h6>
+                            <strong>ROI Focused</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Details Tab -->
+        <div class="tab-pane fade" id="details">
+            <div class="row g-3">
+                <!-- TXV Calculator Details -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="bi bi-calculator me-2"></i>TXV Sizing Calculator</h6>
+                            <small>/txvcalc</small>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Purpose:</strong> Verify TXV sizing for commercial refrigeration systems</p>
+                            <p><strong>Capacity:</strong> 24,000 BTU/hr to 1,500,000+ BTU/hr (2-125+ tons)</p>
+                            <h6>Key Features:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Commercial refrigerant calculations (R-410A, R-22, R-134a, R-407C)</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Pressure drop analysis for large systems</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Prevents floodback in large commercial units</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Real-time sizing validation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Airflow Calculator Details -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="bi bi-wind me-2"></i>Airflow Calculator</h6>
+                            <small>/airflowcalc</small>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Purpose:</strong> Quick airflow estimation for commercial systems</p>
+                            <p><strong>Capacity:</strong> All commercial sizes</p>
+                            <h6>Key Features:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Standard CFM = BTU/hr ÷ (1.08 × ΔT) calculations</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Commercial CFM per ton analysis (350-575 CFM/ton range)</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Static pressure evaluation for commercial ductwork</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>R-22 aging system analysis for large installations</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Commercial Airflow Diagnostic Details -->
+                <div class="col-12">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning">
+                            <h6 class="mb-0"><i class="bi bi-cpu me-2"></i>Commercial Airflow Diagnostic</h6>
+                            <small>/airflowdiagnostic</small>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Purpose:</strong> Advanced diagnostic engine for comprehensive commercial analysis</p>
+                            <p><strong>Capacity:</strong> 2-115+ tons with size-specific thresholds</p>
+                            <h6>Advanced Features:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-gear me-2"></i>Commercial-Specific Diagnostics: Different algorithms for all system sizes</li>
+                                <li><i class="bi bi-clipboard-check me-2"></i>Code Compliance Checking: ASHRAE 62.1 ventilation requirements</li>
+                                <li><i class="bi bi-graph-up me-2"></i>Business Impact Analysis: Cost calculations, payback periods</li>
+                                <li><i class="bi bi-building me-2"></i>Application-Specific Standards: Office, retail, healthcare, manufacturing</li>
+                                <li><i class="bi bi-currency-dollar me-2"></i>Commercial Cost Analysis: Energy costs, demand charges</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Commercial Subcool Calculator Details -->
+                <div class="col-12">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="bi bi-thermometer-half me-2"></i>Commercial Subcool Calculator</h6>
+                            <small>/subcoolcalc</small>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Purpose:</strong> Precision refrigerant charge analysis for commercial systems</p>
+                            <p><strong>Capacity:</strong> 2-115+ tons with size-specific diagnostic thresholds</p>
+
+                            <h6>Commercial Refrigerant Support:</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6 col-md-4">
+                                    <div class="card bg-light text-center p-2">
+                                        <strong>R-410A</strong><br>
+                                        <small class="text-success">Standard commercial</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-4">
+                                    <div class="card bg-light text-center p-2">
+                                        <strong>R-22</strong><br>
+                                        <small class="text-warning">Legacy systems</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-4">
+                                    <div class="card bg-light text-center p-2">
+                                        <strong>R-134a</strong><br>
+                                        <small class="text-info">Chiller applications</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-4">
+                                    <div class="card bg-light text-center p-2">
+                                        <strong>R-407C</strong><br>
+                                        <small class="text-primary">R-22 replacement</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-4">
+                                    <div class="card bg-light text-center p-2">
+                                        <strong>R-32</strong><br>
+                                        <small class="text-danger">High efficiency (A2L)</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-4">
+                                    <div class="card bg-light text-center p-2">
+                                        <strong>R-454B</strong><br>
+                                        <small class="text-success">Low GWP (A2L)</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6>Advanced Features:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Bubble Point Calculation with accurate P-T relationships</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Commercial Diagnostics with charge level assessment (60-130%)</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Performance Impact Analysis with capacity/efficiency loss calculations</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Business Impact Analysis with annual energy cost calculations</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>System Health Scoring (0-100% overall condition)</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Professional Diagnostic Categories (Critical/Performance/Normal)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Commercial P-T Chart Calculator Details -->
+                <div class="col-12">
+                    <div class="card border-secondary">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>Refrigerant P-T Calculator</h6>
+                            <small>/rptcalc</small>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Purpose:</strong> Professional pressure-temperature lookup for field diagnostics and design calculations</p>
+                            <p><strong>Capacity:</strong> 14 commercial refrigerants with bidirectional conversion capabilities</p>
+
+                            <h6>Core Functionality:</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-12 col-md-6">
+                                    <div class="card bg-success text-white">
+                                        <div class="card-body p-2">
+                                            <h6 class="mb-1"><i class="bi bi-arrow-right me-2"></i>Pressure → Temperature</h6>
+                                            <small>Field diagnostic mode - most common use case</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <div class="card bg-info text-white">
+                                        <div class="card-body p-2">
+                                            <h6 class="mb-1"><i class="bi bi-arrow-left me-2"></i>Temperature → Pressure</h6>
+                                            <small>Design/calculation mode for system planning</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6>Smart Interpolation Engine:</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-12 col-md-4">
+                                    <div class="card border-success text-center">
+                                        <div class="card-body p-2">
+                                            <i class="bi bi-check-circle text-success fs-2 mb-2"></i>
+                                            <h6>Exact</h6>
+                                            <small>Direct data point match</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <div class="card border-warning text-center">
+                                        <div class="card-body p-2">
+                                            <i class="bi bi-calculator text-warning fs-2 mb-2"></i>
+                                            <h6>Interpolated</h6>
+                                            <small>Linear calculation between points</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <div class="card border-danger text-center">
+                                        <div class="card-body p-2">
+                                            <i class="bi bi-exclamation-triangle text-danger fs-2 mb-2"></i>
+                                            <h6>Extrapolated</h6>
+                                            <small>Outside normal range - warning</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6>Professional Features:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Real-time calculation with immediate updates</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>PSIG/PSIA conversion handling</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>System type tracking (RTU, Split, Chiller, etc.)</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Capacity documentation and application notes</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Safety classifications (A1/A2L) and GWP awareness</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Operating range validation (-48°F to 120°F)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wet Bulb to Enthalpy Calculator Details -->
+                <div class="col-12">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="bi bi-cloud-rain me-2"></i>Wet Bulb to Enthalpy Calculator <span class="badge bg-danger">NEW</span></h6>
+                            <small>/wbenthalpy</small>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Purpose:</strong> Psychrometric conversions for field measurements and design verification</p>
+                            <p><strong>Range:</strong> 35°F to 85°F wet bulb temperature with 510 precise data points</p>
+
+                            <h6>Bidirectional Conversion:</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-12 col-md-6">
+                                    <div class="card bg-success text-white">
+                                        <div class="card-body p-2">
+                                            <h6 class="mb-1"><i class="bi bi-arrow-right me-2"></i>Wet Bulb → Enthalpy</h6>
+                                            <small>Field measurements mode - convert sensor readings</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <div class="card bg-primary text-white">
+                                        <div class="card-body p-2">
+                                            <h6 class="mb-1"><i class="bi bi-arrow-left me-2"></i>Enthalpy → Wet Bulb</h6>
+                                            <small>Design verification mode - confirm specifications</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6>Enhanced Psychrometric Calculations:</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6 col-md-3">
+                                    <div class="card bg-light text-center p-2">
+                                        <strong>Sensible Heat</strong><br>
+                                        <small class="text-primary">Components</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="card bg-light text-center p-2">
+                                        <strong>Latent Heat</strong><br>
+                                        <small class="text-info">Components</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="card bg-light text-center p-2">
+                                        <strong>Dew Point</strong><br>
+                                        <small class="text-success">Temperature</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="card bg-light text-center p-2">
+                                        <strong>Humidity Ratio</strong><br>
+                                        <small class="text-warning">Grains/lb</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6>Data Quality Indicators:</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-12 col-md-4">
+                                    <div class="card border-success text-center">
+                                        <div class="card-body p-2">
+                                            <i class="bi bi-bullseye text-success fs-2 mb-2"></i>
+                                            <h6 class="text-success">Exact Match</h6>
+                                            <small>Direct data point detection</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <div class="card border-info text-center">
+                                        <div class="card-body p-2">
+                                            <i class="bi bi-graph-up text-info fs-2 mb-2"></i>
+                                            <h6 class="text-info">Interpolated</h6>
+                                            <small>Linear interpolation with error estimates</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <div class="card border-warning text-center">
+                                        <div class="card-body p-2">
+                                            <i class="bi bi-exclamation-triangle text-warning fs-2 mb-2"></i>
+                                            <h6 class="text-warning">Extrapolated</h6>
+                                            <small>Out-of-range warnings</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6>Professional Features:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Interpolation Engine: 510 data points (35°F to 85°F in 0.1°F increments)</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Psychrometric Formulas: Industry-standard calculations for all air properties</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Auto-calculation: Smooth UX with immediate results on valid input</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>System Context: Measurement location tracking and equipment integration</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Operating Analysis: Intelligent notes based on wet bulb ranges</li>
+                                <li><i class="bi bi-check-circle text-success me-2"></i>Capacity Calculations: Total cooling capacity and SHR when applicable</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories Tab -->
+        <div class="tab-pane fade" id="categories">
+            <div class="row g-3">
+                <!-- Small Commercial -->
+                <div class="col-12 col-lg-6">
+                    <div class="card system-category">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0 text-primary">Small Commercial (2-10 tons)</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Applications:</strong> Small offices, retail shops, restaurants</p>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <small class="text-muted">Airflow</small><br>
+                                    <strong>350-450 CFM/ton</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Static Pressure</small><br>
+                                    <strong>0.8-1.5" WC</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Cost/Ton</small><br>
+                                    <strong>$1,200</strong>
+                                </div>
+                            </div>
+                            <p class="mt-2 mb-0"><small><i class="bi bi-lightbulb me-1"></i>Basic commercial analysis with residential-like simplicity</small></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medium Commercial -->
+                <div class="col-12 col-lg-6">
+                    <div class="card system-category">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0 text-success">Medium Commercial (10-30 tons)</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Applications:</strong> Medium offices, retail stores, schools</p>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <small class="text-muted">Airflow</small><br>
+                                    <strong>375-525 CFM/ton</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Static Pressure</small><br>
+                                    <strong>1.0-2.0" WC</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Cost/Ton</small><br>
+                                    <strong>$1,000</strong>
+                                </div>
+                            </div>
+                            <p class="mt-2 mb-0"><small><i class="bi bi-gear-wide-connected me-1"></i>Enhanced analysis with zone considerations</small></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Large Commercial -->
+                <div class="col-12 col-lg-6">
+                    <div class="card system-category">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0 text-warning">Large Commercial (30-75 tons)</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Applications:</strong> Large offices, hospitals, shopping centers</p>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <small class="text-muted">Airflow</small><br>
+                                    <strong>400-550 CFM/ton</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Static Pressure</small><br>
+                                    <strong>1.5-2.5" WC</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Cost/Ton</small><br>
+                                    <strong>$900</strong>
+                                </div>
+                            </div>
+                            <p class="mt-2 mb-0"><small><i class="bi bi-hospital me-1"></i>Complex system analysis with economizer and VAV support</small></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Industrial -->
+                <div class="col-12 col-lg-6">
+                    <div class="card system-category">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0 text-danger">Industrial (75+ tons)</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Applications:</strong> Manufacturing, large warehouses, data centers</p>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <small class="text-muted">Airflow</small><br>
+                                    <strong>425-575 CFM/ton</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Static Pressure</small><br>
+                                    <strong>2.0-3.0" WC</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Cost/Ton</small><br>
+                                    <strong>$800</strong>
+                                </div>
+                            </div>
+                            <p class="mt-2 mb-0"><small><i class="bi bi-buildings me-1"></i>Advanced analysis with process-specific requirements</small></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subcool System Types -->
+            <div class="row g-3 mt-2">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="bi bi-thermometer-half me-2"></i>Subcool Ranges by System Type</h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>System Type</th>
+                                            <th>Optimal Range</th>
+                                            <th>Characteristics</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>Packaged Rooftop Unit</td><td><span class="badge bg-success">8-18°F</span></td><td>Standard commercial cooling</td></tr>
+                                        <tr><td>Air Cooled Chiller</td><td><span class="badge bg-info">5-12°F</span></td><td>Precise temperature control</td></tr>
+                                        <tr><td>Water Cooled Chiller</td><td><span class="badge bg-primary">4-10°F</span></td><td>High efficiency operation</td></tr>
+                                        <tr><td>Heat Pump</td><td><span class="badge bg-warning">6-16°F</span></td><td>Dual mode operation</td></tr>
+                                        <tr><td>Process Cooling</td><td><span class="badge bg-danger">10-20°F</span></td><td>Industrial applications</td></tr>
+                                        <tr><td>Data Center Cooling</td><td><span class="badge bg-success">8-16°F</span></td><td>Reliable operation critical</td></tr>
+                                        <tr><td>Supermarket Refrigeration</td><td><span class="badge bg-info">12-25°F</span></td><td>Large refrigerant charges</td></tr>
+                                        <tr><td>Industrial Refrigeration</td><td><span class="badge bg-dark">15-30°F</span></td><td>High capacity systems</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Standards Tab -->
+        <div class="tab-pane fade" id="standards">
+            <div class="row g-3">
+                <!-- Airflow Standards -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="bi bi-wind me-2"></i>Airflow Standards by Application</h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Application</th>
+                                            <th>CFM/Person</th>
+                                            <th>CFM/Sq Ft</th>
+                                            <th>Typical Occupancy</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>Office Building</td><td>20</td><td>0.06</td><td>100 sq ft/person</td></tr>
+                                        <tr><td>Retail</td><td>15</td><td>0.12</td><td>30 sq ft/person</td></tr>
+                                        <tr><td>Restaurant</td><td>20</td><td>0.18</td><td>70 sq ft/person</td></tr>
+                                        <tr><td>Manufacturing</td><td>20</td><td>0.50</td><td>500 sq ft/person</td></tr>
+                                        <tr><td>Warehouse</td><td>20</td><td>0.05</td><td>2000 sq ft/person</td></tr>
+                                        <tr><td>Healthcare</td><td>25</td><td>0.18</td><td>120 sq ft/person</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Static Pressure Guidelines -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-warning">
+                            <h6 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Static Pressure Guidelines by Size</h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>System Size</th>
+                                            <th>Normal Range</th>
+                                            <th>Maximum</th>
+                                            <th>Warning Level</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>2-10 tons</td>
+                                            <td><span class="badge bg-success">0.8-1.2" WC</span></td>
+                                            <td><span class="badge bg-danger">1.5" WC</span></td>
+                                            <td><span class="badge bg-warning">1.3" WC</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>10-30 tons</td>
+                                            <td><span class="badge bg-success">1.0-1.5" WC</span></td>
+                                            <td><span class="badge bg-danger">2.0" WC</span></td>
+                                            <td><span class="badge bg-warning">1.7" WC</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>30-75 tons</td>
+                                            <td><span class="badge bg-success">1.2-2.0" WC</span></td>
+                                            <td><span class="badge bg-danger">2.5" WC</span></td>
+                                            <td><span class="badge bg-warning">2.2" WC</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>75+ tons</td>
+                                            <td><span class="badge bg-success">1.5-2.5" WC</span></td>
+                                            <td><span class="badge bg-danger">3.0" WC</span></td>
+                                            <td><span class="badge bg-warning">2.7" WC</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- P-T Chart Reference Data -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>P-T Chart Reference & Refrigerant Properties</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <!-- Sample P-T Data -->
+                                <div class="col-12">
+                                    <h6>Sample P-T Data Points (Common Temperatures)</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Refrigerant</th>
+                                                    <th>32°F (PSIG)</th>
+                                                    <th>70°F (PSIG)</th>
+                                                    <th>105°F (PSIG)</th>
+                                                    <th>130°F (PSIG)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><strong>R-410A</strong></td>
+                                                    <td>103.5</td>
+                                                    <td>201.4</td>
+                                                    <td>363.9</td>
+                                                    <td>504.1</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>R-22</strong></td>
+                                                    <td>43.0</td>
+                                                    <td>120.9</td>
+                                                    <td>241.9</td>
+                                                    <td>345.0</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>R-134A</strong></td>
+                                                    <td>9.9</td>
+                                                    <td>70.8</td>
+                                                    <td>142.4</td>
+                                                    <td>205.0</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>R-32</strong></td>
+                                                    <td>69.1</td>
+                                                    <td>170.2</td>
+                                                    <td>331.9</td>
+                                                    <td>469.4</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Refrigerant Categories -->
+                                <div class="col-12">
+                                    <h6>Refrigerant Categories & Safety Classifications</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Refrigerant</th>
+                                                    <th>Safety Class</th>
+                                                    <th>GWP</th>
+                                                    <th>Common Application</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>R-410A</td>
+                                                    <td><span class="badge bg-success">A1</span></td>
+                                                    <td>2088</td>
+                                                    <td>Standard commercial AC</td>
+                                                    <td><span class="badge bg-success">Current</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>R-22</td>
+                                                    <td><span class="badge bg-success">A1</span></td>
+                                                    <td>1810</td>
+                                                    <td>Legacy systems</td>
+                                                    <td><span class="badge bg-danger">Phaseout</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>R-134A</td>
+                                                    <td><span class="badge bg-success">A1</span></td>
+                                                    <td>1430</td>
+                                                    <td>Chillers</td>
+                                                    <td><span class="badge bg-warning">Transitioning</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>R-32</td>
+                                                    <td><span class="badge bg-warning">A2L</span></td>
+                                                    <td>675</td>
+                                                    <td>High efficiency systems</td>
+                                                    <td><span class="badge bg-info">Emerging</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>R-454B</td>
+                                                    <td><span class="badge bg-warning">A2L</span></td>
+                                                    <td>466</td>
+                                                    <td>R-410A replacement</td>
+                                                    <td><span class="badge bg-info">Future</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Psychrometric Reference Data -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="bi bi-cloud-rain me-2"></i>Psychrometric Reference Data</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <!-- Typical Wet Bulb Ranges -->
+                                <div class="col-12 col-md-6">
+                                    <h6>Typical Wet Bulb Temperature Ranges</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Condition</th>
+                                                    <th>Wet Bulb (°F)</th>
+                                                    <th>Enthalpy (BTU/lb)</th>
+                                                    <th>Application</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>Winter Design</td>
+                                                    <td><span class="badge bg-primary">35-45</span></td>
+                                                    <td>15-20</td>
+                                                    <td>Heating load calc</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Spring/Fall</td>
+                                                    <td><span class="badge bg-success">50-65</span></td>
+                                                    <td>21-28</td>
+                                                    <td>Economizer operation</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Summer Design</td>
+                                                    <td><span class="badge bg-warning">70-78</span></td>
+                                                    <td>31-38</td>
+                                                    <td>Cooling load calc</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Extreme Summer</td>
+                                                    <td><span class="badge bg-danger">79-85</span></td>
+                                                    <td>39-45</td>
+                                                    <td>Peak load conditions</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Measurement Locations -->
+                                <div class="col-12 col-md-6">
+                                    <h6>Common Measurement Locations</h6>
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <div class="card bg-light">
+                                                <div class="card-body p-2">
+                                                    <h6 class="text-primary mb-1">Return Air</h6>
+                                                    <small>Typical: 75°F DB, 62°F WB, 26.5 BTU/lb</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="card bg-light">
+                                                <div class="card-body p-2">
+                                                    <h6 class="text-success mb-1">Outside Air (Summer)</h6>
+                                                    <small>Design: 95°F DB, 78°F WB, 38.1 BTU/lb</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="card bg-light">
+                                                <div class="card-body p-2">
+                                                    <h6 class="text-info mb-1">Supply Air</h6>
+                                                    <small>Typical: 55°F DB, 53°F WB, 21.8 BTU/lb</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="card bg-light">
+                                                <div class="card-body p-2">
+                                                    <h6 class="text-warning mb-1">Mixed Air</h6>
+                                                    <small>Variable: Based on OA/RA mix ratio</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Psychrometric Formulas -->
+                                <div class="col-12">
+                                    <h6>Key Psychrometric Relationships</h6>
+                                    <div class="row g-2">
+                                        <div class="col-12 col-md-6">
+                                            <div class="card bg-light">
+                                                <div class="card-body">
+                                                    <h6>Enthalpy Formula</h6>
+                                                    <code>h = 0.240 × DB + W × (1061 + 0.444 × DB)</code>
+                                                    <p class="mt-2 mb-0 small">Where: h = enthalpy (BTU/lb), DB = dry bulb (°F), W = humidity ratio</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <div class="card bg-light">
+                                                <div class="card-body">
+                                                    <h6>Cooling Capacity</h6>
+                                                    <code>Q = CFM × 4.5 × Δh</code>
+                                                    <p class="mt-2 mb-0 small">Where: Q = BTU/hr, Δh = enthalpy difference</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Refrigerant Cost Analysis -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="bi bi-currency-dollar me-2"></i>Refrigerant Cost Analysis</h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Refrigerant</th>
+                                            <th>Cost/lb</th>
+                                            <th>Category</th>
+                                            <th>Service Cost Range</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>R-410A</td>
+                                            <td class="cost-highlight">$12.50</td>
+                                            <td><span class="badge bg-success">Standard</span></td>
+                                            <td>$350 - $6,000</td>
+                                        </tr>
+                                        <tr>
+                                            <td>R-22</td>
+                                            <td class="cost-highlight">$45.00</td>
+                                            <td><span class="badge bg-danger">Expensive</span></td>
+                                            <td>$525 - $6,000</td>
+                                        </tr>
+                                        <tr>
+                                            <td>R-454B</td>
+                                            <td class="cost-highlight">$35.00</td>
+                                            <td><span class="badge bg-warning">New Tech</span></td>
+                                            <td>$525 - $6,000</td>
+                                        </tr>
+                                        <tr>
+                                            <td>R-134a</td>
+                                            <td class="cost-highlight">$15.00</td>
+                                            <td><span class="badge bg-info">Chiller</span></td>
+                                            <td>$350 - $3,750</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Common Issues by Size -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-danger text-white">
+                            <h6 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Common Issues by Size</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <h6 class="text-primary">Small Commercial (2-10 tons)</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><i class="bi bi-record-circle me-2"></i>Similar to residential but higher capacity</li>
+                                        <li><i class="bi bi-record-circle me-2"></i>Focus on filter maintenance and basic airflow</li>
+                                        <li><i class="bi bi-record-circle me-2"></i>Simple economizer systems if present</li>
+                                    </ul>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <h6 class="text-success">Medium Commercial (10-30 tons)</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><i class="bi bi-record-circle me-2"></i>Multi-zone considerations</li>
+                                        <li><i class="bi bi-record-circle me-2"></i>Economizer complexity increases</li>
+                                        <li><i class="bi bi-record-circle me-2"></i>Static pressure becomes more critical</li>
+                                        <li><i class="bi bi-record-circle me-2"></i>Demand charge considerations</li>
+                                    </ul>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <h6 class="text-warning">Large Commercial (30-75 tons)</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><i class="bi bi-record-circle me-2"></i>Complex ductwork systems</li>
+                                        <li><i class="bi bi-record-circle me-2"></i>VAV considerations</li>
+                                        <li><i class="bi bi-record-circle me-2"></i>Code compliance critical</li>
+                                        <li><i class="bi bi-record-circle me-2"></i>Energy management focus</li>
+                                        <li><i class="bi bi-record-circle me-2"></i>Professional maintenance required</li>
+                                    </ul>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <h6 class="text-danger">Industrial (75+ tons)</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><i class="bi bi-record-circle me-2"></i>Process-specific requirements</li>
+                                        <li><i class="bi bi-record-circle me-2"></i>High static pressure systems</li>
+                                        <li><i class="bi bi-record-circle me-2"></i>Specialized filtration needs</li>
+                                        <li><i class="bi bi-record-circle me-2"></i>Peak demand management critical</li>
+                                        <li><i class="bi bi-record-circle me-2"></i>Planned maintenance essential</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center mt-4 pt-3 border-top">
+        <p class="text-muted small mb-1">
+            <i class="bi bi-tools me-1"></i>&copy;2025 Interior Climate Solutions
+        </p>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>

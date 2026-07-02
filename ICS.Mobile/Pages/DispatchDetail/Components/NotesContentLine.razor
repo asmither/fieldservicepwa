@@ -1,0 +1,11 @@
+﻿<div class="Line"><b>@Label.ToUpper(): </b><br/>@((MarkupString)Text)</div>
+
+@code {
+
+    [Parameter]
+    public string Label { set; get; }
+
+    [Parameter]
+    public string Text { set; get; }
+
+}

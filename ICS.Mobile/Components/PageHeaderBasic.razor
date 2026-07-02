@@ -1,0 +1,38 @@
+﻿<div class="PageHeaderBasic">
+
+    <div class="IconText">
+        <span class="Avatar" aria-hidden="true">
+            @if (!string.IsNullOrEmpty(Image))
+            {
+                <img src="@Image" alt="" />
+            }
+            else if (!string.IsNullOrEmpty(Icon))
+            {
+                <i class="bi @Icon"></i>
+            }
+            else
+            {
+                <img class="Logo" src="/images/icon-300-trans.png" alt="" />
+            }
+        </span>
+        <div class="Text">@Title</div>
+    </div>
+    @if (ChildContent is not null)
+    {
+        @ChildContent
+    }
+</div>
+@code {
+
+    [Parameter]
+    public string? Title { set; get; }
+
+    [Parameter]
+    public string? Image { set; get; }
+
+    [Parameter]
+    public string? Icon { set; get; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { set; get; }
+}

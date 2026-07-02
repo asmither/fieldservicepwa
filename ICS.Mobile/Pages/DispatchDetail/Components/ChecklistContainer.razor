@@ -1,0 +1,14 @@
+﻿<div class="DispatchDetailCheckListContainer">
+    @if (ChildContent is not null)
+    {
+        @ChildContent
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public RenderFragment? ChildContent { set; get; }
+
+
+}

@@ -1,0 +1,90 @@
+@page "/"
+@inherits ICS.Mobile.Pages.PageBase
+@using ICS.Mobile.Components
+@using ICS.Mobile.Pages.Home.Components
+@* @using ICS.Mobile.Components.ScratchPad; *@
+
+<CSSHome />
+<ICSDialogBox @ref="DialogBox" />
+@if (Initialized)
+{
+    @* <ScratchPadOverlay @ref="scratchPadRef" CurrentUserId="@CurrentUserId" /> *@
+    @* <ScratchPadFab CurrentUserId="@CurrentUserId" /> *@
+
+    @switch (PageState)
+    {
+        case HomePageStates.Loading:
+            <ICS.Mobile.Components.ICSLoadingSpinner>
+                <i class="bi-clock-fill"> </i>
+            </ICS.Mobile.Components.ICSLoadingSpinner>
+            break;
+        case HomePageStates.Active:
+
+            @* Settings lives in the bottom tab bar — no duplicate gear here. *@
+            <PageHeaderBasic Title="@UserName" />
+
+            <ActionButtonsContainer>
+                <ActionButtonFull Title="MY DISPATCHES" Count="@DispatchesCount" GridArea="MyDispatches" AlwaysShow=true OnClick="OnMyDispatchesClick" />
+                @* <ActionButtonFull Title="CHECKLISTS IN PROGRESS" Count="@ChecklistCount" GridArea="ChecklistsInProgress" AlwaysShow=false OnClick="ChecklistsInProgressClick" /> *@
+                @if (!DataService.AppState.IsContractor)
+                {
+                    <ActionButtonHalf Title="Start Day" GridArea="StartDay" Icon="bi-sunrise" OnClick="OnStartDayClick" />
+                    <ActionButtonHalf Title="End Day" GridArea="EndDay" Icon="bi-moon-stars" OnClick="OnEndDayClick" />
+                }
+                <ActionButtonHalf Title="Take 5" GridArea="TakeFive" Icon="bi-cup-hot" OnClick="OnTakeFiveClick" />
+                <ActionButtonHalf Title="Injury" GridArea="Injury" Icon="bi-bandaid" OnClick="OnInjuryClick" />
+                @if (!DataService.AppState.IsContractor)
+                {
+                    <ActionButtonFullHH Title="Time Tracking" Icon="bi-stopwatch" GridArea="TimeClock" AlwaysShow=true OnClick="OnTimeTrackingClick" />
+                }
+                @* Bluon integration disconnected — tile retired 2026-07.
+                <ActionButtonFullHH Title="Parts & Manuals" GridArea="Bluon" AlwaysShow=true OnClick="OnBluonBrowseClick" /> *@
+                <ActionButtonFullHH Title="Company Directory" Icon="bi-people" GridArea="Directory" AlwaysShow=true OnClick="OnCompanyDirectoryClick" />
+                <ActionButtonFullHH Title="ICS Pro Calculators" Icon="bi-calculator" GridArea="Calculator" AlwaysShow=true OnClick="CalcClick" />
+                @* <ActionButtonFullHH Title="Create a Dispatch" GridArea="NewDispatch" AlwaysShow=true OnClick="MadlibClick" /> *@
+
+            </ActionButtonsContainer>
+
+            @if (!DataService.AppState.IsContractor)
+            {
+                @if (KPICount > 0)
+                {
+                    <GoalsContainer RefreshNow="() => GetTechKPIListAsync()">
+                        @if (KPIList is not null)
+                        {
+                            @foreach (var kpi in KPIList!)
+                            {
+                                <GoalItem Title="@kpi.KPI" SubTitle="@kpi.TypeDescription" Target='@kpi.KPIValueGoal!.ToString("n2").Replace(".00", "")' ActualValue="@kpi.KPIValue!.ToString("n2").Replace(".00", "")" CssColor="@SetColorBasedOnValueToGoal(kpi)" />
+                            }
+                        }
+                    </GoalsContainer>
+                }
+
+                if (NewsCount > 0)
+                {
+                    <NewsContainer RefreshNow="() => GetNewsAsync()">
+                        @if (NewsList is not null)
+                        {
+                            @foreach (var news in NewsList!)
+                            {
+                                <NewsItem ItemType="@news.TechNewsTypeId"
+                                          Date="@DateLabelDisplay(news.PostedOn)"
+                                          Title="@news.Title" Caption="@news.Caption"
+                                          NewsBody="@news.Body"
+                                          Link="@news.Link" LinkHelper="@news.LinkHelper" LinkType="@news.LinkType"
+                                          ImageFileName="@news.ImageFileName" />
+                            }
+                        }
+
+                    </NewsContainer>
+                }
+            }
+            break;
+    }
+    <SyncIndicator SuppressClickableCloud=false></SyncIndicator>
+}
+else
+{
+    <ICSLoadingSpinner></ICSLoadingSpinner>
+
+}

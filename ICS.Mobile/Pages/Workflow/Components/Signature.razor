@@ -1,0 +1,81 @@
+﻿@using ICS.Mobile.Components
+@inherits WorkflowComponentsBasePage
+@layout EmptyLayout
+
+@if (Initialized)
+{
+    //TODO: Get the screen with and set width and height variables
+
+    @if (image!.ContentType is not null)
+    {
+        <div class="wrapper">
+            <img class="signature-pad-img" src="@image.Base64Version()" alt="Signature" width="@width" height="@height">
+        </div>
+
+        <div class="CenteredButtonContainer">
+            <button class="Button Larger" @onclick="DeleteImageAsync">Clear</button>
+        </div>
+        
+    }
+    else
+    {
+        <div class="wrapper">
+            <canvas @ref="signaturePad" id="signature-pad" class="signature-pad" width="@width" height="@height"></canvas>
+        </div>
+        
+        <br />
+
+        <div class="CenteredButtonContainer">
+            <button class="Button Larger Ok" @onclick="SaveImageAsync">Accept</button>
+            <button class="Button Larger" @onclick="DeleteImageAsync">Clear</button>
+        </div>
+        
+    }
+
+    <CommonError Message="@ErrorMessage" OnDismissClick="() => ErrorMessage = null" />
+
+    @if (WorkflowStep!.NoteRequirementId != 0)
+    {
+        <NoteMedia Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" NoteChanged="NoteChanged" NoteLabel="@WorkflowStep!.NoteLabel"></NoteMedia>
+    }
+
+    <Navigation NextDisabled="NextDisabled" PreviousDisabled="PreviousDisabled" OnNextClick="OnMoveNext" OnPreviousClick="OnMovePrevious"></Navigation>
+}
+else
+{
+    <ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICSLoadingSpinner>
+}
+<style>
+    .wrapper {
+        position: relative;
+        width: @WidthPixels;
+        height: @HeightPixels;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+    .signature-pad {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: @WidthPixels;
+        height: @HeightPixels;
+        border: 1px solid black;
+    }
+
+    .signature-pad-img {
+        position: absolute;
+        left: 0;
+        top: 0;
+       width: @WidthPixels;
+        height: @HeightPixels;
+        border: 1px solid black;
+    }
+
+</style>

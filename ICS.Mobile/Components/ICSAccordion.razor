@@ -1,0 +1,64 @@
+﻿<div class="accordion">
+    <div class="accordion-item">
+            <h3 class="accordion-header" @onclick="ToggleOpen" style="background-color: @HeaderBackgroundColor">
+                <button class="@ButtonClassCSS" type="button">
+                    @Title
+                </button>
+            </h3>
+        <div class="@ContentClassCSS" style="background-color: @BackgroundColor">
+            <div class="accordion-body" style="color: @ForegroundColor">
+                @ChildContent
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public string Title { set; get; }
+
+    [Parameter]
+    public bool Open
+    {
+        set
+        {
+            if (value)
+            {
+                ButtonClassCSS = "accordion-button";
+                ContentClassCSS = "accordion-collapse collapse show";
+            }
+            else
+            {
+                ButtonClassCSS = "accordion-button collapsed";
+                ContentClassCSS = "accordion-collapse collapse";
+            }
+        }
+        get
+        {
+            return ButtonClassCSS == "accordion-button";
+        }
+    }
+
+    
+    [Parameter]
+    public string ForegroundColor { set; get; } = "black";
+    
+    [Parameter]
+    public string BackgroundColor { set; get; } = "white";
+    
+    [Parameter]
+    public string HeaderBackgroundColor { set; get; } = "white";
+
+    private string? ButtonClassCSS = null;
+
+    private string? ContentClassCSS = null;
+
+    private void ToggleOpen()
+    {
+        Open = !Open;
+    }
+}

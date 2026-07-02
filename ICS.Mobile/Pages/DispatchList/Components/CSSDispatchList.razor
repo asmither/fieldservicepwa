@@ -1,0 +1,258 @@
+﻿<style>
+
+    body {
+        padding: env(safe-area-inset-top) 1rem 0.6rem 0.6rem;
+        margin: 0;
+        margin-top: 1rem;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        font-family: var(--font-sans);
+    }
+
+    .DispatchListPageTabs {
+        border-bottom: var(--border-hairline);
+        margin-top: var(--space-4);
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+        .DispatchListPageTabs > .Tab {
+            min-height: var(--touch-target);
+            font-size: var(--text-base);
+            font-weight: var(--weight-medium);
+            letter-spacing: .04em;
+            color: var(--text-muted);
+            border: none;
+            background-color: transparent;
+            border-bottom: 3px solid transparent;
+            padding: 0;
+            margin: 0;
+            transition: color var(--motion-fast) ease, border-color var(--motion-fast) ease;
+        }
+
+        .DispatchListPageTabs .Tab.Selected {
+            font-weight: var(--weight-semibold);
+            border-bottom: 3px solid var(--accent);
+            color: var(--text-primary);
+        }
+
+    .DispatchListItem {
+        margin-top: var(--space-4);
+        background: var(--surface-card);
+        border: var(--border-hairline);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--elevation-1);
+        overflow: hidden;
+    }
+
+        .DispatchListItem .Content {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: auto auto 2px 6rem;
+            grid-template-areas:
+                "Header"
+                "Status"
+                "Border"
+                "Details"
+        }
+
+            .DispatchListItem .Content .Border {
+                border-bottom: 1px solid #89C6E6;
+                margin: 0 1rem 0 1rem;
+            }
+
+            .DispatchListItem .Content .Header {
+                padding: .75rem;
+                grid-area: Header;
+                background-color: rgba(3, 66, 138, 0.5);
+                border: none;
+                border-radius: 10px 10px 0 0;
+                color: var(--PrimaryColor);
+                display: grid;
+                grid-template-columns: 1fr auto;
+                grid-template-rows: 2rem 2rem;
+                grid-template-areas:
+                    "CustomerName Pin"
+                    "FullAddress  Pin";
+            }
+
+                .DispatchListItem .Content .Header .CustomerName, .DispatchListItem .Content .Header .FullAddress {
+                    text-align: left;
+                    color: var(--PrimaryColor);
+                    font-size: 1.38rem;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .DispatchListItem .Content .Header .FullAddress {
+                    grid-area: FullAddress;
+                    font-size: 1.12rem;
+                    color: var(--SecondaryColor);
+                    text-align: left;
+                    align-self: start;
+                }
+
+                .DispatchListItem .Content .Header .CustomerName {
+                    grid-area: CustomerName;
+                    align-self: end;
+                    text-align: left;
+                }
+
+
+
+
+                .DispatchListItem .Content .Header .Pin {
+                    grid-area: Pin;
+                    align-self: center;
+                    align-content: end;
+                    width: 2rem;
+                }
+
+            .DispatchListItem .Content .Status {
+                grid-area: Status;
+                display: grid;
+                grid-template-columns: auto 1fr;
+                grid-template-rows: auto 2rem;
+                grid-template-areas:
+                    "StatusAndPriority PromissedDate"
+                    "Area              Area";
+                align-items: center;
+            }
+
+                .DispatchListItem .Content .Status .StatusAndPriority {
+                    padding: .25rem 1rem .25rem 1rem;
+                    text-align: left;
+                    grid-area: StatusAndPriority;
+                    align-self: center;
+                    font-size: 1rem;
+                    border-radius: 0 0 10px 0;
+                    font-weight: bold;
+                }
+
+                    .DispatchListItem .Content .Status .StatusAndPriority.Pending {
+                        background: var(--PendingColor);
+                    }
+
+                    .DispatchListItem .Content .Status .StatusAndPriority.Traveling {
+                        background: var(--TravelingColor);
+                    }
+
+                    .DispatchListItem .Content .Status .StatusAndPriority.Working {
+                        background: var(--WorkingColor);
+                    }
+
+                    .DispatchListItem .Content .Status .StatusAndPriority.Complete {
+                        background: var(--CompleteColor);
+                    }
+
+                .DispatchListItem .Content .Status .PromissedDate {
+                    padding-right: 1rem;
+                    text-align: right;
+                    grid-area: PromissedDate;
+                    font-size: 1.25rem;
+                    font-weight: 700;
+                    align-self: center;
+                }
+
+                .DispatchListItem .Content .Status .Area {
+                    padding-left: 1rem;
+                    grid-area: Area;
+                    font-size: 1.15rem;
+                    align-self: center;
+                }
+
+            .DispatchListItem .Content .Details {
+                padding: .5rem 1rem .5rem 1rem;
+                grid-area: Details;
+                display: grid;
+                align-content: center;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto;
+                grid-template-areas:
+                    "Tasks    Tasks"
+                    "PO         DNE"
+                    "ESC       Zone";
+                font-size: 1.1rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+                .DispatchListItem .Content .Details .PO {
+                    grid-area: PO;
+                }
+
+                .DispatchListItem .Content .Details .POLabel {
+                    color: var(--SecondaryColor);
+                    grid-area: PO;
+                }
+
+                .DispatchListItem .Content .Details .POValue {
+                    grid-area: PO;
+                }
+
+
+                .DispatchListItem .Content .Details .Zone {
+                    grid-area: Zone;
+                    width: 100%;
+                    text-align: right;
+                }
+
+                .DispatchListItem .Content .Details .ZoneLabel {
+                    color: var(--SecondaryColor);
+                    grid-area: Zone;
+                }
+
+                .DispatchListItem .Content .Details .ZoneValue {
+                    grid-area: Zone;
+                }
+
+                .DispatchListItem .Content .Details .DNE {
+                    grid-area: DNE;
+                    text-align: right;
+                }
+
+                .DispatchListItem .Content .Details .DNELabel {
+                    color: var(--SecondaryColor);
+                    grid-area: DNE;
+                }
+
+                .DispatchListItem .Content .Details .DNEValue {
+                    color: var(--SecondaryColor);
+                    grid-area: DNE;
+                }
+
+
+                .DispatchListItem .Content .Details .ESC {
+                    grid-area: ESC
+                }
+
+                .DispatchListItem .Content .Details .ESCLabel {
+                    color: var(--SecondaryColor);
+                    grid-area: ESC;
+                }
+
+                .DispatchListItem .Content .Details .ESCValue {
+                    grid-area: ESC;
+                }
+
+                .DispatchListItem .Content .Details .Tasks {
+                    grid-area: Tasks;
+                    font-weight: bolder;
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                }
+
+                .DispatchListItem .Content .Details .TasksLabel {
+                    color: var(--SecondaryColor);
+                    grid-area: Tasks;
+                }
+
+                .DispatchListItem .Content .Details .TasksValue {
+                    grid-area: Tasks;
+                }
+
+</style>

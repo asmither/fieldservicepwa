@@ -1,0 +1,68 @@
+/* Approval status marks — color + icon + label, never color alone. */
+.ApprovalMark {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: var(--text-sm);
+    font-style: normal;
+    font-weight: var(--weight-medium);
+}
+
+    .ApprovalMark i {
+        font-size: 1.4rem;
+        line-height: 1;
+    }
+
+.ApprovalMark.Success {
+    color: var(--status-success);
+}
+
+.ApprovalMark.Danger {
+    color: var(--status-danger);
+}
+
+.ApprovalMark.Info {
+    color: var(--status-info);
+}
+
+/* Approve/decline buttons — glove-friendly 48px targets. */
+.ThumbBtn {
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-raised-subtle);
+    border: var(--border-subtle);
+    border-radius: var(--radius-md);
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.ThumbBtn.Up {
+    color: var(--status-success);
+}
+
+.ThumbBtn.Down {
+    color: var(--status-danger);
+}
+
+/* Day-row date cell states (was inline-styled). */
+.date.DateToday {
+    background-color: var(--ThemeColor);
+}
+
+.date.DateHistory {
+    background-color: #243d70e6;
+}
+
+.DateDay {
+    font-size: larger;
+    color: var(--text-primary);
+}
+
+.DateSub {
+    color: var(--text-secondary);
+}

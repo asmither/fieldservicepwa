@@ -1,0 +1,165 @@
+﻿@if (Initialized)
+{
+    <div class="NumberInput">
+        <div class="Display">
+            @display &nbsp;
+        </div>
+        <div class="Buttons">
+            <button type="button" class="Button Seven" @onclick='() => HandleInput("7")'>7</button>
+            <button type="button" class="Button Eight" @onclick='() => HandleInput("8")'>8</button>
+            <button type="button" class="Button Nine" @onclick='() => HandleInput("9")'>9</button>
+
+            <button type="button" class="Button Minus" @onclick='() => HandleInput("-")'>-</button>
+
+            <button type="button" class="Button Four" @onclick='() => HandleInput("4")'>4</button>
+            <button type="button" class="Button Five" @onclick='() => HandleInput("5")'>5</button>
+            <button type="button" class="Button Six" @onclick='() => HandleInput("6")'>6</button>
+            <button type="button" class="Button Clear" @onclick='() => HandleInput("C")'>C</button>
+
+            <button type="button" class="Button One" @onclick='() => HandleInput("1")'>1</button>
+            <button type="button" class="Button Two" @onclick='() => HandleInput("2")'>2</button>
+            <button type="button" class="Button Three" @onclick='() => HandleInput("3")'>3</button>
+            <button type="button" class="Button AllClear" @onclick='() => HandleInput("AC")'>AC</button>
+
+            <button type="button" class="Button Zero" @onclick='() => HandleInput("0")'>0</button>
+            <button type="button" class="Button Decimal" @onclick='() => HandleInput(".")'>.</button>
+        </div>
+    </div>
+}
+
+@code {
+
+    private string display = string.Empty;
+    private bool IgnoreChange = false;
+    private bool Initialized = false;
+
+    [Parameter]
+    public decimal? Value { set; get; }
+
+    [Parameter]
+    public EventCallback<decimal?> ValueChanged { get; set; }
+
+    private void HandleChange()
+    {
+        if (display == string.Empty)
+        {
+            if (Value != null)
+            {
+                Value = null;
+                IgnoreChange = true;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+        else if (decimal.TryParse(display, out decimal result))
+        {
+            if(Value != result)
+            {
+                Value = result;
+                IgnoreChange = true;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
+
+    private void HandleInput(string value)
+    {
+        if (value == "-")
+        {
+            // Toggles -
+
+            if (display.StartsWith('-') == false)
+            {
+                display = "-" + display;
+            }
+            else
+            {
+                display = display.Substring(1);
+            }
+
+            HandleChange();
+
+            return;
+        }
+
+        if (value == ".")
+        {
+            // The number won't be valid till the next step ie 100. would strip the . on parse
+
+            if (display == string.Empty)
+            {
+                display = ".";
+            }
+            else if (!display.Contains("."))
+            {
+                display = display + value;
+            }
+
+            return;
+        }
+
+        if (value == "C")
+        {
+            // Clearing 1 character could leave us with - or .
+            if (display.Length > 0)
+            {
+                display = display.Substring(0, display.Length - 1);
+            }
+
+            HandleChange();
+
+            return;
+        }
+
+        if (value == "AC")
+        {
+            display = string.Empty;
+            HandleChange();
+            return;
+        }
+
+        if (value == "0")
+        {
+            if (display == "0")
+            {
+                return;
+            }
+
+            display = display + value;
+
+            HandleChange();
+
+            return;
+
+        }
+
+        // Numbers 1 - 9 are always valid
+        display = display + value;
+
+        HandleChange();
+
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if (!IgnoreChange)
+        {
+            if (Value == null)
+            {
+                display = string.Empty;
+            }
+            else
+            {
+                display = Value.Value.ToString();
+            }
+        }
+
+        IgnoreChange = false;
+
+        if (!Initialized)
+        {
+            Initialized = true;
+        }
+    }
+}

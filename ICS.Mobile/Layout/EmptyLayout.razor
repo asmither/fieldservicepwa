@@ -1,0 +1,58 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Nav
+<main id="main-content">
+    <ICS.Mobile.Components.AppErrorBoundary @ref="errorBoundary">
+        <ChildContent>
+            @Body
+        </ChildContent>
+        <ErrorContent>
+            <div class="LayoutError" role="alert">
+                <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                <h2>Something went wrong</h2>
+                <p>
+                    This screen hit an unexpected error. Your synced work is safe.
+                    Try again, or head back home — if it keeps happening, use
+                    Settings &gt; Sync to push pending work before restarting the app.
+                </p>
+                <div class="Actions">
+                    <button type="button" @onclick="Recover">Try Again</button>
+                    <a href="/">Go Home</a>
+                </div>
+            </div>
+        </ErrorContent>
+    </ICS.Mobile.Components.AppErrorBoundary>
+</main>
+
+@if (ShowTabBar)
+{
+    <AppTabBar />
+}
+
+@code {
+    private ErrorBoundary? errorBoundary;
+
+    // The tab bar is the app's single global navigation and renders on every
+    // page except: Settings (gets a back arrow instead), the workflow runner
+    // (immersive — has its own bottom step-navigation bar), and login.
+    private bool ShowTabBar
+    {
+        get
+        {
+            var path = new Uri(Nav.Uri).AbsolutePath.TrimEnd('/').ToLowerInvariant();
+            return path != "/settings"
+                && path != "/login"
+                && !path.StartsWith("/workflow-runner");
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Auto-recover on navigation so one bad page doesn't brick the app.
+        errorBoundary?.Recover();
+    }
+
+    private void Recover()
+    {
+        errorBoundary?.Recover();
+    }
+}

@@ -1,0 +1,310 @@
+﻿@if (Show)
+{
+    <div class="ICS-dialog" @onkeydown="HandleKeyDown">
+        <div class="ICS-dialog-content" role="dialog" aria-modal="true" aria-labelledby="@HeaderId"
+             tabindex="-1" @ref="ContentRef">
+            <div class="ICS-dialog-header">
+                <h2 id="@HeaderId">@HeaderText</h2>
+            </div>
+            <div class="ICS-dialog-body">
+                <div class="ICS-dialog-prompt" style="@CustomBodyStyle">
+                    @if (ShowCommentBox && TableData is not null)
+                    {
+
+                    }
+                    else
+                    {
+                        @if (!string.IsNullOrEmpty(PromptText))
+                        {
+                            <p>@((MarkupString)PromptText)</p>
+                        }
+                        @if (ChildContent is not null)
+                        {
+                            @ChildContent
+                        }
+                    }
+                    @if (TableData is not null)
+                    {
+                        <table class="ICS-table">
+                            @if (!string.IsNullOrEmpty(TableCol1Header) && !string.IsNullOrEmpty(TableCol2Header))
+                            {
+                                <tr>
+                                    <th style="width: 40%;"><center>@TableCol1Header</center></th>
+                                    <th><center>@TableCol2Header</center></th>
+                                </tr>
+                            }
+                            @foreach (var item in TableData!)
+                            {
+                                <tr>
+                                    <td class="keycol">
+                                        @if (!string.IsNullOrEmpty(item.Key) && item.Key.Trim().Length > 0)
+                                        {
+                                            @string.Concat(item.Key, ":")
+                                        }
+                                        else
+                                        {
+
+                                            @item.Key
+                                        }
+                                    </td>
+                                    <td class="valcol">@item.Value</td>
+                                </tr>
+                            }
+                        </table>
+                    }
+                    @if (InputBoxOption && ShowCommentBox)
+                    {
+                        <div class="ICS-dialog-commentbox">
+                            <textarea rows=7 @bind="CommentValue" placeholder="@PlaceholderText" />
+                        </div>
+                    }
+                    <div class="ICS-dialog-footer">
+
+                        @if (!string.IsNullOrEmpty(OptButtonText))
+                        {
+                            @if (InputBoxOption && !ShowCommentBox)
+                            {
+                                <button class="ICS-optbtn @DefaultCheck(3)" @onclick="() => CommentWanted()">@OptButtonText</button>
+                            }
+                            else
+                            {
+                                <button class="ICS-optbtn @DefaultCheck(3)" @onclick="() => ButtonClicked(3)">@OptButtonText</button>
+                            }
+                        }
+                        @if (!ShowCommentBox)
+                        {
+                            @if (!string.IsNullOrEmpty(OkButtonText))
+                            {
+                                <button class="ICS-okbtn @DefaultCheck(1)" @onclick="() => ButtonClicked(1)">@OkButtonText</button>
+                            }
+                        }
+                        @if (!string.IsNullOrEmpty(CancelButtonText))
+                        {
+                            <button class="ICS-cancelbtn @DefaultCheck(2)" @onclick="() => ButtonClicked(2)"> @CancelButtonText</button>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+
+
+    // Use this for async wait for dialog result!
+    private TaskCompletionSource<int> _tcs = new TaskCompletionSource<int>();
+
+    public Task<int> WaitForDialogResultAsync(string header = "", string prompt = "", string okLabel = "", string cancelLabel = "", string optLabel = "", int defaultButton = 1, Dictionary<string, string>? tableData = null)
+    {
+        _tcs = new TaskCompletionSource<int>(); // our special little trigger for async wait
+
+        if (!string.IsNullOrEmpty(header)) HeaderText = header;
+        if (!string.IsNullOrEmpty(prompt)) PromptText = prompt;
+        if (!string.IsNullOrEmpty(okLabel)) OkButtonText = okLabel;
+        if (!string.IsNullOrEmpty(cancelLabel)) CancelButtonText = cancelLabel;
+        if (!string.IsNullOrEmpty(optLabel)) OptButtonText = optLabel;
+        if (tableData is not null && tableData.Count > 0) TableData = tableData;
+
+        CommentValue = "";
+        ShowCommentBox = false;
+        InputBoxOption = false;
+
+        // 1 is OK, 2=cancel, 3=opt
+
+        DefaultButton = defaultButton;
+        Toggle(); // show the dialog
+        return _tcs.Task;
+
+
+        // EXAMPLE USAGE:
+        // await DialogBox.WaitForDialogResultAsync(header: "Fatal Error",
+        //                                   prompt: "There was an error updating the time data.  Please try again."
+        //                                   as string, okLabel: "OK", cancelLabel: string.Empty, defaultButton: 1);
+
+        // if (1 == await DialogBox.WaitForDialogResultAsync(header: "Finish Checklist", prompt: "Are you ready to mark this checklist as complete?", okLabel: "COMPLETE", cancelLabel: "Not Yet", defaultButton: 1))
+        //     { await OnComplete.InvokeAsync(); }
+
+        // if (1 == await DialogBox.WaitForDialogResultAsync(
+        //         header: "Please Upgrade your App", prompt: "An app update is requested.  Will you please go to settings and perform an update (may have to do it 4 times).  You can also try a force-quit of the app and restart.  The update is critical to smooth functioning of your ICS app.  We apologize for the inconvenience.", okLabel: "OK", defaultButton: 1))
+        // {
+        //     GotoSettings(); // not awaiting this because we are quitting the app.
+        // }
+
+    }
+
+    // Use this for async wait for dialog result with 3rd button triggering additional text comment!
+    public Task<(int, string)> WaitForDialogResultAndCommentAsync(string header = "", string prompt = "", string okLabel = "", string cancelLabel = "", string optLabel = "", string commentBoxPlaceholderText = "", string commentDefaultValue = "", int defaultButton = 1, Dictionary<string, string>? tableData = null)
+    {
+
+        // Use of 3rd button (optLabel) will trigger the comment box and return the string.
+
+        var tcs = new TaskCompletionSource<(int, string)>();  // our return value touple for async wait
+        _tcs = new TaskCompletionSource<int>();
+
+
+        if (tableData is not null && tableData.Count > 0) TableData = tableData;
+        if (!string.IsNullOrEmpty(header)) HeaderText = header;
+        if (!string.IsNullOrEmpty(prompt)) PromptText = prompt;
+        if (!string.IsNullOrEmpty(okLabel)) OkButtonText = okLabel;
+        if (!string.IsNullOrEmpty(cancelLabel)) CancelButtonText = cancelLabel;
+        if (!string.IsNullOrEmpty(optLabel)) OptButtonText = optLabel;
+        if (!string.IsNullOrEmpty(optLabel))
+        {
+            ShowCommentBox = false; // start with comment box hidden
+            InputBoxOption = true;  // enable the option for comment box
+            CommentValue = commentDefaultValue;
+            if (commentBoxPlaceholderText is not null)
+                PlaceholderText = commentBoxPlaceholderText;
+            else
+                PlaceholderText = defPlaceHolderText;
+
+        }
+        else
+        {
+            ShowCommentBox = false;
+            InputBoxOption = false;
+            CommentValue = "";
+        }
+
+        DefaultButton = defaultButton;
+        Toggle();
+
+        // When the button is clicked, set the result of the tuple
+        _tcs.Task.ContinueWith(t => tcs.SetResult((t.Result, CommentValue)));
+
+        return tcs.Task;
+
+        // EXAMPLE USAGE w/ comment box:
+        // int inputBoxResult = 0;
+        // string comment = string.Empty;
+        // (inputBoxResult, comment) = await DialogBox.WaitForDialogResultAndCommentAsync(header: "Decline Time",
+        //                 prompt: "Do you want to decline this timecard?" as string,
+        //                 commentBoxPlaceholderText: "Please note why you are disputing...", commentDefaultValue: string.Empty,
+        //                 okLabel: "DECLINE", cancelLabel: "Cancel", optLabel: "Decline+Note", defaultButton: 3);
+
+    }
+
+    public async Task CommentWanted()
+    {
+        // this is a trick!  If the user clicks the optional button, we will show the comment box first.
+        // then when they click same button after commenting, it will be handled as a normal button click and process result
+        ShowCommentBox = true;
+    }
+
+
+    public async Task ButtonClicked(int buttonValue)
+    {
+        ReturnValue = buttonValue;
+        if (OnButtonClick.HasDelegate)
+        {
+            await OnButtonClick.InvokeAsync(ReturnValue);
+        }
+        _tcs.TrySetResult(ReturnValue); // Complete the task with the button value
+        Toggle();
+    }
+
+    public void Toggle()
+    {
+        Show = !Show;
+        if (Show)
+        {
+            _needsFocus = true;
+        }
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (Show && _needsFocus)
+        {
+            // Move focus into the dialog so keyboard/screen-reader users land
+            // on it and Escape works immediately.
+            _needsFocus = false;
+            try { await ContentRef.FocusAsync(); } catch { /* element may be gone */ }
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (!Show || e.Key != "Escape")
+            return;
+
+        // Escape acts as Cancel when a cancel button exists, otherwise OK.
+        await ButtonClicked(!string.IsNullOrEmpty(CancelButtonText) ? 2 : 1);
+    }
+
+
+    private string DefaultCheck(int ButtonValue)
+    {
+        return ButtonValue == DefaultButton ? "Default-Btn" : "";
+    }
+
+    // local vars
+    bool ShowCommentBox { get; set; } = false;
+    bool InputBoxOption { get; set; } = false;
+    bool _needsFocus = false;
+    ElementReference ContentRef;
+    string HeaderId { get; } = $"ics-dialog-title-{Guid.NewGuid():N}";
+    const string defPlaceHolderText = "Enter Comment Here"; // default for input box if never set anywhere
+
+    // Parameters
+
+    [Parameter]
+    public bool Show { get; set; } = false;
+
+    [Parameter]
+    public string HeaderText { get; set; } = "Attention Requested";
+
+    [Parameter]
+    public string PromptText { get; set; } = ""; // body
+
+    [Parameter]
+    public string CustomBodyStyle { get; set; } = ""; // custom css for body element.  Helpful if passing in a custom body content
+
+    [Parameter]
+    public int ReturnValue { get; set; } = 0;
+
+    // Button Text
+    [Parameter]
+    public string OkButtonText { get; set; } = "OK"; // set to empty to hide button
+
+    [Parameter]
+    public string CancelButtonText { get; set; } = "Cancel"; // set to empty to hide button
+
+    [Parameter]
+    public string OptButtonText { get; set; } = ""; // set to empty to hide button
+
+    [Parameter]
+    public int DefaultButton { get; set; } = 1; // OK=1, Cancel=2, Opt=3
+
+    [Parameter]
+    public string CommentValue { get; set; } = "";
+
+    [Parameter]
+    public string PlaceholderText { get; set; } = defPlaceHolderText;
+
+    // Optional table
+    [Parameter]
+    public Dictionary<string, string> TableData { get; set; } = null;
+    [Parameter]
+    public string TableCol1Header { get; set; } = "";
+    [Parameter]
+    public string TableCol2Header { get; set; } = "";
+
+
+
+
+    // Optional Callbacks on ButtonClick before return
+    [Parameter]
+    public EventCallback<int> OnButtonClick { get; set; }
+
+    // Custom Optional Body Content
+    [Parameter]
+    public RenderFragment? ChildContent { set; get; }
+
+
+}

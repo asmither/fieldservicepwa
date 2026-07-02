@@ -1,0 +1,103 @@
+@using ICS.Mobile.Components
+@inherits WorkflowComponentsBasePage
+@layout EmptyLayout
+@if (Initialized)
+{
+    @if (_isLoading)
+    {
+        <div class="WorkflowFilesAndPhotosContainer">
+            <div class="custom-file-upload">
+                <label for="loading">
+                    <span>
+                        <strong>
+                            <i>Loading Photos...</i>
+                            <i class="icon bi bi-cloud-arrow-down"></i>
+                        </strong>
+                    </span>
+                </label>
+            </div>
+        </div>
+    }
+    else
+    {
+        @foreach (var input in Images)
+        {
+
+            @if (Display(input))
+            {
+                @if (input!.ContentType is not null && input.Data is not null)
+                {
+                    <div class="WorkflowFilesAndPhotosContainer">
+                        <div class="WorkflowPrompt Smaller">@input.ImageLabel</div>
+                        <div class="Image">
+                            @if (input.IsVideo())
+                            {
+                                <center>
+                                    <video class="Image" crossorigin="anonymous" controls>
+                                        <source src="@input.GetURL()" type="@input.ContentType">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </center>
+                            }
+                            else if (input.IsImage())
+                            {
+                                <img src="@input.Base64Version()" alt="@input.ImageLabel">
+                            }
+                            else
+                            {
+                                <br /><a href="@input.GetURL()" alt="@input.ImageLabel" target="_blank">@input.ImageLabel</a>
+                            }
+                            
+                        </div>
+                        <div class="ButtonWrapper">
+                            <button class="Button" @onclick="() => DeleteImage(input.Id)">
+                                <i class="Image icon bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="WorkflowFilesAndPhotosContainer">
+                        <div class="WorkflowPrompt Smaller">@input.ImageLabel</div>
+                        <div class="custom-file-upload">
+                            <InputFile id="@input.Id" OnChange="(e) => FileChanged(e, input.Id)" accept="image/*" capture="camera"></InputFile>
+                            @if (ChildComponentIsBusy)
+                            {
+                                <label for="@input.Id">
+                                    <span>
+                                        <strong>
+                                            <i>One Moment Please</i>
+                                            <i class="icon bi bi-cloud-arrow-up"></i>
+                                        </strong>
+                                    </span>
+                                </label>
+                            }
+                            else
+                            {
+                                <label for="@input.Id"><span><strong><i>@input.RequiredLabel</i><i class="icon bi-camera"></i></strong></span></label>
+                            }
+
+                        </div>
+                    </div>
+                }
+            }
+        }
+    }
+    <CommonError Message="@ErrorMessage"></CommonError>
+
+
+    @if (WorkflowStep!.NoteRequirementId != 0)
+    {
+        <NoteMedia Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" NoteChanged="NoteChanged" NoteLabel="@WorkflowStep!.NoteLabel"></NoteMedia>
+    }
+    
+    <Navigation NextDisabled="NextDisabled" PreviousDisabled="PreviousDisabled" OnNextClick="OnMoveNext" OnPreviousClick="OnMovePrevious" ChildComponentIsBusy="ChildComponentIsBusy"></Navigation>
+    <ICS.Mobile.Components.ICSDialogBox @ref="DialogBox" />
+}
+else
+{
+    <ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICSLoadingSpinner>
+}

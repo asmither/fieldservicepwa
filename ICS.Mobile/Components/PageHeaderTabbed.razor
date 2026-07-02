@@ -1,0 +1,41 @@
+﻿<div class="PageHeaderTabbed">
+    <div class="Tab @Status">
+        <div class="TabTextTop">@TabTextTop?.ToUpper()</div>
+        <div class="TabTextBottom">@TabTextBottom</div>
+    </div>
+
+    @ChildContent
+
+</div>
+
+
+@code {
+
+    /// <summary>
+    /// If utilized this will set the background color to one of the predefine values: Pending, Traveling, Working, or Complete.
+    /// </summary>
+    [Parameter]
+    public string? Status { set; get; }
+
+    /// <summary>
+    /// Sets the text in the top part of the tab.
+    /// </summary>
+    [Parameter]
+    [EditorRequired]
+    public string? TabTextTop { set; get; } = "Complete";
+
+    /// <summary>
+    /// Sets the text in the lower part of the tab.
+    /// </summary>
+    [Parameter]
+    [EditorRequired]
+    public string? TabTextBottom { set; get; } = "High";
+
+
+    /// <summary>
+    /// Expects a RoundButtonGreen component
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { set; get; }
+
+}

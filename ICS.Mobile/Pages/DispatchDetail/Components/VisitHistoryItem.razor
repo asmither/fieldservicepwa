@@ -1,0 +1,1203 @@
+﻿@using ICS.Portal.Data.Custom
+
+<style>
+    /* Dark Mode Visit History Item Styling */
+    .visit-history-container {
+        background: #1a1a1a;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+    }
+
+        .visit-history-container:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px);
+        }
+
+    /* Header Section */
+    .visit-header {
+        background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
+        padding: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+        .visit-header:hover {
+            background: linear-gradient(135deg, #333333 0%, #282828 100%);
+        }
+
+    /* Top Row with PO# and Dispatch# */
+    .visit-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        gap: 8px;
+    }
+
+    .visit-po-number {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #e2b629;
+        font-weight: 600;
+        font-size: 1.1rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+        .visit-po-number i {
+            color: #e2b629;
+            font-size: 1rem;
+        }
+
+    .visit-visitdate {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+        .visit-visitdate i {
+            color: white;
+            font-size: 1rem;
+        }
+
+    .visit-dispatch-number {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #999;
+        font-size: 1.1rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+        .visit-dispatch-number .label {
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .visit-dispatch-number .value {
+            color: #ccc;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+    /* Priority Badge */
+    .priority-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-left: 12px;
+    }
+
+        .priority-badge.emergency {
+            background: rgba(244, 67, 54, 0.2);
+            color: #ff5252;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        .priority-badge.high {
+            background: rgba(255, 152, 0, 0.2);
+            color: #ffab40;
+            border: 1px solid rgba(255, 152, 0, 0.3);
+        }
+
+        .priority-badge.normal {
+            display: none;
+        }
+
+    /* Tech and Status Row */
+    .visit-tech-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .tech-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .tech-info i {
+            color: #4a9eff;
+            font-size: 1rem;
+        }
+
+    .tech-name {
+        color: #e0e0e0;
+        font-weight: 500;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+        .tech-name:hover {
+            color: #4a9eff;
+        }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+        .status-badge.complete {
+            background: rgba(76, 175, 80, 0.15);
+            color: #66bb6a;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .status-badge.in-progress {
+            background: rgba(33, 150, 243, 0.15);
+            color: #42a5f5;
+            border: 1px solid rgba(33, 150, 243, 0.3);
+        }
+
+        .status-badge.pending {
+            background: rgba(158, 158, 158, 0.15);
+            color: #9e9e9e;
+            border: 1px solid rgba(158, 158, 158, 0.3);
+        }
+
+    /* Tasks Section */
+    .visit-tasks {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin-top: 8px;
+    }
+
+    .tasks-label {
+        color: #666;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .tasks-value {
+        color: #b0b0b0;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    /* Expanded Details Section */
+    .visit-details {
+        background: #1f1f1f;
+        padding: 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        animation: slideDown 0.3s ease;
+    }
+
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            max-height: 0;
+        }
+
+        to {
+            opacity: 1;
+            max-height: 500px;
+        }
+    }
+
+    /* Date Grid */
+    .date-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .date-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .date-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #666;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+        .date-label i {
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+    .date-value {
+        color: #ccc;
+        font-weight: 500;
+        font-size: 0.95rem;
+        padding-left: 20px;
+    }
+
+    /* Action Buttons */
+    .visit-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .action-button {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
+        border: 1px solid rgba(74, 158, 255, 0.3);
+        border-radius: 8px;
+        color: #4a9eff;
+        font-weight: 500;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+        .action-button:hover {
+            background: linear-gradient(135deg, #333333 0%, #282828 100%);
+            border-color: #4a9eff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(74, 158, 255, 0.2);
+        }
+
+        .action-button i {
+            font-size: 1rem;
+        }
+
+        .action-button.primary {
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.1) 0%, rgba(74, 158, 255, 0.05) 100%);
+            border-color: #4a9eff;
+        }
+
+            .action-button.primary:hover {
+                background: linear-gradient(135deg, rgba(74, 158, 255, 0.2) 0%, rgba(74, 158, 255, 0.1) 100%);
+            }
+
+    /* Expand/Collapse Icon */
+    .expand-icon {
+        margin-left: auto;
+        color: #CCC;
+        transition: transform 0.3s ease;
+    }
+
+        .expand-icon.expanded {
+            transform: rotate(180deg);
+        }
+
+    /* Collapsible Notes Styles */
+    .visit-notes {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 6px;
+        margin-top: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .notes-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        color: #666;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 10px 12px;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.02);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        transition: background 0.2s ease;
+    }
+
+        .notes-label:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .notes-label i.bi-sticky {
+            font-size: 0.85rem;
+        }
+
+    .notes-expand-icon {
+        color: #999;
+        transition: transform 0.3s ease;
+        margin-left: auto;
+    }
+
+        .notes-expand-icon.expanded {
+            transform: rotate(180deg);
+        }
+
+    .notes-content {
+        color: #b0b0b0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .notes-content.collapsed {
+            max-height: 60px;
+            overflow: hidden;
+            position: relative;
+        }
+
+            .notes-content.collapsed::after {
+                content: '...';
+                position: absolute;
+                bottom: 12px;
+                right: 12px;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03) 20px);
+                padding-left: 30px;
+                color: #666;
+                font-weight: bold;
+            }
+
+    .notes-preview {
+        color: #999;
+        font-style: italic;
+        font-size: 0.85rem;
+    }
+
+    /* Additional Info Grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .info-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #666;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+        .info-label i {
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+    .info-value {
+        color: #ccc;
+        font-weight: 500;
+        font-size: 0.95rem;
+        padding-left: 20px;
+    }
+
+    /* Workflow History Section - Scrollable Listbox */
+    .workflow-history-container {
+        margin-top: 16px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+    }
+
+    .workflow-history-header {
+        background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #999;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+        .workflow-history-header i {
+            color: #4a9eff;
+            font-size: 1rem;
+        }
+
+    .workflow-history-list {
+        max-height: 240px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: thin;
+        scrollbar-color: #444 #1a1a1a;
+    }
+
+        /* Custom Scrollbar */
+        .workflow-history-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .workflow-history-list::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .workflow-history-list::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+
+            .workflow-history-list::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+    /* Individual Workflow Item */
+    .workflow-item {
+        padding: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .workflow-item:last-child {
+            border-bottom: none;
+        }
+
+        .workflow-item:hover {
+            background: rgba(74, 158, 255, 0.08);
+        }
+
+        .workflow-item:active {
+            background: rgba(74, 158, 255, 0.12);
+        }
+
+    .workflow-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .workflow-prompt {
+        color: #e0e0e0;
+        font-weight: 500;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .workflow-prompt i {
+            color: #4a9eff;
+            font-size: 0.85rem;
+        }
+
+    .workflow-meta {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        font-size: 0.8rem;
+        color: #888;
+    }
+
+    .workflow-employee {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+        .workflow-employee i {
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+    .workflow-date {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+        .workflow-date i {
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+    .workflow-arrow {
+        color: #4a9eff;
+        font-size: 1.2rem;
+        opacity: 0;
+        transform: translateX(-5px);
+        transition: all 0.2s ease;
+    }
+
+    .workflow-item:hover .workflow-arrow {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    /* Empty State */
+    .workflow-empty {
+        padding: 24px;
+        text-align: center;
+        color: #666;
+        font-size: 0.85rem;
+    }
+
+        .workflow-empty i {
+            font-size: 2rem;
+            color: #444;
+            margin-bottom: 8px;
+        }
+
+    /* Mobile Responsiveness - Portrait Mode */
+    @@media (max-width: 640px) {
+        .visit-header {
+            padding: 12px;
+        }
+
+        .visit-header-top {
+            gap: 4px;
+        }
+
+        .visit-po-number {
+            font-size: 0.95rem;
+            flex: 1;
+            overflow: hidden;
+        }
+
+            .visit-po-number span {
+                text-overflow: ellipsis;
+                overflow: hidden;
+                white-space: nowrap;
+            }
+
+        .visit-visitdate {
+            font-size: 0.95rem;
+            flex: 1;
+            overflow: hidden;
+        }
+
+            .visit-visitdate span {
+                text-overflow: ellipsis;
+                overflow: hidden;
+                white-space: nowrap;
+            }
+
+
+        .visit-dispatch-number {
+            font-size: 0.85rem;
+        }
+        /* Priority badge adjustments */
+        .priority-badge {
+            font-size: 0.75rem;
+            padding: 3px 6px;
+            margin-left: 6px;
+        }
+        /* Keep 2 columns for date and info grids on mobile */
+        .date-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .info-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        /* Adjust date item for smaller screens */
+        .date-item {
+            gap: 2px;
+        }
+
+        .date-label {
+            font-size: 0.7rem;
+        }
+
+            .date-label i {
+                font-size: 0.75rem;
+            }
+
+        .date-value {
+            font-size: 0.85rem;
+            padding-left: 16px;
+        }
+        /* Adjust info item for smaller screens */
+        .info-item {
+            gap: 2px;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+        }
+
+        .info-value {
+            font-size: 0.85rem;
+        }
+        /* Keep action buttons side by side if possible */
+        .visit-actions {
+            flex-direction: row;
+            gap: 8px;
+        }
+
+        .action-button {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+        }
+
+            .action-button i {
+                font-size: 0.9rem;
+            }
+
+            .action-button span {
+                display: none; /* Hide text on very small screens */
+            }
+
+            .action-button i {
+                margin: 0; /* Center icon when text is hidden */
+            }
+    }
+
+    /* Show button text on slightly larger mobile screens */
+    @@media (min-width: 380px) and (max-width: 640px) {
+        .action-button span {
+            display: inline;
+            font-size: 0.8rem;
+        }
+    }
+
+    /* Very small screens (under 380px) */
+    @@media (max-width: 379px) {
+        .visit-po-number {
+            font-size: 0.9rem;
+        }
+
+            .visit-po-number i {
+                font-size: 0.9rem;
+            }
+
+        .visit-visitdate {
+            font-size: 0.9rem;
+        }
+
+            .visit-visitdate i {
+                font-size: 0.9rem;
+            }
+
+        .visit-dispatch-number {
+            font-size: 0.8rem;
+        }
+
+        .priority-badge {
+            display: none; /* Hide priority badge on very small screens to save space */
+        }
+
+        .date-grid,
+        .info-grid {
+            font-size: 0.85rem;
+        }
+    }
+</style>
+
+<div class="visit-history-container" @onclick="() => ToggleExpanded(id: Id.GetValueOrDefault(0))">
+    <div class="visit-header">
+        <div class="visit-header-top">
+            <div class="visit-visitdate">
+                <i class="bi bi-calendar-check-fill"></i>
+                <span>@(WorkStart?.Contains(' ') == true ? WorkStart.Substring(0, WorkStart.IndexOf(' ')).TrimEnd() : WorkStart)</span>
+            </div>
+            <div class="visit-po-number">
+                @* <i class="bi bi-file-text"></i> *@
+                @if (!string.IsNullOrEmpty(DispData?.PurchaseOrderNumber))
+                {
+                    <span>@DispData.PurchaseOrderNumber</span>
+                }
+                else
+                {
+                    <span></span>
+                }
+
+                @if (!string.IsNullOrEmpty(DispData?.Priority) && !DispData.Priority.Equals("NORMAL", StringComparison.OrdinalIgnoreCase))
+                {
+                    <span class="priority-badge @GetPriorityClass(DispData.Priority)">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        @DispData.Priority
+                    </span>
+                }
+            </div>
+
+            <div class="visit-dispatch-number">
+                <span class="label">#</span>
+                <span class="value">@DispData?.ClientWorkOrder</span>
+                <i class="bi bi-chevron-down expand-icon @(IsVisitExpanded((DispData?.Id ?? 0)) ? "expanded" : "")"></i>
+            </div>
+        </div>
+
+        <div class="visit-tech-row">
+            <div class="tech-info">
+                <i class="bi bi-person-fill"></i>
+                @if (!string.IsNullOrEmpty(DispData?.TechPhone))
+                {
+                    <a href="@($"tel:+1{DispData.TechPhone.Replace("-", "")}")" class="tech-name" @onclick:stopPropagation="true">
+                        @DispData.TechName
+                    </a>
+                }
+                else
+                {
+                    <span class="tech-name">@(DispData?.TechName ?? "Unassigned")</span>
+                }
+            </div>
+
+            <span class="status-badge @GetStatusClass(TechStatus)">
+                <i class="bi @GetStatusIcon(TechStatus)"></i>
+                @TechStatus
+            </span>
+        </div>
+
+        @if (!string.IsNullOrEmpty(DispData?.TaskNames))
+        {
+            <div class="visit-tasks">
+                <div class="tasks-label">Tasks</div>
+                <div class="tasks-value">@DispData.TaskNames.TitleCase()</div>
+            </div>
+        }
+    </div>
+
+    @if (IsVisitExpanded((DispData?.Id ?? 0)))
+    {
+        <div class="visit-details">
+            <!-- Date Information -->
+            <div class="date-grid">
+                @if (!string.IsNullOrEmpty(DueDate))
+                {
+                    <div class="date-item">
+                        <div class="date-label">
+                            <i class="bi bi-calendar-check"></i>
+                            Due Date
+                        </div>
+                        <div class="date-value">@DueDate</div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Dispatched))
+                {
+                    <div class="date-item">
+                        <div class="date-label">
+                            <i class="bi bi-send"></i>
+                            Dispatched
+                        </div>
+                        <div class="date-value">@Dispatched</div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(WorkStart))
+                {
+                    <div class="date-item">
+                        <div class="date-label">
+                            <i class="bi bi-play-circle"></i>
+                            Started
+                        </div>
+                        <div class="date-value">@WorkStart</div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(WorkStop))
+                {
+                    <div class="date-item">
+                        <div class="date-label">
+                            <i class="bi bi-stop-circle"></i>
+                            Completed
+                        </div>
+                        <div class="date-value">@WorkStop</div>
+                    </div>
+                }
+            </div>
+
+            <!-- Additional Information -->
+            @if (DispData != null)
+            {
+                <div class="info-grid">
+                    @if (!string.IsNullOrEmpty(DispData.LocName))
+                    {
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-house"></i>
+                                Location
+                            </div>
+                            <div class="info-value">@DispData.LocName</div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(DispData.Zone))
+                    {
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-pin-map"></i>
+                                Zone
+                            </div>
+                            <div class="info-value">@DispData.Zone</div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(DispData.CalledInBy))
+                    {
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-currency-dollar"></i>
+                                NTE
+                            </div>
+                            <div class="info-value">@DispData.CalledInBy</div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(DispData.TechPhone))
+                    {
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-phone-flip"></i>
+                                Tech Phone
+                            </div>
+                            <div class="info-value">
+                                <a href="@($"tel:+1{DispData.TechPhone.Replace("-", "")}")" style="color: #4a9eff; text-decoration: none;">
+                                    @DispData.TechPhone
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Workflow History Section - Fixed height, scrollable Listbox of workflows -->
+                @if (WorkflowHistory is not null && WorkflowHistory.Count > 0)
+                {
+                    <div class="workflow-history-container">
+                        <div class="workflow-history-header">
+                            <i class="bi bi-clock-history"></i>
+                            Past Workflows (@WorkflowHistory.Count)
+                        </div>
+                        <div class="workflow-history-list">
+                            @foreach (var work in WorkflowHistory)
+                            {
+                                <div class="workflow-item" @onclick="() => OpenWorkflow(work.WorkflowResultId)" @onclick:stopPropagation="true">
+                                    <div class="workflow-info">
+                                        <div class="workflow-prompt">
+                                            <i class="bi bi-journal-text"></i>
+                                            @work.Prompt
+                                        </div>
+                                        <div class="workflow-meta">
+                                            <span class="workflow-employee">
+                                                <i class="bi bi-person"></i>
+                                                @work.Employee
+                                            </span>
+                                            <span class="workflow-date">
+                                                <i class="bi bi-calendar3"></i>
+                                                @work.Completed.GetValueOrDefault(work.Created).ToString("ddd M/dd/yy", System.Globalization.CultureInfo.InvariantCulture)
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <i class="bi bi-chevron-right workflow-arrow"></i>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (WorkflowHistory is not null && WorkflowHistory.Count == 0)
+                {
+                    <div class="workflow-history-container">
+                        <div class="workflow-history-header">
+                            <i class="bi bi-clock-history"></i>
+                            Past Workflows
+                        </div>
+                        <div class="workflow-empty">
+                            <i class="bi bi-inbox"></i>
+                            <div>No workflow history available</div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Notes Section -->
+                @if (!string.IsNullOrEmpty(DispData.Notes))
+                {
+                    <div class="visit-notes">
+                        <div class="notes-label" @onclick="() => ToggleNotes()" @onclick:stopPropagation="true">
+                            <span style="display: flex; align-items: center; gap: 6px;">
+                                <i class="bi bi-sticky"></i>
+                                Notes
+                                @if (!notesExpanded)
+                                {
+                                    <span class="notes-preview">&nbsp; &nbsp; @(DispData.Notes.Length > 300 ? " - Tap to Expand - " : string.Empty)</span>
+                                }
+                            </span>
+                            <i class="bi bi-chevron-down notes-expand-icon @(notesExpanded ? "expanded" : "")"></i>
+                        </div>
+                        <div class="notes-content @(!notesExpanded ? "collapsed" : "")" @onclick="() => ToggleNotes()" @onclick:stopPropagation="true">
+                            @if (!notesExpanded && DispData.Notes.Length > 300)
+                            {
+                                @(DispData.Notes.Substring(0, 300))
+                            }
+                            else
+                            {
+                                @DispData.Notes
+                            }
+                        </div>
+                    </div>
+                }
+            }
+
+            <!-- Action Buttons -->
+            <div class="visit-actions">
+                @* <button class="action-button primary" @onclick="() => ShowDetailsBox(0)" @onclick:stopPropagation="true">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Full Details</span>
+                </button>
+ *@
+                @* @if (!string.IsNullOrEmpty(DispData?.ClientWorkOrder))
+                {
+                    <button class="action-button" @onclick="() => OpenWorkflow(DispData.Id)" @onclick:stopPropagation="true">
+                        <i class="bi bi-folder-open"></i>
+                        <span>View Workflow</span>
+                    </button>
+                } *@
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Details Dialog Box (keeping original functionality) -->
+<ICS.Mobile.Components.ICSDialogBox @ref="DetailsBox">
+    @if (DispData != null)
+    {
+        <table width="100%" style="color: #e0e0e0;">
+            <tr>
+                <td colspan="2" class="DialogTitle">
+                    <h3 style="color: #4a9eff;">@DispData.LocName</h3>
+                </td>
+            </tr>
+            <tr>
+                <td class="DialogLabel" style="color: #999;">Disp#</td>
+                <td class="DialogValue" style="color: #ccc;">@DispData.ClientWorkOrder</td>
+            </tr>
+            <tr>
+                <td class="DialogLabel" style="color: #999;">PO#</td>
+                <td class="DialogValue" style="color: #ccc;">@DispData.PurchaseOrderNumber</td>
+            </tr>
+            <tr>
+                <td class="DialogLabel" style="color: #999;">Priority</td>
+                <td class="DialogValue" style="color: #ccc;">@DispData.Priority</td>
+            </tr>
+            <tr>
+                <td class="DialogLabel" style="color: #999;">NTE</td>
+                <td class="DialogValue" style="color: #ccc;">@DispData.CalledInBy</td>
+            </tr>
+            <tr>
+                <td class="DialogLabel" style="color: #999;">Zone</td>
+                <td class="DialogValue" style="color: #ccc;">@DispData.Zone</td>
+            </tr>
+            <tr>
+                <td class="DialogLabel" style="color: #999;">Tasks</td>
+                <td class="DialogValue" style="color: #ccc;">
+                    @if (!string.IsNullOrEmpty(DispData?.TaskNames))
+                    {
+                        @foreach (string task in DispData.TaskNames.Split(",").ToList())
+                        {
+                            <div>@task.TitleCase()</div>
+                        }
+                    }
+                </td>
+            </tr>
+            <tr>
+                <td class="DialogLabel" style="color: #999;">Tech Name</td>
+                <td class="DialogValue" style="color: #ccc;">@DispData.TechName</td>
+            </tr>
+            <tr>
+                <td class="DialogLabel" style="color: #999;">Tech Phone</td>
+                <td class="DialogValue" style="color: #ccc;">
+                    @if (!string.IsNullOrEmpty(DispData?.TechPhone))
+                    {
+                        @((MarkupString)PageBase.TextToHtml(DispData?.TechPhone))
+                    }
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">&nbsp;</td>
+            </tr>
+            <tr>
+                <td colspan="2" align="left" style="color: #b0b0b0;">
+                    @((MarkupString)PageBase.TextToHtml(DispData?.Notes))
+                </td>
+            </tr>
+        </table>
+    }
+</ICS.Mobile.Components.ICSDialogBox>
+
+@code {
+    private Mobile.Components.ICSDialogBox DetailsBox;
+    private bool isExpanded = false;
+
+    [Parameter] public int? Id { get; set; } = null;
+
+    [Parameter] public Portal.Data.Queries.Models.DispatchesByLocationResult? DispData { get; set; }
+
+    [Parameter] public string? TechStatus { get; set; } = "";
+
+    [Parameter] public string? DueDate { get; set; } = "";
+
+    [Parameter] public string? Dispatched { get; set; } = "";
+
+    [Parameter] public string? WorkStart { get; set; } = "";
+
+    [Parameter] public string? WorkStop { get; set; } = "";
+
+    [Parameter] public string? Complete { get; set; } = "";
+
+    [Parameter] public EventCallback<int> GoToWorkflowReviewClick { get; set; }
+
+    [Parameter]
+    public EventCallback<int> ToggleExpandedCallback { get; set; }
+
+
+    [Parameter] public List<Portal.Data.Queries.Models.WorkflowResultListResult>? WorkflowHistory { get; set; }
+
+    [Parameter] public HashSet<string> ExpandedVisit { get; set; } = new HashSet<string>();
+
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+
+    private bool notesExpanded = false;
+
+    private void ToggleNotes()
+    {
+        notesExpanded = !notesExpanded;
+    }
+
+    private void ExpandNotes()
+    {
+        notesExpanded = true;
+    }
+
+    // private void ToggleVisitExpanded()
+    // {
+    //     isExpanded = !isExpanded;
+    // }
+
+    private async Task OpenWorkflow(int wf)
+    {
+        if (GoToWorkflowReviewClick.HasDelegate)
+        {
+            await GoToWorkflowReviewClick.InvokeAsync(wf);
+        }
+    }
+
+    private string GetPriorityClass(string priority)
+    {
+        if (string.IsNullOrEmpty(priority))
+            return "normal";
+
+        return priority.ToUpper() switch
+        {
+            "EMERGENCY" => "emergency",
+            "HIGH" => "high",
+            _ => "normal"
+        };
+    }
+
+    private string GetStatusClass(string status)
+    {
+        if (string.IsNullOrEmpty(status))
+            return "pending";
+
+        var lowerStatus = status.ToLower();
+        if (lowerStatus.Contains("complete") || lowerStatus.Contains("finished") || lowerStatus.Contains("done"))
+            return "complete";
+        if (lowerStatus.Contains("progress") || lowerStatus.Contains("working") || lowerStatus.Contains("started"))
+            return "in-progress";
+
+        return "pending";
+    }
+
+    private string GetStatusIcon(string status)
+    {
+        var statusClass = GetStatusClass(status);
+        return statusClass switch
+        {
+            "complete" => "bi-check-circle-fill",
+            "in-progress" => "bi-arrow-repeat",
+            _ => "bi-clock"
+        };
+    }
+
+    public async Task ShowDetailsBox(int id)
+    {
+        await DetailsBox.WaitForDialogResultAsync(
+            header: "Dispatch Details",
+            prompt: "",
+            okLabel: "OK",
+            cancelLabel: "",
+            defaultButton: 1);
+    }
+
+    #region Visit Expand/Collapse
+    private string GetVisitId(int id)
+    {
+        // Create a unique identifier for each equipment item
+        return $"{id}";
+    }
+
+    private bool IsVisitExpanded(int id)
+    {
+        return ExpandedVisit.Contains(GetVisitId(id));
+    }
+
+    private async Task ToggleExpanded(int id)
+    {
+        // string visitId = GetVisitId(id);
+        // if (ExpandedVisit.Contains(visitId))
+        //     ExpandedVisit.Remove(visitId);
+        // else
+        //     ExpandedVisit.Add(visitId);
+
+        // // Save to localStorage
+        // try
+        // {
+        //     var json = System.Text.Json.JsonSerializer.Serialize(ExpandedVisit);
+        //     await JSRuntime.InvokeVoidAsync("localStorage.setItem", "expandedVisitAppwideList", json);
+        // }
+        // catch { }
+
+        // StateHasChanged();
+        if (id > 0)
+        {
+            if (ToggleExpandedCallback.HasDelegate)
+                await ToggleExpandedCallback.InvokeAsync(id);
+        }
+    }
+
+    #endregion
+}

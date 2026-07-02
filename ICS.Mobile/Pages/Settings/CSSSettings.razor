@@ -1,0 +1,117 @@
+<style>
+
+    body {
+        padding: calc(env(safe-area-inset-top) + 0rem) 1rem 1rem;
+        margin: 0;
+        margin-top: 1rem;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        font-family: var(--font-sans);
+    }
+
+    a:visited {
+        color: var(--OffsetColor);
+    }
+
+    a:link {
+        color: var(--OffsetColor);
+    }
+
+    .SettingsItemContainer {
+        margin-bottom: var(--space-4);
+    }
+
+        .SettingsItemContainer > .Title {
+            font-size: var(--text-sm);
+            font-weight: var(--weight-semibold);
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin: var(--space-6) 0 var(--space-2);
+        }
+
+
+        .SettingsItemContainer > .Content {
+            background: var(--surface-card);
+            border: var(--border-hairline);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--elevation-1);
+            padding: var(--space-4);
+        }
+
+            .SettingsItemContainer > .Content > .Line {
+                min-height: var(--touch-target);
+                display: flex;
+                align-items: center;
+                gap: var(--space-3);
+                font-size: var(--text-base);
+                color: var(--text-primary);
+            }
+
+            .SettingsItemContainer > .Content > .LineWithButton {
+                display: grid;
+                align-items: center;
+                min-height: var(--touch-target);
+                grid-template-columns: 1fr auto;
+                grid-template-areas:
+                    "Line Button";
+            }
+
+                .SettingsItemContainer > .Content > .LineWithButton > .Line {
+                    grid-area: Line;
+                }
+
+
+
+                .SettingsItemContainer > .Content > .LineWithButton > .Button {
+                    grid-area: Button;
+                    font-size: 2rem;
+                    min-width: var(--touch-target);
+                    min-height: var(--touch-target);
+                    padding: 0 0 0 3rem;
+                    border: 0;
+                    margin: 0;
+                    border-radius: var(--radius-full);
+                    color: var(--text-primary);
+                }
+
+                    .SettingsItemContainer > .Content > .LineWithButton > .Button:active {
+                        background: var(--surface-raised-subtle);
+                    }
+
+     .csscopy {
+        -webkit-user-select: all;
+        -moz-user-select: all;
+        -ms-user-select: all;
+        user-select: all;
+    }
+
+    .BottomContainer{
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .BottomButton{
+        text-align: center;
+        font-size: var(--text-xl);
+        min-height: var(--touch-target);
+        color: var(--text-on-accent);
+        background-color: var(--accent-strong);
+        border-radius: var(--radius-md);
+        border-color: transparent;
+        margin: var(--space-8);
+        padding: var(--space-4);
+    }
+
+    .BottomButton:active {
+        background-color: var(--accent);
+    }
+
+    .BottomButton[disabled]{
+        pointer-events: none;
+        opacity: 50%;
+
+    }
+</style>

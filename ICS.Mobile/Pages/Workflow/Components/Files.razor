@@ -1,0 +1,121 @@
+@using ICS.Mobile.Components
+@inherits WorkflowComponentsBasePage
+@layout EmptyLayout
+@if (Initialized)
+{
+    @if (_isLoading)
+    {
+        <div class="WorkflowFilesAndPhotosContainer">
+            <div class="custom-file-upload">
+                <label for="loading">
+                    <span>
+                        <strong>
+                            <i>Loading Files...</i>
+                            <i class="icon bi bi-cloud-arrow-down"></i>
+                        </strong>
+                    </span>
+                </label>
+            </div>
+        </div>
+    }
+    else
+    {
+        @foreach (var input in Images)
+        {
+            @if (Display(input))
+            {
+                @if (input!.ContentType is not null && input.Data is not null)
+                {
+                    <div class="WorkflowFilesAndPhotosContainer">
+                        <div class="WorkflowPrompt Smaller">@input.ImageLabel</div>
+                        <div class="Image">
+                            @if (input.IsVideo())
+                            {
+                                <center>
+                                    <video controls style="width: 100%; max-height: 200px; object-fit: contain;">
+                                        <source src="@input.GetURL("https://interiorcsstorage.blob.core.windows.net/images")">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </center>
+                            }
+                            else if (input.IsImage())
+                            {
+                                <img src="@input.Base64Version()" alt="File Capture">
+                            }
+                            else
+                            {
+                                <div class="file-upload-display" style="text-align: center; padding: 1.5rem 1rem 3rem 1rem;">
+                                    @if (input.ContentType?.Contains("pdf") == true)
+                                    {
+                                        <i class="icon bi bi-file-earmark-pdf" style="font-size: 3rem; color: #dc3545;"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="icon bi bi-file-earmark" style="font-size: 3rem; color: #6c757d;"></i>
+                                    }
+                                    <br />
+                                    <a href="@input.GetURL("https://interiorcsstorage.blob.core.windows.net/images")" target="_blank" style="word-break: break-all;">
+                                        @(GetDisplayFileName(input))
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                        <div class="ButtonWrapper">
+                            <button class="Button" @onclick="() => DeleteFile(input.Id)">
+                                <i class="Image icon bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="WorkflowFilesAndPhotosContainer">
+                        <div class="WorkflowPrompt Smaller">@input.ImageLabel</div>
+                        <div class="custom-file-upload">
+                            <InputFile id="@input.Id" OnChange="(e) => FileChanged(e, input.Id)"></InputFile>
+                            @if (ChildComponentIsBusy)
+                            {
+                                <label for="@input.Id">
+                                    <span>
+                                        <strong>
+                                            <i>One Moment Please</i>
+                                            <i class="icon bi bi-cloud-arrow-up"></i>
+                                        </strong>
+                                    </span>
+                                </label>
+                            }
+                            else
+                            {
+                                <label for="@input.Id">
+                                    <span>
+                                        <strong>
+                                            <i>@input.RequiredLabel</i>
+                                            <i class="icon bi bi-arrow-up-circle"></i>
+                                        </strong>
+                                    </span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        }
+    }
+
+    <CommonError Message="@ErrorMessage"></CommonError>
+    <ICS.Mobile.Components.ICSDialogBox @ref="DialogBox" />
+
+    @if (WorkflowStep!.NoteRequirementId != 0)
+    {
+        <NoteMedia Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" NoteChanged="NoteChanged" NoteLabel="@WorkflowStep!.NoteLabel"></NoteMedia>
+    }
+
+    <Navigation NextDisabled="NextDisabled" PreviousDisabled="PreviousDisabled" OnNextClick="OnMoveNext" OnPreviousClick="OnMovePrevious" ChildComponentIsBusy="ChildComponentIsBusy"></Navigation>
+
+}
+else
+{
+    <ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICSLoadingSpinner>
+}

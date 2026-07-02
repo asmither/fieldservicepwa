@@ -1,0 +1,22 @@
+﻿<div class="HomeNewsContainer">
+    <div class="CategoryTitle" @onclick="()=>RefreshAll()" style="cursor: pointer;">NEWS</div>
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { set; get; }
+
+    [Parameter]
+    public EventCallback RefreshNow { get; set; } // callback for Refresh button click
+
+    public async void RefreshAll()
+    {
+        if (RefreshNow.HasDelegate)
+            await RefreshNow.InvokeAsync();
+        
+    }
+
+    
+
+}

@@ -1,0 +1,72 @@
+@* Workflow step navigation bar — the single bottom action bar for the
+   checklist runner (replaces the retired WFBottomMenu / WorkflowFooter /
+   WFEquipmentFooter variants). Built on the design system: the primary
+   next-step action is a 56px full-width button; Back is secondary.
+   API is source-compatible with the previous version of this component. *@
+@using ICS.Mobile.Components
+
+<nav class="WorkflowNavBar" aria-label="Checklist step navigation">
+    <AppButton Variant="AppButton.ButtonVariant.Secondary"
+               Size="AppButton.ButtonSize.Large"
+               Icon="bi-arrow-left"
+               Disabled="@(PreviousDisabled || ChildComponentIsBusy)"
+               OnClick="PreviousClick">
+        @PreviousLabel
+    </AppButton>
+    <div class="Grow">
+        <AppButton Variant="AppButton.ButtonVariant.Primary"
+                   Size="AppButton.ButtonSize.Large"
+                   FullWidth="true"
+                   Icon="bi-arrow-right"
+                   Disabled="@NextDisabled"
+                   Busy="@ChildComponentIsBusy"
+                   OnClick="NextClick">
+            @NextLabel
+        </AppButton>
+    </div>
+</nav>
+
+@code {
+
+    private void PreviousClick()
+    {
+        if (PreviousDisabled || ChildComponentIsBusy)
+        {
+            return;
+        }
+
+        OnPreviousClick.InvokeAsync();
+    }
+
+    private void NextClick()
+    {
+        if (NextDisabled || ChildComponentIsBusy)
+        {
+            return;
+        }
+
+        OnNextClick.InvokeAsync();
+    }
+
+    [Parameter]
+    public bool PreviousDisabled { set; get; } = true;
+
+    [Parameter]
+    public bool NextDisabled { set; get; } = true;
+
+    [Parameter]
+    public EventCallback OnPreviousClick { set; get; }
+
+    [Parameter]
+    public EventCallback OnNextClick { set; get; }
+
+    [Parameter]
+    public bool ChildComponentIsBusy { set; get; }
+
+    /// <summary>Verb for the primary action, e.g. "Next", "Complete Step". Optional.</summary>
+    [Parameter]
+    public string NextLabel { set; get; } = "Next";
+
+    [Parameter]
+    public string PreviousLabel { set; get; } = "Back";
+}

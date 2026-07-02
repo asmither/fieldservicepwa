@@ -1,0 +1,53 @@
+﻿
+<div class="DispatchDetailPageHeader">
+    <button class="BackButton Transparent" @onclick="Click">
+        <svg class="DefaulltBack" width="34" height="34" viewBox="-8.5 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+            <title>Jump back to Dispatch Details</title>
+            <g id="goback" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+                <path d="M45,3 C45,1.9 44.2,1 43.1,1 L2.9,29 C1.3,30.1 1,31.3 1,32.1 L1,32.1 C1,32.1 1.1,33.8 2.9,35.1 L43.1,63 C44.1,63 45,62.1 45,61 L45,3 L45,3 Z" id="back" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="4" sketch:type="MSShapeGroup"></path>
+            </g>
+        </svg>
+    </button>
+    <div class='@(string.Concat("StatusAndPriority ",Status?.Replace("Travel To", "Traveling").Replace("Travelling", "Traveling") ?? string.Empty))'>
+        <div class="Status">@(Status?.Replace("Travel To", "Traveling").Replace("Travelling", "Traveling").ToUpper() ?? string.Empty)</div>
+        <div class="Priority">@Priority</div>
+    </div>
+</div>
+
+@code {
+
+    private void Click()
+    {
+        if (OnNavigateBackClick.HasDelegate)
+            OnNavigateBackClick.InvokeAsync();
+    }
+
+    [Parameter]
+    [EditorRequired]
+    public EventCallback OnNavigateBackClick { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public string? Status { set; get; }
+
+
+    [Parameter]
+    [EditorRequired]
+    public string? Priority { set; get; }
+
+
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrEmpty(Status))
+        {
+            Status = "";
+        }
+
+        if (string.IsNullOrEmpty(Priority))
+        {
+            Priority = "";
+        }
+
+
+    }
+}

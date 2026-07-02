@@ -1,0 +1,274 @@
+@page "/txvcalc"
+@inherits TXVCalcPage
+@using ICS.Mobile.Components
+@using ICS.Mobile.DataModels.Custom;
+@using static ICS.Mobile.DataModels.Custom.HVACCalculations;
+
+
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/calc-theme.css" rel="stylesheet">
+
+<style>
+    /* Token bridge — map Bootstrap onto the ICS design tokens (guide rule 7). */
+    .container-fluid {
+        color: var(--text-primary);
+        --bs-body-color: var(--text-primary);
+        --bs-body-color-rgb: 255, 255, 255;
+        --bs-body-bg: var(--surface-input);
+        --bs-emphasis-color: var(--text-primary);
+        --bs-heading-color: var(--text-primary);
+        --bs-secondary-color: var(--text-muted);
+        --bs-secondary-bg: var(--surface-raised-subtle);
+        --bs-tertiary-color: var(--text-muted);
+        --bs-tertiary-bg: var(--surface-raised-subtle);
+        --bs-border-color: rgba(255, 255, 255, 0.15);
+        --bs-border-color-translucent: rgba(255, 255, 255, 0.09);
+        --bs-link-color: var(--accent-soft);
+        --bs-link-hover-color: var(--accent);
+        --bs-primary-rgb: 41, 148, 208; /* --brand-500 */
+        --bs-box-shadow-sm: var(--elevation-1);
+    }
+
+        .container-fluid .card {
+            --bs-card-bg: var(--surface-card);
+            --bs-card-border-color: rgba(255, 255, 255, 0.09);
+            --bs-card-cap-bg: rgba(255, 255, 255, 0.04);
+            --bs-card-border-radius: var(--radius-md);
+        }
+
+        .container-fluid .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--text-primary);
+            --bs-table-border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .container-fluid .bg-light {
+            --bs-bg-opacity: 0.08;
+        }
+
+        .container-fluid .bg-warning {
+            color: rgba(0, 0, 0, 0.85); /* keep dark-on-amber in both themes */
+        }
+
+        .container-fluid .form-select {
+            --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgba(255,255,255,0.75)' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        }
+</style>
+
+<PageHeaderBasic Title="TXV Sizing Calculator" Icon="bi-sliders">
+    <RoundButtonGreen Icon="bi-arrow-left" OnClick="HomePageClick" />
+</PageHeaderBasic>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+
+            <!-- Header -->
+            <div class="text-center mb-4">
+                @* <div class="d-flex align-items-center justify-content-center mb-3">
+                    <svg class="me-3" width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #0d6efd;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <h1 class="h2 mb-0">TXV Sizing Calculator</h1>
+                </div> *@
+                <p class="text-muted">
+                    Determine if your Thermostatic Expansion Valve is properly sized for optimal HVAC performance
+                </p>
+            </div>
+
+            <div class="row g-4">
+                <!-- Input Section -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0 d-flex align-items-center">
+                                <svg class="me-2" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <circle cx="12" cy="12" r="6"></circle>
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                </svg>
+                                System Parameters
+                            </h5>
+                        </div>
+                        <div class="card-body">
+
+                            <div class="mb-3">
+                                <label class="form-label">System Capacity (BTU/hr)</label>
+                                <input type="number" class="form-control" @bind="Inputs.SystemCapacity" @bind:event="oninput" @onchange="OnInputChanged" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Refrigerant Type</label>
+                                <select class="form-select" @bind="Inputs.RefrigerantType" @bind:after="OnInputChanged">
+                                    <option value="R-410A">R-410A</option>
+                                    <option value="R-22">R-22</option>
+                                    <option value="R-134a">R-134a</option>
+                                    <option value="R-407C">R-407C</option>
+                                </select>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label">Evaporator Temp (°F)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.EvaporatorTemp" @bind:event="oninput" @onchange="OnInputChanged" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Condensing Temp (°F)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.CondensingTemp" @bind:event="oninput" @onchange="OnInputChanged" />
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label">Subcooling (°F)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.Subcooling" @bind:event="oninput" @onchange="OnInputChanged" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Superheat (°F)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.Superheat" @bind:event="oninput" @onchange="OnInputChanged" />
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-6">
+                                    <label class="form-label">TXV Rating (Tons)</label>
+                                    <input type="number" step="0.5" class="form-control" @bind="Inputs.TxvRating" @bind:event="oninput" @onchange="OnInputChanged" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Pressure Drop (PSI)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.PressureDrop" @bind:event="oninput" @onchange="OnInputChanged" />
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn btn-primary w-100" @onclick="CalculateTXVSizing">
+                                <svg class="me-2" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                                Calculate TXV Sizing
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0 d-flex align-items-center">
+                                @GetStatusIcon()
+                                <span class="ms-2">Analysis Results</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+
+                            @if (Results != null)
+                            {
+                                <!-- Sizing Status -->
+                                <div class="alert @GetStatusAlertClass() border-start border-4 border-primary">
+                                    <h6 class="alert-heading">Sizing Status</h6>
+                                    <p class="mb-1 fw-bold @GetStatusColorClass()">
+                                        @Results.SizingStatus
+                                    </p>
+                                    <small class="text-muted">
+                                        Sizing Ratio: @Results.SizingRatio.ToString("F2")
+                                    </small>
+                                </div>
+
+                                <!-- Calculations -->
+                                <div class="card mb-3">
+                                    <div class="card-body py-3">
+                                        <h6 class="card-title">Calculations</h6>
+                                        <div class="row g-2 small">
+                                            <div class="col-6"><strong>System Capacity:</strong></div>
+                                            <div class="col-6">@Results.SystemTons.ToString("F2") tons</div>
+
+                                            <div class="col-6"><strong>Required TXV:</strong></div>
+                                            <div class="col-6">@Results.RequiredTXVCapacity.ToString("F2") tons</div>
+
+                                            <div class="col-6"><strong>Actual TXV:</strong></div>
+                                            <div class="col-6">@Inputs.TxvRating tons</div>
+
+                                            <div class="col-6"><strong>Pressure Drop:</strong></div>
+                                            <div class="col-6">@Results.ActualPressureDrop.ToString("F1") PSI</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Recommendation -->
+                                <div class="card mb-3">
+                                    <div class="card-body py-3">
+                                        <h6 class="card-title">Recommendation</h6>
+                                        <p class="mb-0 small">@Results.Recommendation</p>
+                                    </div>
+                                </div>
+
+                                <!-- Warnings -->
+                                @if (Results.Warnings.Any())
+                                {
+                                    <div class="alert alert-warning border-start border-4 border-warning">
+                                        <h6 class="alert-heading d-flex align-items-center">
+                                            <svg class="me-2" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L4.316 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                            </svg>
+                                            Warnings
+                                        </h6>
+                                        <ul class="mb-0 small">
+                                            @foreach (var warning in Results.Warnings)
+                                            {
+                                                <li>@warning</li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-center py-5 text-muted">
+                                    <svg class="mb-3 opacity-50" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <p>Enter system parameters and click "Calculate TXV Sizing" to see results</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guidelines Section -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-info">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <h5 class="card-title mb-0 text-info">TXV Sizing Guidelines</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <h6 class="text-success">Proper Sizing (0.8 - 1.3 ratio):</h6>
+                                    <ul class="small mb-0">
+                                        <li>Stable operation</li>
+                                        <li>Optimal refrigerant flow</li>
+                                        <li>Good superheat control</li>
+                                        <li>Maximum efficiency</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-warning">Sizing Issues:</h6>
+                                    <ul class="small mb-0">
+                                        <li><strong>Undersized:</strong> High superheat, poor capacity</li>
+                                        <li><strong>Oversized:</strong> Hunting, floodback risk</li>
+                                        <li>Monitor superheat and subcooling</li>
+                                        <li>Consider system operating conditions</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>

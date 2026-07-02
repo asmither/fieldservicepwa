@@ -1,0 +1,34 @@
+﻿@if (Message is not null)
+{
+    <div class="CommonError">
+        <div class="Message">
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <strong>@Title </strong>
+            }
+            @Message
+        </div>
+        @if (OnDismissClick.HasDelegate)
+        {
+            <button type="button" class="Button Transparent" @onclick="OnClick">
+                <i class="bi-x-circle"></i>
+            </button>
+        }
+    </div>
+}
+@code {
+
+    [Parameter]
+    public string Title { set; get; } = "* ";
+
+    [Parameter]
+    public string? Message { set; get; }
+
+    [Parameter]
+    public EventCallback OnDismissClick { set; get; }
+
+    private async Task OnClick()
+    {
+        await OnDismissClick.InvokeAsync();
+    }
+}

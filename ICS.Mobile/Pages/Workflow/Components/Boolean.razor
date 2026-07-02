@@ -1,0 +1,28 @@
+﻿@using ICS.Mobile.Components
+@inherits WorkflowComponentsBasePage
+@layout EmptyLayout
+
+@if (Initialized) 
+{
+    <NullableBooleanInput TruePrompt="@TruePrompt" FalsePrompt="@FalsePrompt" @bind-Value="@ValueAsBool" ></NullableBooleanInput>
+    <CommonError Message="@ErrorMessage" />
+    @if (WorkflowStep!.ImageRequirementId != 0 || WorkflowStep.NoteRequirementId != 0)
+    {
+        @if (WorkflowStep.NoteRequirementId != 0)
+        {
+            <NoteMedia Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" NoteChanged="NoteChanged" NoteLabel="@WorkflowStep!.NoteLabel"></NoteMedia>
+        }
+
+        @if (WorkflowStep.ImageRequirementId != 0)
+        {
+            <ImageMedia @ref=imageRef Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" ImageChanged="ImageChanged" ImageLabel="@WorkflowStep!.ImageLabel" OnWorkingStateChange="OnImageWorkingStateChanged"></ImageMedia>
+        }
+    }
+    <Navigation NextDisabled="NextDisabled" PreviousDisabled="PreviousDisabled" OnNextClick="OnMoveNext" OnPreviousClick="OnMovePrevious"></Navigation>
+}
+else
+{
+    <ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICSLoadingSpinner>
+}

@@ -1,0 +1,94 @@
+﻿<div class="DispatchDetailChecklistHeader">
+    <div class="Title">Checklists</div>
+    <div class="Tabs">
+        <button class="Tab @Selected(ChecklistTabs.Required)" @onclick="() => Click(ChecklistTabs.Required)">
+            &starf; @ChecklistTabs.Required.ToString()
+        </button>
+        <button class="Tab @Selected(ChecklistTabs.Completed)" @onclick="() => Click(ChecklistTabs.Completed)">
+            &check; @ChecklistTabs.Completed.ToString()
+        </button>
+        <button class="Tab @Selected(ChecklistTabs.Add)" @onclick="() => Click(ChecklistTabs.Add)">
+            &plus; @ChecklistTabs.Add.ToString()
+        </button>
+    </div> 
+</div>
+
+<style>
+
+    .DispatchDetailChecklistHeader {
+        padding: 1.5rem 0 0 0;
+    }
+
+        .DispatchDetailChecklistHeader .Title {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .DispatchDetailChecklistHeader .Tabs {
+            border-bottom: 2px solid #7fcde6;
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: auto auto auto 1fr;
+            grid-column-gap: .5rem;
+        }
+
+        .DispatchDetailChecklistHeader > .Tabs > .Tab {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: rgba(0,0,0,.65);
+            border: none;
+            background-color: rgba(255,255,255, .25);
+            border-bottom: 2px solid transparent;
+            padding: 0;
+            margin: 0;
+            border-radius: .5rem .5rem 0 0;
+            padding: .5rem .75rem;
+            border-bottom: 2px solid #1B5CAD;
+        }
+
+            .DispatchDetailChecklistHeader > .Tabs > .Tab.Selected {
+                color: var(--PrimaryColor);
+                border: none;
+            }
+
+</style>
+
+@code {
+
+    public enum ChecklistTabs
+    {
+        Required,
+        Completed,
+        Add
+    }
+
+    public ChecklistTabs SelectedTab = ChecklistTabs.Required;
+
+    private void Click(ChecklistTabs selectedTab)
+    {
+        if (SelectedTab != selectedTab)
+        {
+            SelectedTab = selectedTab;
+            OnChecklistTabClick.InvokeAsync(selectedTab);
+        }
+    }
+
+    private string Selected(ChecklistTabs tab)
+    {
+        if (tab == SelectedTab)
+        {
+            return "Selected";
+        }
+        return string.Empty;
+    }
+
+    public void SetTab(ChecklistTabs tab)
+    {
+        SelectedTab = tab;
+    }
+
+    [Parameter]
+    [EditorRequired]
+    public EventCallback<ChecklistTabs> OnChecklistTabClick { set; get; }
+
+}

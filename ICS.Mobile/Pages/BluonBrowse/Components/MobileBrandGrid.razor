@@ -1,0 +1,707 @@
+﻿@namespace ICS.Mobile.Pages.BluonBrowse.Components
+@using ICS.Portal.Data.Custom
+
+<div class="brand-grid-container">
+    @if (IsLoading)
+    {
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p class="mt-2">Loading brands...</p>
+        </div>
+    }
+    else if (Brands != null && Brands.Any())
+    {
+        <!-- Top Controls Row -->
+        <div class="brand-controls">
+            <!-- View Toggle -->
+            <div class="view-toggle">
+                <button class="toggle-btn @(ViewMode == "grid" ? "active" : "")"
+                        @onclick='() => ViewMode = "grid"'
+                        title="Grid View">
+                    <i class="bi bi-grid-3x3-gap-fill"></i>
+                </button>
+                <button class="toggle-btn @(ViewMode == "list" ? "active" : "")"
+                        @onclick='() => ViewMode = "list"'
+                        title="List View">
+                    <i class="bi bi-list-ul"></i>
+                </button>
+            </div>
+
+            <!-- Count Display -->
+            <div class="brand-count">
+                <i>@FilteredBrands.Count() of @Brands.Count Brands</i>
+            </div>
+        </div>
+
+        <!-- A-Z Letter Strip -->
+        <div class="letter-strip-container">
+            <div class="letter-strip">
+                <button class="letter-btn @(ActiveLetter == null ? "active" : "")"
+                        @onclick="() => SetActiveLetter(null)">
+                    ALL
+                </button>
+                @foreach (var letter in AvailableLetters)
+                {
+                    <button class="letter-btn @(ActiveLetter == letter ? "active" : "") @(HasBrandsForLetter(letter) ? "" : "disabled")"
+                            @onclick="() => SetActiveLetter(letter)"
+                            disabled="@(!HasBrandsForLetter(letter))">
+                        @letter
+                    </button>
+                }
+                <button class="letter-btn @(ActiveLetter == "#" ? "active" : "") @(HasBrandsForLetter("#") ? "" : "disabled")"
+                        @onclick='() => SetActiveLetter("#")'
+                        disabled="@(!HasBrandsForLetter("#"))">
+                    #
+                </button>
+            </div>
+        </div>
+
+        <!-- Optional Text Filter -->
+        <div class="text-filter-row">
+            <div class="filter-input-wrapper">
+                <i class="bi bi-search filter-icon"></i>
+                <input type="text"
+                       class="filter-input"
+                       placeholder="Filter brands..."
+                       @bind="FilterTerm"
+                       @bind:event="oninput" />
+                @if (!string.IsNullOrEmpty(FilterTerm))
+                {
+                    <button class="clear-btn" @onclick="ClearFilter">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="brand-content">
+            @if (ViewMode == "grid")
+            {
+                <!-- Grid View -->
+                <div class="mobile-grid">
+                    @foreach (var brand in FilteredBrands)
+                    {
+                        <div class="mobile-card brand-card" @onclick="() => SelectBrand(brand)">
+                            @if (!string.IsNullOrEmpty(brand.Image?.Url))
+                            {
+                                <div class="brand-logo">
+                                    <img src="@brand.Image.Url" alt="@brand.Brand" loading="lazy" />
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="brand-placeholder">
+                                    <span class="placeholder-letter">@GetFirstLetter(brand.Brand)</span>
+                                </div>
+                            }
+                            <div class="brand-name">@brand.Brand</div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <!-- List View with Grouped Headers -->
+                <div class="brand-list">
+                    @foreach (var group in GroupedBrands)
+                    {
+                        <div class="letter-group">
+                            <div class="letter-header">@group.Key</div>
+                            @foreach (var brand in group.Value)
+                            {
+                                <div class="brand-list-item" @onclick="() => SelectBrand(brand)">
+                                    @if (!string.IsNullOrEmpty(brand.Image?.Url))
+                                    {
+                                        <img src="@brand.Image.Url" alt="" class="list-logo" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <div class="list-placeholder">
+                                            <span>@GetFirstLetter(brand.Brand)</span>
+                                        </div>
+                                    }
+                                    <span class="list-brand-name">@brand.Brand</span>
+                                    <i class="bi bi-chevron-right list-chevron"></i>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (!FilteredBrands.Any())
+        {
+            <div class="empty-state">
+                <i class="bi bi-search"></i>
+                @if (!string.IsNullOrEmpty(FilterTerm))
+                {
+                    <p>No brands match "@FilterTerm"</p>
+                }
+                else if (ActiveLetter != null)
+                {
+                    <p>No brands starting with "@ActiveLetter"</p>
+                }
+                <button class="btn-reset" @onclick="ResetFilters">Show All Brands</button>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>No brands available</p>
+        </div>
+    }
+</div>
+
+<style>
+    .brand-grid-container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    /* ===== Top Controls ===== */
+    .brand-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 0.25rem;
+    }
+
+    .view-toggle {
+        display: flex;
+        background: rgba(0,0,0,0.08);
+        border-radius: 8px;
+        padding: 3px;
+    }
+
+    .toggle-btn {
+        background: transparent;
+        border: none;
+        padding: 0.4rem 0.75rem;
+        border-radius: 6px;
+        color: var(--bluon-primary);
+        font-size: 1.1rem;
+        transition: all 0.2s;
+    }
+
+        .toggle-btn.active {
+            background: var(--bluon-primary);
+            color: white;
+        }
+
+    .brand-count {
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    /* ===== Letter Strip ===== */
+    .letter-strip-container {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .letter-strip {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 4px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0.5rem 0.25rem;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+
+        .letter-strip::-webkit-scrollbar {
+            display: none;
+        }
+
+    .letter-btn {
+        flex-shrink: 0;
+        min-width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 8px;
+        background: rgba(30, 60, 114, 0.1);
+        color: var(--bluon-primary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+    }
+
+        .letter-btn:first-child {
+            min-width: 48px;
+            font-size: 0.75rem;
+        }
+
+        .letter-btn.active {
+            background: var(--bluon-primary);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .letter-btn.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .letter-btn:active:not(.disabled) {
+            transform: scale(0.95);
+        }
+
+    .letter-strip {
+        cursor: grab;
+    }
+
+
+    /* ===== Text Filter ===== */
+    .text-filter-row {
+        padding: 0 0.25rem;
+    }
+
+    .filter-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .filter-icon {
+        position: absolute;
+        left: 12px;
+        color: #999;
+        font-size: 0.9rem;
+        pointer-events: none;
+    }
+
+    .filter-input {
+        width: 100%;
+        padding: 0.6rem 2.5rem 0.6rem 2.25rem;
+        border-radius: 10px;
+        font-size: 1rem;
+        background: var(--ThemeColor, #f8f9fa);
+        border: 2px solid transparent;
+        color: var(--PrimaryColor, #333);
+        font-weight: 500;
+        transition: border-color 0.2s;
+    }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--bluon-primary);
+        }
+
+        .filter-input::placeholder {
+            color: #aaa;
+            font-weight: 400;
+        }
+
+    .clear-btn {
+        position: absolute;
+        right: 8px;
+        background: rgba(0,0,0,0.1);
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        font-size: 0.7rem;
+    }
+
+    /* ===== Content Area ===== */
+    .brand-content {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 1rem;
+    }
+
+    /* ===== Grid View ===== */
+    .mobile-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.6rem;
+        padding: 0.25rem;
+    }
+
+    .brand-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 0.6rem;
+        min-height: 90px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+        .brand-card:active {
+            transform: scale(0.96);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+        }
+
+    .brand-logo {
+        width: 60px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.35rem;
+    }
+
+        .brand-logo img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+    .brand-placeholder {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, var(--bluon-primary), var(--bluon-secondary));
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.35rem;
+    }
+
+    .placeholder-letter {
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .brand-name {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--bluon-dark);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        width: 100%;
+        line-height: 1.2;
+    }
+
+    /* ===== List View ===== */
+    .brand-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .letter-group {
+        margin-bottom: 0.5rem;
+    }
+
+    .letter-header {
+        position: sticky;
+        top: 0;
+        background: linear-gradient(135deg, var(--bluon-primary), var(--bluon-secondary));
+        color: white;
+        font-weight: 700;
+        font-size: 0.9rem;
+        padding: 0.4rem 1rem;
+        z-index: 10;
+    }
+
+    .brand-list-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.7rem 1rem;
+        background: white;
+        border-bottom: 1px solid #eee;
+        transition: background 0.15s;
+    }
+
+        .brand-list-item:active {
+            background: #f0f0f0;
+        }
+
+    .list-logo {
+        width: 40px;
+        height: 32px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+
+    .list-placeholder {
+        width: 40px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--bluon-primary), var(--bluon-secondary));
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    .list-brand-name {
+        flex: 1;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--bluon-dark);
+    }
+
+    .list-chevron {
+        color: #ccc;
+        font-size: 0.9rem;
+    }
+
+    /* ===== Empty State ===== */
+    .empty-state {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: #666;
+    }
+
+        .empty-state i {
+            font-size: 2.5rem;
+            opacity: 0.3;
+            display: block;
+            margin-bottom: 0.75rem;
+        }
+
+        .empty-state p {
+            margin-bottom: 1rem;
+        }
+
+    .btn-reset {
+        background: var(--bluon-primary);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.25rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    /* ===== Loading ===== */
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 3rem;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--bluon-light, #f8f9fa);
+        border-top-color: var(--bluon-primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* ===== Landscape / Small Height ===== */
+    @@media (orientation: landscape) and (max-height: 500px) {
+        .mobile-grid {
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 0.4rem;
+        }
+
+        .brand-card {
+            min-height: 75px;
+            padding: 0.4rem;
+        }
+
+        .brand-logo {
+            width: 50px;
+            height: 40px;
+        }
+
+        .brand-placeholder {
+            width: 40px;
+            height: 40px;
+        }
+
+        .letter-btn {
+            min-width: 32px;
+            height: 32px;
+            font-size: 0.8rem;
+        }
+
+        .brand-list-item {
+            padding: 0.5rem 0.75rem;
+        }
+    }
+</style>
+
+<script>
+     window.initLetterStripDrag = function () {
+        // Only attach once to document
+        if (window._letterStripDragInitialized) return;
+        window._letterStripDragInitialized = true;
+
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        let activeSlider = null;
+
+        document.addEventListener('mousedown', (e) => {
+            const slider = e.target.closest('.letter-strip');
+            if (!slider) return;
+
+            isDown = true;
+            activeSlider = slider;
+            slider.style.cursor = 'grabbing';
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        });
+
+        document.addEventListener('mouseleave', (e) => {
+            if (!activeSlider) return;
+            isDown = false;
+            activeSlider.style.cursor = 'grab';
+            activeSlider = null;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!activeSlider) return;
+            isDown = false;
+            activeSlider.style.cursor = 'grab';
+            activeSlider = null;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDown || !activeSlider) return;
+            e.preventDefault();
+            const x = e.pageX - activeSlider.offsetLeft;
+            const walk = (x - startX) * 1.5;
+            activeSlider.scrollLeft = scrollLeft - walk;
+        });
+    };
+</script>
+
+@code {
+    [Inject]
+    private IJSRuntime JS { get; set; } = default!;
+
+    [Parameter] public List<BluonBrands.Brands.Data>? Brands { get; set; }
+    [Parameter] public EventCallback<BluonBrands.Brands.Data> OnBrandSelected { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+
+    private string ViewMode = "grid";
+    private string FilterTerm = "";
+    private string? ActiveLetter = null;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("initLetterStripDrag");
+            }
+            catch { }
+
+        }
+    }
+
+    private static readonly string[] AvailableLetters =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray().Select(c => c.ToString()).ToArray();
+
+    private IEnumerable<BluonBrands.Brands.Data> FilteredBrands
+    {
+        get
+        {
+            var brands = Brands ?? Enumerable.Empty<BluonBrands.Brands.Data>();
+
+            // Apply letter filter
+            if (ActiveLetter == "#")
+            {
+                brands = brands.Where(b => !string.IsNullOrEmpty(b.Brand) &&
+                    !char.IsLetter(b.Brand[0]));
+            }
+            else if (!string.IsNullOrEmpty(ActiveLetter))
+            {
+                brands = brands.Where(b => b.Brand?.StartsWith(ActiveLetter, StringComparison.OrdinalIgnoreCase) ?? false);
+            }
+
+            // Apply text filter
+            if (!string.IsNullOrWhiteSpace(FilterTerm))
+            {
+                brands = brands.Where(b => b.Brand?.Contains(FilterTerm, StringComparison.OrdinalIgnoreCase) ?? false);
+            }
+
+            return brands.OrderBy(b => b.Brand);
+        }
+    }
+
+    private Dictionary<string, List<BluonBrands.Brands.Data>> GroupedBrands
+    {
+        get
+        {
+            return FilteredBrands
+                .GroupBy(b => GetFirstLetter(b.Brand))
+                .OrderBy(g => g.Key == "#" ? "ZZZ" : g.Key) // Put # at end
+                .ToDictionary(g => g.Key, g => g.OrderBy(b => b.Brand).ToList());
+        }
+    }
+
+    private bool HasBrandsForLetter(string letter)
+    {
+        if (Brands == null) return false;
+
+        if (letter == "#")
+        {
+            return Brands.Any(b => !string.IsNullOrEmpty(b.Brand) && !char.IsLetter(b.Brand[0]));
+        }
+
+        return Brands.Any(b => b.Brand?.StartsWith(letter, StringComparison.OrdinalIgnoreCase) ?? false);
+    }
+
+    private void SetActiveLetter(string? letter)
+    {
+        ActiveLetter = letter;
+        // Optionally clear text filter when using letter nav
+        // FilterTerm = "";
+    }
+
+    private string GetFirstLetter(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return "#";
+        var first = char.ToUpper(name[0]);
+        return char.IsLetter(first) ? first.ToString() : "#";
+    }
+
+    private void ClearFilter()
+    {
+        FilterTerm = "";
+    }
+
+    private void ResetFilters()
+    {
+        FilterTerm = "";
+        ActiveLetter = null;
+    }
+
+    private async Task SelectBrand(BluonBrands.Brands.Data brand)
+    {
+        await OnBrandSelected.InvokeAsync(brand);
+    }
+}

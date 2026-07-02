@@ -1,0 +1,72 @@
+﻿<div class="HomeGoalItem">
+    <div class="Title">@Title</div>
+    <div class="SubTitle" style="color: var(--SecondaryColor);">@SubTitle</div>
+    <div class="Target">@Target</div>
+    <div class="Graphic">
+        <input type="range" class="Slider" min="0" max='@Target' value='@ActualValue' style="accent-color: var(@CssColor);" />
+        <svg class="Icon" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                 width="96px" height="32px" viewBox="0 0 96 32" enable-background="new 0 0 96 32" xml:space="preserve">
+<path d="M96,5v22c0,2.76-2.54,5-5.67,5H10.7c-3.13,0-5.67-2.24-5.67-5v-6.27L0,16.33l5.03-4.91V5c0-2.76,2.54-5,5.67-5h79.63
+	C93.46,0,96,2.24,96,5z" />
+</svg>
+        
+        <div class="Value" style="color: var(@CssColor);">
+            @ActualValue
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    [EditorRequired]
+    public string? Title { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public string? SubTitle { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public string? Target { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public string? ActualValue { set; get; }
+    
+
+    [Parameter]
+    [EditorRequired]
+    public string? CssColor { set; get; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (string.IsNullOrEmpty(Title))
+        {
+            Title = "";
+        }
+        if (string.IsNullOrEmpty(SubTitle))
+        {
+            SubTitle = "";
+        }
+        if (string.IsNullOrEmpty(Target))
+        {
+            Target = "0";
+        }
+        if (string.IsNullOrEmpty(ActualValue))
+        {
+            ActualValue = "0";
+        }
+
+        if (string.IsNullOrEmpty(CssColor))
+        {
+            CssColor = "--PrimaryColor";
+        }
+
+
+
+
+    }
+}

@@ -1,0 +1,32 @@
+﻿<div class="menu-item-container">
+    <div class="menu-button" @onclick="Click">
+        <i class="icon bi @Icon"></i>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    [EditorRequired]
+    public string? Icon{ set; get; }
+
+    [Parameter]
+    public EventCallback OnClick{ set; get; }
+
+    private void Click()
+    {
+        if (OnClick.HasDelegate)
+        {
+            OnClick.InvokeAsync();
+        }
+    }
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if(Icon is null)
+        {
+            throw new ArgumentNullException(nameof(Icon));
+        }
+    }
+}

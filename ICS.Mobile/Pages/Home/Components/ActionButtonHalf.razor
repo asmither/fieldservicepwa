@@ -1,0 +1,52 @@
+<button class="ActionButtonHalf @GridArea" @onclick="OnClick">
+    <div class="ImageContainer">
+        @if (!string.IsNullOrEmpty(Icon))
+        {
+            <i class="Icon bi @Icon" aria-hidden="true"></i>
+        }
+        else
+        {
+            <img class="Image" src="@ImageUrl" alt="" />
+        }
+    </div>
+    <div class="Title">@Title</div>
+</button>
+
+@code {
+    [Parameter]
+    [EditorRequired]
+    public string? Title { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public string? GridArea { set; get; }
+
+    /// <summary>Legacy image tile; prefer Icon for token-tinted glyphs.</summary>
+    [Parameter]
+    public string? ImageUrl { set; get; }
+
+    /// <summary>Bootstrap-icon class (e.g. "bi-sunrise"). Takes precedence over ImageUrl.</summary>
+    [Parameter]
+    public string? Icon { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public EventCallback OnClick { set; get; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        Title ??= string.Empty;
+
+        if (string.IsNullOrEmpty(GridArea))
+        {
+            throw new ArgumentNullException(nameof(GridArea));
+        }
+
+        if (!OnClick.HasDelegate)
+        {
+            throw new ArgumentNullException(nameof(OnClick));
+        }
+    }
+}

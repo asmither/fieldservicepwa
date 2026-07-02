@@ -1,0 +1,13 @@
+﻿<div class="form-button-group  transparent">
+    <button type="submit" class="btn btn-primary btn-block btn-lg @DisabledCSS">@Text</button>
+</div>
+
+@code {
+    private string DisabledCSS => IsBusy ? "disable" : string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Text { set; get; }
+
+    [Parameter]
+    public bool IsBusy { set; get; } = false;
+}

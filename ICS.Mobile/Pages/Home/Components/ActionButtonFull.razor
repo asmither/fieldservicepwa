@@ -1,0 +1,65 @@
+﻿@if (Count > 0 || AlwaysShow)
+{
+    <button class="ActionButtonFull @GridArea" @onclick="Click">
+        <div class="Title">@Title</div>
+        @if (Count > 0)
+        {
+            <div class="Count">@Count</div>
+        } 
+        else
+        {
+            <div class="CountEmpty">Tap to Check</div>
+        }
+    </button>
+}
+@code {
+
+    [Parameter]
+    [EditorRequired]
+    public string? Title { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public string? GridArea { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public int? Count { set; get; }
+
+    [Parameter]
+    public bool AlwaysShow { set; get; } = false;
+
+    [Parameter]
+    [EditorRequired]
+    public EventCallback OnClick { set; get; }
+
+    private void Click()
+    {
+        OnClick.InvokeAsync();
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (string.IsNullOrEmpty(nameof(Title)))
+        {
+            Title = String.Empty;
+        }
+
+        if (string.IsNullOrEmpty(nameof(GridArea)))
+        {
+            throw new ArgumentNullException(nameof(OnClick));
+        }
+
+        if (!Count.HasValue)
+        {
+            Count = 0;
+        }
+
+        if (!OnClick.HasDelegate)
+        {
+            throw new ArgumentNullException(nameof(OnClick));
+        }
+    }
+}

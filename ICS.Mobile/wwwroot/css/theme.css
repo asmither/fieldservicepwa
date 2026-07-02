@@ -1,0 +1,146 @@
+﻿:root {
+    --PrimaryForegroundColor: #000000;
+    --PrimaryBorder: 1px solid gray;
+    --HomeMenuBackgroundColor: #FFFFFF;
+    --HomeMenuForegroundColor: #000000;
+    --HomeMenuBorder: 1px solid #DCDCE9;
+    --HomeMenuSelectedColor: #666666;
+    --MenuBackgroundColor: #FFFFFF;
+    --MenuForegroundColor: #000000;
+    --MenuBorder: 1px solid #DCDCE9;
+    --OkButtonBackgroundColor: green;
+    --OkButtonForegroundColor: white;
+    --OkButtonBorder: 1px solid black;
+    --CancelButtonBackgroundColor: red;
+    --CancelButtonForegroundColor: white;
+    --CancelButtonBorder: 1px solid black;
+    --SelectItemBackgroundColor: red;
+    --SelectItemForedgroundColor: white;
+    --SelectItemBorder: 1px solid black;
+    --SelectedItemBackgroundColor: green;
+    --SelectedItemForedgroundColor: white;
+    --SelectedItemBorder: 1px solid black;
+    --top-menu-height: 64px;
+    --bottom-menu-height: 64px;
+    --icon-button-padding: 16px;
+    --arrow-button-outer-padding: 24px;
+    --arrow-button-inner-padding: 64px;
+    font-size: 16px;
+    font-family: Roboto;
+}
+
+body {
+
+    min-height: 95vh;
+}
+
+.top-menu-container, .top-menu-container:before {
+    left: 0;
+    right: 0;
+    width: 100%;
+    position: fixed;
+    background: var(--MenuBackgroundColor);
+    z-index: 99999;
+}
+
+.top-menu-container {
+    top: env(safe-area-inset-top);
+    height: var(--top-menu-height);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--MenuForegroundColor);
+    border-bottom: var(--MenuBorder);
+}
+
+.top-menu:before {
+    top: 0;
+    height: env(safe-area-inset-top);
+    content: '';
+}
+
+.top-menu-icon-button {
+    border: none;
+    background-color: transparent;
+    font-size: 32px;
+    color: inherit;
+    text-align: center;
+    cursor: pointer;
+    padding: var(--icon-button-padding);
+}
+
+.top-menu-title {
+    font-size: 1rem;
+    text-align: center;
+    font-weight: 400;
+}
+
+.top-menu-badge {
+    top: 10px;
+    right: 8px;
+    height: 20px;
+    width: 20px;
+    position: absolute;
+    display: inline-flex;
+    line-height: 20px;
+    font-size: 10px;
+    background: red;
+    color: white;
+    border-radius: 100px;
+    align-items: center;
+    justify-content: center;
+    font-weight: 400;
+    font-style: normal;
+    text-align: center;
+}
+
+bottom-menu {
+    min-height: var(--bottom-menu-height);
+    display: flex;
+    justify-content: space-between;
+    align-content: center;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    padding-top: 8px;
+    background-color: white;
+    border-top: 1px solid gray;
+}
+
+.bottom-menu .icon-text-button {
+    display: grid;
+    grid-template-rows: 24px 10px;
+    justify-content: space-around;
+    align-items: center;
+    border: none;
+    background-color: transparent;
+    color: black;
+    align-self: center;
+}
+
+    .bottom-menu .icon-text-button > i {
+        font-size: 24px;
+    }
+
+    .bottom-menu .icon-text-button > strong {
+        font-size: 9px;
+        font-weight: bold;
+    }
+
+.bottom-menu .arrow-button {
+    font-size: 32px;
+    border: none;
+    background-color: transparent;
+}
+
+.arrow-button.left {
+    padding-left: var(--arrow-button-outer-padding);
+    padding-right: var(--arrow-button-inner-padding);
+}
+
+.arrow-button.right {
+    padding-left: var(--arrow-button-inner-padding);
+    padding-right: var(--arrow-button-outer-padding);
+}

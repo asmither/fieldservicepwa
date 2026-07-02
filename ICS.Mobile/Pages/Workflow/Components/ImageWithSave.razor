@@ -1,0 +1,128 @@
+﻿@inject IJSRuntime JS
+<style>
+    .SavableImageContainer {
+        width: 100%;
+        box-sizing: border-box;
+        padding-bottom: .5rem;
+        position: relative;
+        display: inline-block;
+    }
+
+        .SavableImageContainer > img {
+            width: 100%;
+            display: block;
+        }
+
+        .SavableImageContainer > button {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            border: none;
+            border-radius: 6px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+
+            .SavableImageContainer > button:hover {
+                background-color: rgba(0, 0, 0, 0.7);
+            }
+
+            .SavableImageContainer > button svg {
+                display: block;
+            }
+</style>
+<br />
+<div class="SavableImageContainer" style="@WidthStyle">
+    <img class="Image" src="@ImageBase64" title="@Title" alt="@Title" />
+    @if (ShowDownload)
+    {
+        <button @onclick="() => ShareThisImage()" title="Copy to clipboard">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#FFFFFF" viewBox="0 0 16 16">
+                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z" />
+                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0z" />
+            </svg>
+        </button>
+    }
+</div>
+
+
+@code {
+
+    private string WidthStyle
+    {
+        get
+        {
+            if (MaxWidth is not null)
+            {
+                return $"max-width: {MaxWidth}px;";
+            }
+            return string.Empty;
+        }
+    }
+
+
+    private async Task ShareThisImage()
+    {
+        if (string.IsNullOrEmpty(ImageBase64))
+            return;
+
+        string contentType = "image/jpg"; // default
+        string base64Data = ImageBase64;
+
+        if (ImageBase64.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(
+                ImageBase64,
+                @"^data:(?<type>[\w/\-\.]+);base64,(?<data>.+)$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            if (match.Success)
+            {
+                contentType = match.Groups["type"].Value;
+                base64Data = match.Groups["data"].Value;
+            }
+        }
+
+        await JS.InvokeVoidAsync("openShareImage", base64Data, contentType, Title);
+    }
+
+
+    [Parameter]
+    public string ImageBase64 { set; get; } = string.Empty;
+
+    [Parameter]
+    public string FileName { set; get; } = string.Empty;
+
+
+    [Parameter]
+    public int? MaxWidth { set; get; }
+
+    [Parameter]
+    public bool ShowDownload { set; get; } = true;
+
+    [Parameter]
+    public string? Title { set; get; }
+
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if (string.IsNullOrEmpty(FileName))
+        {
+            FileName = string.Empty;
+        }
+
+        if (string.IsNullOrEmpty(Title))
+        {
+            Title = FileName ?? string.Empty;
+        }
+
+    }
+
+}

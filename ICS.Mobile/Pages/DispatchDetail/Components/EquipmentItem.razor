@@ -1,0 +1,2354 @@
+﻿@using ICS.Mobile.Services
+@using ICS.Portal.Data.Queries.Models
+@using ICS.Portal.Data.Custom
+@using static ICS.Portal.Data.Custom.BluonModels
+@using static ICS.Portal.Data.Custom.BluonBrands
+@using static ICS.Portal.Data.Custom.BluonParts
+@using ICS.Mobile.Pages.BluonBrowse.Components
+
+<div class="equipment-item-container">
+    @if (currentView == ViewState.Equipment && EquipList != null)
+    {
+        @* 1. UNGROUPED EQUIPMENT - Show first without group header *@
+
+        var ungroupedEquipment = EquipList.Where(x => !x.IsRetired && string.IsNullOrWhiteSpace(x.EquipmentGroup)).ToList();
+
+        @if (ungroupedEquipment.Any())
+        {
+            @foreach (var eq in ungroupedEquipment)
+            {
+                @RenderEquipmentCard(eq, false)
+            }
+        }
+
+        @* 2. GROUPED EQUIPMENT - Alphabetical by group name *@
+
+        var groupedEquipment = EquipList
+        .Where(x => !x.IsRetired && !string.IsNullOrWhiteSpace(x.EquipmentGroup))
+        .GroupBy(x => x.EquipmentGroup)
+        .OrderBy(g => g.Key)
+        .ToList();
+
+        @foreach (var group in groupedEquipment)
+        {
+            var groupName = group.Key ?? "Unknown Group";
+            var isGroupExpanded = IsGroupExpanded(groupName);
+            var equipmentCount = group.Count();
+
+            <div class="equipment-group">
+                <div class="group-header @(!isGroupExpanded ? "collapsed" : "")" @onclick="() => ToggleGroup(groupName)">
+                    <div class="group-title">
+                        <i class="bi @(isGroupExpanded ? "bi-folder2-open" : "bi-folder2")"></i>
+                        <span>@groupName</span>
+                        <span class="group-count">@equipmentCount</span>
+                    </div>
+                    <i class="bi @(isGroupExpanded ? "bi-chevron-up" : "bi-chevron-down") group-chevron"></i>
+                </div>
+
+                @if (isGroupExpanded)
+                {
+                    <div class="group-content">
+                        @foreach (var eq in group)
+                        {
+                            @RenderEquipmentCard(eq, false)
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        @* 3. RETIRED EQUIPMENT - Show last *@
+
+        var retiredEquipment = EquipList.Where(x => x.IsRetired).ToList();
+
+        @if (retiredEquipment.Any())
+        {
+            var isRetiredExpanded = IsGroupExpanded("__RETIRED__");
+            var retiredCount = retiredEquipment.Count();
+
+            <div class="equipment-group retired-group">
+                <div class="group-header retired-header @(!isRetiredExpanded ? "collapsed" : "")" @onclick='() => ToggleGroup("__RETIRED__")'>
+                    <div class="group-title">
+                        <i class="bi bi-archive"></i>
+                        <span>Retired Equipment</span>
+                        <span class="group-count retired-count">@retiredCount</span>
+                    </div>
+                    <i class="bi @(isRetiredExpanded ? "bi-chevron-up" : "bi-chevron-down") group-chevron"></i>
+                </div>
+
+                @if (isRetiredExpanded)
+                {
+                    <div class="group-content">
+                        @foreach (var eq in retiredEquipment)
+                        {
+                            @RenderEquipmentCard(eq, true)
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+    else if (currentView == ViewState.EquipmentUsages)
+    {
+        <!-- EquipmentUsages View -->
+        <div class="manuals-panel">
+            <div class="manuals-header">
+                <button class="back-button" @onclick="BackToEquipment">
+                    <i class="bi bi-arrow-left"></i>
+                </button>
+                <div class="manuals-title">
+                    <h3>@selectedModel?.Model</h3>
+                    <p class="manuals-subtitle">@currentEquipment?.UnitTag @currentEquipment?.Make</p>
+                </div>
+            </div>
+            @if (equipmentUsages is not null && equipmentUsages.Any())
+            {
+                <div class="manuals-list">
+                    <div class="category-documents">
+                        @foreach (var doc in equipmentUsages)
+                        {
+                            <div class="document-item">
+                                <div class="document-icon">
+                                    <i class="bi bi-checklist"></i>
+                                </div>
+                                <div class="document-info" @onclick="() => OpenWorkflow(doc.WorkflowResultId)">
+                                    <p class="document-title">
+                                        @($"{doc.LastActivity.ToString("MMM dd yyyy")} - {doc.ClientWorkOrder} | {doc.PurchaseOrderNumber} ")
+                                        @if (doc.Priority.ToUpper() != "NORMAL")
+                                        {
+                                            @doc.Priority
+                                        }
+                                    </p>
+                                    <p class="document-description">
+                                        @doc.Workflow<br />
+                                        @doc.FirstName @doc.LastName | @doc.DispZone | @doc.Customer.Left(10)
+                                    </p>
+                                </div>
+                                <div class="document-action">
+                                    <i class="bi bi-journal-text"></i>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="bi bi-file-text"></i>
+                    <h4>No Prior Visits Available</h4>
+                    <p>No checklists found for this equipment</p>
+                </div>
+
+            }
+
+        </div>
+    }
+    else if (currentView == ViewState.ModelSearch)
+    {
+        <!-- Model Search Results View -->
+        <div class="search-panel">
+            <div class="search-header">
+                <button class="back-button" @onclick="BackToEquipment">
+                    <i class="bi bi-arrow-left"></i>
+                </button>
+                <div class="search-title">
+                    <h3>Select Equipment Model</h3>
+                    <p class="search-subtitle">Search: @searchModel</p>
+                </div>
+            </div>
+
+            <div class="search-edit-section">
+                <div class="edit-input-group">
+                    <input type="text" @bind="editedSearchModel" @bind:event="oninput"
+                    class="edit-input" placeholder="Refine model search..." />
+                    <button class="edit-button" @onclick="RefineSearch" disabled="@(isSearching || string.IsNullOrWhiteSpace(editedSearchModel))">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+                @if (editedSearchModel != searchModel && !string.IsNullOrWhiteSpace(editedSearchModel))
+                {
+                    <p class="edit-hint">Press search to refine results</p>
+                }
+            </div>
+
+            @if (isSearching)
+            {
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Searching for models...</p>
+                </div>
+            }
+            else if (modelSearchResults != null && modelSearchResults.Any())
+            {
+                <div class="model-list">
+                    @foreach (var model in modelSearchResults)
+                    {
+                        <div class="model-card" @onclick="() => SelectModel(model)">
+                            <div class="model-header">
+                                @if (!string.IsNullOrEmpty(model.BrandImage))
+                                {
+                                    <img src="@model.BrandImage" alt="@model.BrandName" class="brand-logo" />
+                                }
+                                else
+                                {
+                                    <div class="brand-placeholder">
+                                        <i class="bi bi-building"></i>
+                                    </div>
+                                }
+                                <div class="model-info">
+                                    <h4 class="model-name">@model.Model</h4>
+                                    <p class="brand-name">@(model.BrandName ?? "Unknown Brand")</p>
+                                </div>
+                            </div>
+
+                            <div class="model-stats">
+                                <div class="stat">
+                                    <i class="bi bi-book-fill"></i>
+                                    <span>@(model.ManualsCount ?? 0) Manuals</span>
+                                </div>
+                                <div class="stat">
+                                    <i class="bi bi-tools"></i>
+                                    <span>@(model.FunctionalPartsCount ?? 0) Parts</span>
+                                </div>
+                                @if (model.ConfidenceScore.HasValue)
+                                {
+                                    <div class="confidence-badge" style="@GetConfidenceStyle(model.ConfidenceScore.Value)">
+                                        @($"{model.ConfidenceScore.Value:P0} Match")
+                                    </div>
+                                }
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(model.SystemType))
+                            {
+                                <div class="model-type">
+                                    <i class="bi bi-tag"></i>
+                                    <span>@model.SystemType</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else if (modelSearchResults != null)
+            {
+                <div class="empty-state">
+                    <i class="bi bi-search-x"></i>
+                    <h4>No Models Found</h4>
+                    <p>Try editing the model number above for better results</p>
+                </div>
+            }
+        </div>
+    }
+    else if (currentView == ViewState.Manuals)
+    {
+        <!-- Manuals View -->
+        <div class="manuals-panel">
+            <div class="manuals-header">
+                <button class="back-button" @onclick="BackToChooseView">
+                    <i class="bi bi-arrow-left"></i>
+                </button>
+                <div class="manuals-title">
+                    <h3>@selectedModel?.Model</h3>
+                    <p class="manuals-subtitle">@selectedModel?.BrandName</p>
+                </div>
+            </div>
+
+            @if (isLoadingManuals)
+            {
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Loading manuals...</p>
+                </div>
+            }
+            else if (modelManuals?.Data?.Manuals != null)
+            {
+                var manuals = modelManuals.Data.Manuals;
+                var docGroups = GetDocumentationGroups(manuals);
+
+                @if (docGroups.Any())
+                {
+                    <div class="manuals-list">
+                        @foreach (var group in docGroups.Where(g => g.Documents.Any()))
+                        {
+                            <div class="manual-category">
+                                <div class="category-header" @onclick="() => ToggleCategory(group.CategoryName)">
+                                    <div class="category-info">
+                                        <i class="bi @group.Icon"></i>
+                                        <span class="category-name">@group.DisplayName</span>
+                                        <span class="badge">@group.Documents.Count</span>
+                                    </div>
+                                    <i class="bi @(expandedCategories.Contains(group.CategoryName) ? "bi-chevron-up" : "bi-chevron-down") chevron"></i>
+                                </div>
+
+                                @if (expandedCategories.Contains(group.CategoryName))
+                                {
+                                    <div class="category-documents">
+                                        @foreach (var doc in group.Documents)
+                                        {
+                                            <div class="document-item" @onclick="() => OpenDocument(doc.Url)">
+                                                <div class="document-icon">
+                                                    <i class="bi bi-file-pdf-fill"></i>
+                                                </div>
+                                                <div class="document-info">
+                                                    <p class="document-title">@doc.Title</p>
+                                                    @if (!string.IsNullOrEmpty(doc.Description))
+                                                    {
+                                                        <p class="document-description">@doc.Description</p>
+                                                    }
+                                                </div>
+                                                <div class="document-action">
+                                                    <i class="bi bi-box-arrow-up-right"></i>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="bi bi-file-text"></i>
+                        <h4>No Documentation Available</h4>
+                        <p>No manuals found for this model</p>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <h4>Unable to Load Manuals</h4>
+                    <p>Please try again later</p>
+                </div>
+            }
+        </div>
+    }
+    else if (currentView == ViewState.ChooseView)
+    {
+        <!-- Choice between Manuals and Parts -->
+        <div class="choice-panel">
+            <div class="choice-header">
+                <button class="back-button" @onclick="BackToModelSearch">
+                    <i class="bi bi-arrow-left"></i>
+                </button>
+                <div class="choice-title">
+                    <h3>@selectedModel?.Model</h3>
+                    <p class="choice-subtitle">@selectedModel?.BrandName</p>
+                </div>
+            </div>
+
+            <div class="choice-content">
+                <div class="choice-cards">
+                    <div class="choice-card" @onclick="ShowManuals">
+                        <div class="choice-icon">
+                            <i class="bi bi-book-fill"></i>
+                        </div>
+                        <div class="choice-info">
+                            <h4>Manuals & Documentation</h4>
+                            <p class="choice-count">@(selectedModel?.ManualsCount ?? 0) Available</p>
+                        </div>
+                        <div class="choice-arrow">
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                    </div>
+
+                    <div class="choice-card" @onclick="ShowParts">
+                        <div class="choice-icon">
+                            <i class="bi bi-tools"></i>
+                        </div>
+                        <div class="choice-info">
+                            <h4>Parts & Replacements</h4>
+                            <p class="choice-count">@(selectedModel?.FunctionalPartsCount ?? 0) Available</p>
+                        </div>
+                        <div class="choice-arrow">
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (currentView == ViewState.Parts)
+    {
+        <!-- Parts List View -->
+        <div class="parts-panel">
+            <div class="parts-header">
+                <button class="back-button" @onclick="BackToChooseView">
+                    <i class="bi bi-arrow-left"></i>
+                </button>
+                <div class="parts-title">
+                    <h3>Parts List</h3>
+                    <p class="parts-subtitle">@selectedModel?.Model - @selectedModel?.BrandName</p>
+                </div>
+            </div>
+
+            @if (isLoadingParts)
+            {
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Loading parts...</p>
+                </div>
+            }
+            else if (partsList != null && partsList.Any())
+            {
+                <div class="parts-list-container">
+                    <MobilePartSearchResults Parts="@partsList"
+                    SearchTerm="@(selectedModel?.Model ?? "")"
+                    IsLoading="false"
+                    OnPartSelected="@OnPartSelected" />
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="bi bi-tools"></i>
+                    <h4>No Parts Found</h4>
+                    <p>No parts available for this model</p>
+                </div>
+            }
+        </div>
+    }
+    else if (currentView == ViewState.PartDetails)
+    {
+        <!-- Part Details View -->
+        <div class="part-details-panel">
+            <div class="part-details-header">
+                <button class="back-button" @onclick="BackToParts">
+                    <i class="bi bi-arrow-left"></i>
+                </button>
+                <div class="part-details-title">
+                    <h3>Part Details</h3>
+                    <p class="part-details-subtitle">@selectedPart?.Number</p>
+                </div>
+            </div>
+
+            @if (selectedPart != null)
+            {
+                <div class="part-details-container">
+                    <MobilePartDetails Part="@selectedPart"
+                    PartInfo="@selectedPartInfo"
+                    Alternatives="@alternativeParts"
+                    HideSpecs=true
+                    OnAddToProject="@OnAddPartToProject"
+                    IsLoadingAlternatives="@isLoadingAlternatives" />
+                </div>
+                @if (selectedPartInfo?.Data.Specifications != null && selectedPartInfo?.Data.Specifications.ToDictionary().Count > 0)
+                {
+                    <div class="specifications-section" style="margin-top: 1rem;">
+                        <h4 style="color: white; margin-bottom: 0.5rem;">Specifications</h4>
+                        <MobileSpecificationsViewer Specifications="@selectedPartInfo.Data.Specifications" />
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>
+
+<link href="/css/bluon-dark.css" rel="stylesheet" />
+<style>
+    .equipment-item-container {
+    width: 100%;
+    min-height: 100px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: white;
+    }
+
+    /* Equipment Card Styles */
+    .equipment-card {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+    border: 1px solid #333;
+    transition: all 0.2s ease;
+    }
+
+    .equipment-card.collapsed {
+    padding: 0;
+    }
+
+    .equipment-card.collapsed .equipment-header {
+    border-bottom: none;
+    padding: 1rem;
+    margin-bottom: 0;
+    }
+
+    .equipment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #444;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+    }
+
+    .equipment-header:hover {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px 12px 0 0;
+    }
+
+    .equipment-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: white;
+    }
+
+    .equipment-title i {
+    color: #4dabf7;
+    font-size: 1.25rem;
+    }
+
+    .collapsed-info {
+    margin-left: 1rem;
+    font-size: 0.85rem;
+    color: #A8AE96;
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    }
+
+    .collapsed-info .separator {
+    color: #555;
+    }
+
+    /* Equipment Group Accordion Styles */
+    .equipment-group {
+    background: #252525;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    border: 1px solid #444;
+    overflow: hidden;
+    }
+
+    .group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.875rem 1rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+    background: linear-gradient(135deg, #2a3a4a 0%, #1e2a36 100%);
+    }
+
+    .group-header:hover {
+    background: linear-gradient(135deg, #3aaa5a 0%, #2e5a46 100%);
+    }
+
+    .group-header.collapsed {
+    border-radius: 12px;
+    }
+
+    .group-title {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    }
+
+    .group-title i {
+    font-size: 1.125rem;
+    }
+
+    .group-count {
+    background: #4dabf7;
+    color: #1a1a1a;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.125rem 0.5rem;
+    border-radius: 10px;
+    margin-left: 0.25rem;
+    }
+
+    .group-chevron {
+    color: #adb5bd;
+    font-size: 1rem;
+    transition: transform 0.2s ease;
+    }
+
+    .group-content {
+    padding: 0.5rem 0.75rem 0.75rem 0.75rem;
+    background: #1e1e1e;
+    }
+
+    .group-content .equipment-card {
+    margin-bottom: 0.75rem;
+    }
+
+    .group-content .equipment-card:last-child {
+    margin-bottom: 0;
+    }
+
+    /* Retired Group Styles */
+    .retired-group {
+    border-color: #6c4a4a;
+    }
+
+    .retired-header {
+    background: linear-gradient(135deg, #4a3232 0%, #362626 100%);
+    }
+
+    .retired-header:hover {
+    background: linear-gradient(135deg, #5a4242 0%, #463636 100%);
+    }
+
+    .retired-header .group-title {
+    color: #e07070;
+    }
+
+    .retired-header .group-title i {
+    color: #e07070;
+    }
+
+    .retired-count {
+    background: #e07070;
+    }
+
+    /* Retired Equipment Card */
+    .equipment-card.retired-card {
+    opacity: 0.8;
+    border-color: #6c4a4a;
+    }
+
+    .retired-badge {
+    background: #e07070;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    }
+
+    .equipment-location {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #adb5bd;
+    font-size: 0.875rem;
+    }
+
+    .equipment-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    margin-bottom: 1rem;
+    }
+
+    .detail-row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 1rem;
+    padding: 0.375rem 0;
+    align-items: center;
+    }
+
+    .detail-label {
+    font-size: 0.875rem;
+    color: #adb5bd;
+    font-weight: 500;
+    }
+
+    .detail-value {
+    font-size: 1.1rem;
+    color: white;
+    font-weight: 600;
+    word-break: break-word;
+    -webkit-user-select: all;
+    -moz-user-select: all;
+    -ms-user-select: element;
+    user-select: all;
+    }
+
+    .qty-row {
+    background: #2a2a2a;
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin-top: 0.25rem;
+    border: 1px solid #444;
+    -webkit-user-select: all;
+    -moz-user-select: all;
+    -ms-user-select: element;
+    user-select: all;
+    }
+
+    .qty-value {
+    font-size: 0.875rem;
+    color: #f8f9fa;
+    -webkit-user-select: all;
+    -moz-user-select: all;
+    -ms-user-select: element;
+    user-select: all;
+    }
+
+    .notes-row {
+    grid-template-columns: 100px 1fr;
+    background: #3a3a00;
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin-top: 0.5rem;
+    border: 1px solid #666600;
+    }
+
+    .notes-value {
+    white-space: pre-wrap;
+    font-size: 0.875rem;
+    color: #ffff99;
+    -webkit-user-select: all;
+    -moz-user-select: all;
+    -ms-user-select: element;
+    user-select: all;
+    }
+
+    .equipment-actions {
+    padding-top: 0.75rem;
+    display: flex;
+    justify-content: center; /* center them */
+    gap: 1rem; /* spacing between buttons */
+    flex-wrap: wrap; /* allows 3rd button later without breaking */
+    width: 100%;
+    }
+
+
+
+    .action-button {
+    flex: 1; /* allow equal widths */
+    min-width: 160px;
+    max-width: 250px;
+    width: 40%;
+    padding: 0.875rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    }
+
+    .action-button.primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    }
+
+    .action-button.primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0056b3 0%, #004094 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.25);
+    }
+
+    .action-button.history {
+    background: linear-gradient(135deg, #ffff11 0%, #aaaa11 100%);
+    color: black;
+    }
+
+    .action-button.history:hover:not(:disabled) {
+    background: linear-gradient(135deg, #999900 0%, #444400 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 255, 0, 0.25);
+    }
+
+    .action-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    }
+
+    /* Search Panel Styles */
+    .search-panel, .manuals-panel {
+    background: #1a1a1ab0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(255, 255, 255, 0.1);
+    border: 1px solid #aaaaaaF0;
+    }
+
+    .search-header, .manuals-header {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    }
+
+    .back-button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: larger;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    }
+
+    .back-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    font-weight: 800;
+    }
+
+    .search-title, .manuals-title {
+    flex: 1;
+    }
+
+    .search-title h3, .manuals-title h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    }
+
+    .search-subtitle, .manuals-subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+    opacity: 0.9;
+    }
+
+    /* Search Edit Section */
+    .search-edit-section {
+    padding: 1rem;
+    background: #2a2a2a;
+    border-bottom: 1px solid #444;
+    }
+
+    .edit-input-group {
+    display: flex;
+    gap: 0.5rem;
+    }
+
+    .edit-input {
+    flex: 1;
+    padding: 0.625rem 0.875rem;
+    border: 2px solid #444;
+    border-radius: 8px;
+    font-size: 1.1375rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    background: #1a1a1a;
+    color: white;
+    }
+
+    .edit-input:focus {
+    outline: none;
+    border-color: #4dabf7;
+    box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.2);
+    }
+
+    .edit-button {
+    padding: 0 1rem;
+    background: #4dabf7;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+    }
+
+    .edit-button:hover:not(:disabled) {
+    background: #74b9ff;
+    }
+
+    .edit-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    }
+
+    .edit-hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.75rem;
+    color: #adb5bd;
+    }
+
+    /* Model List Styles */
+    .model-list {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 60vh;
+    overflow-y: auto;
+    background: #1a1a1a;
+    }
+
+    .model-card {
+    background: #e9edf8e0;
+    border: 2px solid #444;
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(11, 171, 247, 0.25);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    }
+
+    .model-card:hover {
+    border-color: #4dabf7;
+    box-shadow: 0 4px 12px rgba(77, 171, 247, 0.25);
+    transform: translateY(-2px);
+    }
+
+    .model-header {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    margin-bottom: 0.75rem;
+    }
+
+    .brand-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: white;
+    padding: 4px;
+    }
+
+    .brand-placeholder {
+    width: 48px;
+    height: 48px;
+    background: #3a3a3a;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #adb5bd;
+    font-size: 1.5rem;
+    }
+
+    .model-info {
+    flex: 1;
+    }
+
+    .model-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    line-height: 1.2;
+    }
+
+    .brand-name {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+    color: #adb5bd;
+    }
+
+    .model-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+    }
+
+    .stat {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    color: #f8f9fa;
+    }
+
+    .stat i {
+    color: #4dabf7;
+    font-size: 0.875rem;
+    }
+
+    .confidence-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: auto;
+    }
+
+    .model-type {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    color: #adb5bd;
+    padding-top: 0.5rem;
+    border-top: 1px solid #444;
+    }
+
+    /* Manual Category Styles */
+    .manuals-list {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 60vh;
+    overflow-y: auto;
+    background: #1a1a1a;
+    }
+
+    .manual-category {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    }
+
+    .manual-category:hover {
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+    }
+
+    .category-header {
+    padding: 0.875rem 1rem;
+    background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    transition: all 0.2s ease;
+    }
+
+    .category-header:hover {
+    background: linear-gradient(135deg, #444 0%, #3a3a3a 100%);
+    }
+
+    .category-header:active {
+    transform: scale(0.99);
+    }
+
+    .category-info {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    }
+
+    .category-info i {
+    color: #4dabf7;
+    font-size: 1.125rem;
+    }
+
+    .category-name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: white;
+    }
+
+    .badge {
+    background: #4dabf7;
+    color: #1a1a1a;
+    padding: 0.125rem 0.375rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    }
+
+    .chevron {
+    color: #adb5bd;
+    transition: transform 0.2s ease;
+    }
+
+    .category-documents {
+    padding: 0.75rem;
+    background: #1a1a1a;
+    border-top: 1px solid #444;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    }
+
+    .document-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #2a2a2a;
+    border-radius: 8px;
+    border: 1px solid #444;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    }
+
+    .document-item:hover {
+    border-color: #4dabf7;
+    box-shadow: 0 2px 8px rgba(77, 171, 247, 0.2);
+    transform: translateX(2px);
+    }
+
+    .document-icon {
+    color: #ff6b6b;
+    font-size: 1.25rem;
+    }
+
+    .document-info {
+    flex: 1;
+    min-width: 0;
+    }
+
+    .document-title {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+    word-break: break-word;
+    line-height: 1.3;
+    }
+
+    .document-description {
+    margin: 0.25rem 0 0;
+    font-size: 0.75rem;
+    color: #adb5bd;
+    line-height: 1.3;
+    }
+
+    .document-action {
+    color: #4dabf7;
+    font-size: 1rem;
+    }
+
+    /* Loading and Empty States */
+    .loading-state, .empty-state {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    }
+
+    .empty-state i {
+    font-size: 3rem;
+    color: white;
+    margin-bottom: 1rem;
+    display: block;
+    }
+
+    .empty-state h4 {
+    margin: 0 0 0.5rem;
+    color: #f8f9fa;
+    font-size: 1.125rem;
+    }
+
+    .empty-state p {
+    margin: 0;
+    color: pink;
+    font-size: 0.875rem;
+    }
+
+    /* Spinners */
+    .spinner {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 1rem;
+    border: 3px solid #333;
+    border-top: 3px solid #4dabf7;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    }
+
+    .spinner-small {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    }
+
+    @@keyframes spin {
+    0% {
+    transform: rotate(0deg);
+    }
+
+    100% {
+    transform: rotate(360deg);
+    }
+    }
+
+    /* Scrollbar Styling */
+    .model-list::-webkit-scrollbar,
+    .manuals-list::-webkit-scrollbar {
+    width: 6px;
+    }
+
+    .model-list::-webkit-scrollbar-track,
+    .manuals-list::-webkit-scrollbar-track {
+    background: #2a2a2a;
+    border-radius: 3px;
+    }
+
+    .model-list::-webkit-scrollbar-thumb,
+    .manuals-list::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+    }
+
+    .model-list::-webkit-scrollbar-thumb:hover,
+    .manuals-list::-webkit-scrollbar-thumb:hover {
+    background: #777;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 360px) {
+    .detail-row {
+    grid-template-columns: 80px 1fr;
+    }
+
+    .model-stats {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    }
+
+    .confidence-badge {
+    margin-left: 0;
+    }
+    }
+
+    /* Choice Panel Styles */
+    .choice-panel, .parts-panel, .part-details-panel {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(255, 255, 255, 0.1);
+    }
+
+    .choice-header, .parts-header, .part-details-header {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    }
+
+    .choice-title h3, .parts-title h3, .part-details-title h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    }
+
+    .choice-subtitle, .parts-subtitle, .part-details-subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+    opacity: 0.9;
+    }
+
+    .choice-content {
+    padding: 1rem;
+    background: #1a1a1a;
+    }
+
+    .choice-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    }
+
+    .choice-card {
+    background: #2a2a2a;
+    border: 2px solid #444;
+    border-radius: 10px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    }
+
+    .choice-card:hover {
+    border-color: #4dabf7;
+    box-shadow: 0 4px 12px rgba(77, 171, 247, 0.25);
+    transform: translateY(-2px);
+    }
+
+    .choice-icon {
+    width: 48px;
+    height: 48px;
+    background: #3a3a3a;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4dabf7;
+    font-size: 1.5rem;
+    }
+
+    .choice-info {
+    flex: 1;
+    }
+
+    .choice-info h4 {
+    margin: 0;
+    color: white;
+    font-size: 1.125rem;
+    font-weight: 600;
+    }
+
+    .choice-count {
+    margin: 0.25rem 0 0;
+    color: #adb5bd;
+    font-size: 0.875rem;
+    }
+
+    .choice-arrow {
+    color: #adb5bd;
+    font-size: 1.25rem;
+    }
+
+    /* Parts Container Styles */
+    .parts-list-container, .part-details-container {
+    padding: 1rem;
+    background: #1a1a1a;
+    max-height: 70vh;
+    overflow-y: auto;
+    }
+
+    .parts-list-container::-webkit-scrollbar,
+    .part-details-container::-webkit-scrollbar {
+    width: 6px;
+    }
+
+    .parts-list-container::-webkit-scrollbar-track,
+    .part-details-container::-webkit-scrollbar-track {
+    background: #2a2a2a;
+    border-radius: 3px;
+    }
+
+    .parts-list-container::-webkit-scrollbar-thumb,
+    .part-details-container::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+    }
+
+    .parts-list-container::-webkit-scrollbar-thumb:hover,
+    .part-details-container::-webkit-scrollbar-thumb:hover {
+    background: #777;
+    }
+</style>
+
+@code {
+
+        [Inject] protected IJSRuntime JSRuntime { set; get; } = default!;
+        [Inject] protected IWorkflowData DataService { set; get; } = default!;
+        [Inject] protected SettingsService SettingsService { set; get; } = default!;
+        [Inject] protected HTTPService HTTPService { set; get; } = default!;
+        [Inject] protected ScratchPadService ScratchPadSvc { get; set; } = default!;
+
+        [Parameter] public List<WorkflowEquipment>? EquipList { set; get; } = null;
+
+        [Parameter] public EventCallback<int> GoToWorkflowReviewClick { get; set; }
+
+
+        [Parameter] public bool BluonEnabled { set; get; } = false;
+
+    public bool debugMode = false;
+
+    private enum ViewState
+    {
+        Equipment,      // default equipment list view
+        ModelSearch,    // simple model search view
+        Manuals,        // Manuals - renderer inside this control
+        ChooseView,    // Choose between Manuals and Parts
+        Parts,         // Parts list view - calls BluonExplorer
+        PartDetails,    // Individual part details - calls BluonExplorer
+        EquipmentUsages  // list of workflows using the equipment
+    }
+
+    private ViewState currentView = ViewState.Equipment;
+    private bool isSearching = false;
+    private bool isLoadingManuals = false;
+    private bool isLoadingAlternatives = false;
+    private bool isLoadingParts = false;
+
+    private string searchModel = "";
+    private string editedSearchModel = "";
+    private WorkflowEquipment? currentEquipment = null;
+
+    private List<EquipmentFindUsagesResult>? equipmentUsages = null;
+
+    private List<ModelSearch.ModelData>? modelSearchResults;
+    private ModelSearch.ModelData? selectedModel;
+    private ModelManuals.Root? modelManuals;
+
+    // Parts-related state - using the correct types
+    private List<BluonBrands.BrandPartsAndOem.Datum>? partsList;
+    private BluonBrands.BrandPartsAndOem.Datum? selectedPart;
+    private List<BluonParts.PartAlternatives.Datum>? alternativeParts;
+    private BluonParts.PartInfo.Root? selectedPartInfo;  // For specifications
+
+    private HashSet<string> expandedCategories = new HashSet<string> { "ServiceFacts", "PartsManuals" };
+    private HashSet<string> expandedEquipment = new HashSet<string>();
+    private HashSet<string> expandedGroups = new HashSet<string>();
+
+    // Bluon service instances
+    private BluonModels? bluonModels = null;
+    private BluonBrands? bluonBrands = null;
+    private BluonParts? bluonParts = null;  // BluonParts service
+
+    protected override void OnParametersSet()
+    {
+        if (BluonEnabled)
+            InitializeBluonServices();
+
+    }
+
+
+    public async Task FindEquipmentUsages(WorkflowEquipment eq)
+    {
+
+        if (eq == null || DataService == null)
+            return;
+
+        // Go get all dispatches
+        var response = await HTTPService!.GetHttpQueriesClient(DataService.AppState.AuthorizedUser!).PostAsync<EquipmentFindUsagesOutput>(new
+            EquipmentFindUsagesInput()
+            {
+                EquipmentId = eq.Id
+            });
+        if (response.IsSuccess)
+        {
+            var output = response.Data!;
+            if (output.ReturnValue == EquipmentFindUsagesOutput.Returns.Ok)
+            {
+                equipmentUsages = output.ResultData;
+            }
+            else
+            {
+                equipmentUsages = null;
+            }
+        }
+    }
+
+    private string GetEquipmentId(WorkflowEquipment eq)
+    {
+        // Create a unique identifier for each equipment item
+        return $"{eq.Id}"; // $"{eq.UnitTag}_{eq.Make}_{eq.Model}_{eq.Serial}";
+    }
+
+    private async Task ToggleEquipment(WorkflowEquipment eq)
+    {
+        var equipmentId = GetEquipmentId(eq);
+        if (expandedEquipment.Contains(equipmentId))
+            expandedEquipment.Remove(equipmentId);
+        else
+            expandedEquipment.Add(equipmentId);
+
+        // Save to localStorage
+        try
+        {
+            var json = System.Text.Json.JsonSerializer.Serialize(expandedEquipment);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "expandedEquipment", json);
+        }
+        catch { }
+
+        StateHasChanged();
+    }
+
+    private bool IsEquipmentExpanded(WorkflowEquipment eq)
+    {
+        return expandedEquipment.Contains(GetEquipmentId(eq));
+    }
+
+    private async Task ToggleGroup(string groupName)
+    {
+        if (expandedGroups.Contains(groupName))
+            expandedGroups.Remove(groupName);
+        else
+            expandedGroups.Add(groupName);
+
+        // Save to localStorage
+        try
+        {
+            var json = System.Text.Json.JsonSerializer.Serialize(expandedGroups);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "expandedEquipmentGroups", json);
+        }
+        catch { }
+
+        StateHasChanged();
+    }
+
+    private bool IsGroupExpanded(string groupName)
+    {
+        return expandedGroups.Contains(groupName);
+    }
+
+    private void InitializeBluonServices()
+    {
+        if (!string.IsNullOrWhiteSpace(SettingsService.BluonApiKey))
+        {
+            // Get API settings from settings
+            string? apiKey = SettingsService.BluonApiKey ?? string.Empty;
+            string? apiRoot = SettingsService.BluonApiRoot ?? string.Empty;
+            string? userId = DataService?.AppState?.EmployeeId?.ToString() ?? "0";
+
+            // Initialize Bluon Decoder Class
+            if (!string.IsNullOrWhiteSpace(apiKey) && !string.IsNullOrWhiteSpace(apiRoot))
+            {
+                bluonModels = new BluonModels(apiKey, apiRoot, userId, DataService as IBluonCache);
+                bluonBrands = new BluonBrands(apiKey, apiRoot, userId, DataService as IBluonCache);
+                bluonParts = new BluonParts(apiKey, apiRoot, userId, DataService as IBluonCache);
+                BluonEnabled = true;
+            }
+        }
+        else
+            BluonEnabled = false;
+    }
+
+    private async Task ShowEquipmentUsages(WorkflowEquipment eq)
+    {
+        if (eq == null)
+            return;
+        try
+        {
+            await FindEquipmentUsages(eq);
+            currentEquipment = eq;
+            currentView = ViewState.EquipmentUsages;
+        }
+        catch (Exception ex)
+        {
+            if (debugMode) Console.WriteLine($"Error loading past history: {ex.Message}");
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+
+    }
+    private async Task ShowModelSearch(WorkflowEquipment eq)
+    {
+        if (eq == null || string.IsNullOrEmpty(eq.Model) || bluonModels == null)
+            return;
+
+        currentEquipment = eq;
+        searchModel = eq.Model;
+        editedSearchModel = searchModel;
+        isSearching = true;
+        currentView = ViewState.ModelSearch;
+        StateHasChanged();
+
+        try
+        {
+            // Search for models using the Bluon API
+            var results = await bluonModels.ModelNameSearch(searchModel);
+            modelSearchResults = results?.Data;
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+            if (debugMode) Console.WriteLine($"Error searching models: {ex.Message}");
+            modelSearchResults = new List<ModelSearch.ModelData>();
+        }
+        finally
+        {
+            isSearching = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RefineSearch()
+    {
+        if (string.IsNullOrWhiteSpace(editedSearchModel) || bluonModels == null)
+            return;
+
+        searchModel = editedSearchModel;
+        isSearching = true;
+        StateHasChanged();
+
+        try
+        {
+            var results = await bluonModels.ModelNameSearch(searchModel);
+            modelSearchResults = results?.Data;
+        }
+        catch (Exception ex)
+        {
+            if (debugMode) Console.WriteLine($"Error refining search: {ex.Message}");
+            modelSearchResults = new List<ModelSearch.ModelData>();
+        }
+        finally
+        {
+            isSearching = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SelectModel(ModelSearch.ModelData model)
+    {
+        if (model == null || bluonModels == null)
+            return;
+
+        selectedModel = model;
+        currentView = ViewState.ChooseView;  // Go to choice view instead of directly to manuals
+        StateHasChanged();
+    }
+
+    private void BackToEquipment()
+    {
+        currentView = ViewState.Equipment;
+        modelSearchResults = null;
+        currentEquipment = null;
+        StateHasChanged();
+    }
+
+    // Helper method to count total manuals across all categories
+    private int CountTotalManuals(ModelManuals.ManualSets manuals)
+    {
+        int count = 0;
+        if (manuals.ServiceFacts?.Any() == true) count += manuals.ServiceFacts.Count;
+        if (manuals.PartsManuals?.Any() == true) count += manuals.PartsManuals.Count;
+        if (manuals.Iom?.Any() == true) count += manuals.Iom.Count;
+        if (manuals.ProductData?.Any() == true) count += manuals.ProductData.Count;
+        if (manuals.WiringDiagram?.Any() == true) count += manuals.WiringDiagram.Count;
+        if (manuals.Nomenclature?.Any() == true) count += manuals.Nomenclature.Count;
+        if (manuals.ProductBrochures?.Any() == true) count += manuals.ProductBrochures.Count;
+        if (manuals.ControlsManuals?.Any() == true) count += manuals.ControlsManuals.Count;
+        if (manuals.SchematicDrawings?.Any() == true) count += manuals.SchematicDrawings.Count;
+        if (manuals.Warranty?.Any() == true) count += manuals.Warranty.Count;
+        if (manuals.Diagnostic?.Any() == true) count += manuals.Diagnostic.Count;
+        if (manuals.BluonGuidelines?.Any() == true) count += manuals.BluonGuidelines.Count;
+        if (manuals.Misc?.Any() == true) count += manuals.Misc.Count;
+        return count;
+    }
+
+    private void BackToModelSearch()
+    {
+        currentView = ViewState.ModelSearch;
+        modelManuals = null;
+        partsList = null;
+        StateHasChanged();
+    }
+
+    private void BackToChooseView()
+    {
+        currentView = ViewState.ChooseView;
+        StateHasChanged();
+    }
+
+    private void BackToParts()
+    {
+        currentView = ViewState.Parts;
+        selectedPart = null;
+        alternativeParts = null;
+        StateHasChanged();
+    }
+
+    private async Task ShowManuals()
+    {
+        if (selectedModel == null || bluonModels == null)
+            return;
+
+        isLoadingManuals = true;
+        currentView = ViewState.Manuals;
+        StateHasChanged();
+
+        try
+        {
+            // Get manuals for the selected model
+            modelManuals = await bluonModels.GetManualsForModel(selectedModel.Id);
+
+            // Debug logging to check what manuals we received
+            if (modelManuals?.Data?.Manuals != null)
+            {
+                var manuals = modelManuals.Data.Manuals;
+
+
+                if (debugMode) Console.WriteLine($"Total manual categories found: {CountTotalManuals(manuals)}");
+
+                if (debugMode)
+                {
+                    // Log each category that has manuals
+                    if (manuals.ServiceFacts?.Any() == true)
+                        Console.WriteLine($"ServiceFacts: {manuals.ServiceFacts.Count}");
+                    if (manuals.PartsManuals?.Any() == true)
+                        Console.WriteLine($"PartsManuals: {manuals.PartsManuals.Count}");
+                    if (manuals.Iom?.Any() == true)
+                        Console.WriteLine($"IOM: {manuals.Iom.Count}");
+                    if (manuals.ProductData?.Any() == true)
+                        Console.WriteLine($"ProductData: {manuals.ProductData.Count}");
+                    if (manuals.WiringDiagram?.Any() == true)
+                        Console.WriteLine($"WiringDiagram: {manuals.WiringDiagram.Count}");
+                    if (manuals.Nomenclature?.Any() == true)
+                        Console.WriteLine($"Nomenclature: {manuals.Nomenclature.Count}");
+                    if (manuals.ProductBrochures?.Any() == true)
+                        Console.WriteLine($"ProductBrochures: {manuals.ProductBrochures.Count}");
+                    if (manuals.ControlsManuals?.Any() == true)
+                        Console.WriteLine($"ControlsManuals: {manuals.ControlsManuals.Count}");
+                    if (manuals.SchematicDrawings?.Any() == true)
+                        Console.WriteLine($"SchematicDrawings: {manuals.SchematicDrawings.Count}");
+                    if (manuals.Warranty?.Any() == true)
+                        Console.WriteLine($"Warranty: {manuals.Warranty.Count}");
+                    if (manuals.Diagnostic?.Any() == true)
+                        Console.WriteLine($"Diagnostic: {manuals.Diagnostic.Count}");
+                    if (manuals.BluonGuidelines?.Any() == true)
+                        Console.WriteLine($"BluonGuidelines: {manuals.BluonGuidelines.Count}");
+                    if (manuals.Misc?.Any() == true)
+                        Console.WriteLine($"Misc: {manuals.Misc.Count}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (debugMode) Console.WriteLine($"Error loading manuals: {ex.Message}");
+            modelManuals = null;
+        }
+        finally
+        {
+            isLoadingManuals = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ShowParts()
+    {
+        if (selectedModel == null || bluonBrands == null)
+            return;
+
+        isLoadingParts = true;
+        currentView = ViewState.Parts;
+        StateHasChanged();
+
+        try
+        {
+            // Get parts for the selected model using the brand API
+            var partsResult = await bluonBrands.GetBrandOemParts(selectedModel.BrandName ?? "", selectedModel.Id);
+            partsList = partsResult?.Data;
+
+            if (debugMode) Console.WriteLine($"Loaded {partsList?.Count ?? 0} parts for model {selectedModel.Model}");
+        }
+        catch (Exception ex)
+        {
+            if (debugMode) Console.WriteLine($"Error loading parts: {ex.Message}");
+            partsList = null;
+        }
+        finally
+        {
+            isLoadingParts = false;
+            StateHasChanged();
+        }
+    }
+
+    private async void OnPartSelected(BrandPartsAndOem.Datum part)
+    {
+        selectedPart = part;
+        currentView = ViewState.PartDetails;
+        StateHasChanged();
+
+        // Load alternatives and part info asynchronously
+        await LoadPartAlternatives();
+        await LoadPartInfo();
+    }
+
+    private async Task OnAddPartToProject(BrandPartsAndOem.Datum part)
+    {
+
+        // call clipboard and append text
+
+        await ScratchPadSvc.AddItemAsync(null, $"{part.Number} {part.Subtype} {part.Description} \r\n{part.Subcategory}");
+        //\r\n{ParseSpecsForText(part)}", ScratchPadItemType.Note);
+        ScratchPadSvc.Show();
+        // For now, just log it
+        if (debugMode) Console.WriteLine($"Part added to project: {part.Number} - {part.Description}");
+        
+
+
+    }
+
+    private void OnAlternativeSelected(PartAlternatives.Datum alternative)
+    {
+        // For now, we can't easily convert between types
+        // This would need proper mapping or API call to get the full part details
+        if (debugMode) Console.WriteLine($"Alternative selected: {alternative?.Details?.Description} - {alternative?.Details?.Number}");
+        StateHasChanged();
+    }
+
+    private async Task LoadPartAlternatives()
+    {
+        if (selectedPart == null || bluonParts == null) return;
+        isLoadingAlternatives = true;
+        StateHasChanged();
+        try
+        {
+            var alternativesResponse = await bluonParts.GetAllPartAlternatives(selectedPart.Id, 50);
+            alternativeParts = alternativesResponse;
+            if (debugMode) Console.WriteLine($"Loaded {alternativeParts?.Count ?? 0} alternatives for part {selectedPart.Number}");
+        }
+        catch (Exception ex)
+        {
+            if (debugMode) Console.WriteLine($"Error loading alternatives: {ex.Message}");
+            alternativeParts = null;
+        }
+        finally
+        {
+            isLoadingAlternatives = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadPartInfo()
+    {
+        if (selectedPart == null || bluonParts == null) return;
+        try
+        {
+            selectedPartInfo = await bluonParts.GetPartInfo(selectedPart.Id);
+            if (debugMode) Console.WriteLine($"Loaded part info for {selectedPart.Number}");
+            if (selectedPartInfo?.Data?.Specifications != null)
+            {
+                if (debugMode) Console.WriteLine($"Part has {selectedPartInfo.Data.Specifications.GetSpecificationCount} specifications");
+            }
+        }
+        catch (Exception ex)
+        {
+            if (debugMode) Console.WriteLine($"Error loading part info: {ex.Message}");
+            selectedPartInfo = null;
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    private string GetConfidenceStyle(double confidence)
+    {
+        var percentage = confidence * 100;
+        if (percentage >= 90)
+            return "background: #d4edda; color: #155724;";
+        else if (percentage >= 70)
+            return "background: #fff3cd; color: #856404;";
+        else
+            return "background: #f8d7da; color: #721c24;";
+    }
+
+    private void ToggleCategory(string categoryName)
+    {
+        if (expandedCategories.Contains(categoryName))
+            expandedCategories.Remove(categoryName);
+        else
+            expandedCategories.Add(categoryName);
+        StateHasChanged();
+    }
+
+    private async Task OpenWorkflow(int wf)
+    {
+        if (GoToWorkflowReviewClick.HasDelegate)
+        {
+            await GoToWorkflowReviewClick.InvokeAsync(wf);
+        }
+    }
+
+    private async Task OpenDocument(string? url)
+    {
+        if (!string.IsNullOrEmpty(url))
+        {
+            try
+            {
+                // Open the document in a new tab/window
+                await JSRuntime.InvokeAsync<object>("open", new object[] { url, "_blank" });
+            }
+            catch (Exception ex)
+            {
+                if (debugMode) Console.WriteLine($"Error opening document: {ex.Message}");
+            }
+        }
+    }
+
+    // Documentation grouping logic
+    public class DocumentationGroup
+    {
+        public string CategoryName { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public List<DocumentItem> Documents { get; set; } = new();
+    }
+
+    public class DocumentItem
+    {
+        public string Title { get; set; } = "";
+        public string Url { get; set; } = "";
+        public string? Description { get; set; }
+    }
+
+    private List<DocumentationGroup> GetDocumentationGroups(ModelManuals.ManualSets manuals)
+    {
+        var groups = new List<DocumentationGroup>();
+
+        // Service Facts
+        if (manuals.ServiceFacts?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "ServiceFacts",
+                    DisplayName = "Service Facts",
+                    Icon = "bi-gear-fill",
+                    Documents = manuals.ServiceFacts.Select(sf => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(sf.Url) ?? "Service Fact",
+                        Url = sf.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Parts Manuals
+        if (manuals.PartsManuals?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "PartsManuals",
+                    DisplayName = "Parts Manuals",
+                    Icon = "bi-wrench",
+                    Documents = manuals.PartsManuals.Select(pm => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(pm.Url) ?? "Parts Manual",
+                        Url = pm.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Wiring Diagrams
+        if (manuals.WiringDiagram?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "WiringDiagrams",
+                    DisplayName = "Wiring Diagrams",
+                    Icon = "bi-diagram-3-fill",
+                    Documents = manuals.WiringDiagram.Select(wd => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(wd.Url) ?? "Wiring Diagram",
+                        Url = wd.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // IOM
+        if (manuals.Iom?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "IOM",
+                    DisplayName = "Installation/Operation Manuals",
+                    Icon = "bi-tools",
+                    Documents = manuals.Iom.Select(iom => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(iom.Url) ?? "Installation/Operation Manual",
+                        Url = iom.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Product Data
+        if (manuals.ProductData?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "ProductData",
+                    DisplayName = "Product Data",
+                    Icon = "bi-clipboard-data-fill",
+                    Documents = manuals.ProductData.Select(pd => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(pd.Url) ?? "Product Data",
+                        Url = pd.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Additional categories...
+
+        // Nomenclature
+        if (manuals.Nomenclature?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "Nomenclature",
+                    DisplayName = "Nomenclature",
+                    Icon = "bi-card-text",
+                    Documents = manuals.Nomenclature.Select(n => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(n.Url) ?? "Nomenclature",
+                        Url = n.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Product Brochures
+        if (manuals.ProductBrochures?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "ProductBrochures",
+                    DisplayName = "Product Brochures",
+                    Icon = "bi-file-text-fill",
+                    Documents = manuals.ProductBrochures.Select(pb => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(pb.Url) ?? "Product Brochure",
+                        Url = pb.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Controls Manuals
+        if (manuals.ControlsManuals?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "ControlsManuals",
+                    DisplayName = "Controls Manuals",
+                    Icon = "bi-toggles2",
+                    Documents = manuals.ControlsManuals.Select(cm => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(cm.Url) ?? "Controls Manual",
+                        Url = cm.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Schematic Drawings
+        if (manuals.SchematicDrawings?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "SchematicDrawings",
+                    DisplayName = "Schematic Drawings",
+                    Icon = "bi-diagram-2-fill",
+                    Documents = manuals.SchematicDrawings.Select(sd => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(sd.Url) ?? "Schematic Drawing",
+                        Url = sd.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Warranty
+        if (manuals.Warranty?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "Warranty",
+                    DisplayName = "Warranty Information",
+                    Icon = "bi-shield-check-fill",
+                    Documents = manuals.Warranty.Select(w => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(w.Url) ?? "Warranty Information",
+                        Url = w.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Diagnostic
+        if (manuals.Diagnostic?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "Diagnostic",
+                    DisplayName = "Diagnostic Information",
+                    Icon = "bi-search",
+                    Documents = manuals.Diagnostic.Select(d => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(d.Url) ?? "Diagnostic Info",
+                        Url = d.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // BluonGuidelines
+        if (manuals.BluonGuidelines?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "BluonGuidelines",
+                    DisplayName = "Bluon Guidelines",
+                    Icon = "bi-compass",
+                    Documents = manuals.BluonGuidelines.Select(bg => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(bg.Url) ?? "Bluon Guideline",
+                        Url = bg.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        // Miscellaneous
+        if (manuals.Misc?.Any() == true)
+        {
+            groups.Add(new DocumentationGroup
+                {
+                    CategoryName = "Miscellaneous",
+                    DisplayName = "Miscellaneous",
+                    Icon = "bi-three-dots",
+                    Documents = manuals.Misc.Select(m => new DocumentItem
+                    {
+                        Title = GetDocumentTitle(m.Url) ?? "Document",
+                        Url = m.Url ?? "",
+                        Description = null
+                    }).ToList()
+                });
+        }
+
+        return groups.OrderBy(g => GetCategoryOrder(g.CategoryName)).ToList();
+    }
+
+    private int GetCategoryOrder(string categoryName)
+    {
+        return categoryName switch
+        {
+            "ServiceFacts" => 1,
+            "PartsManuals" => 2,
+            "IOM" => 3,
+            "ProductData" => 4,
+            "WiringDiagrams" => 5,
+            "Nomenclature" => 6,
+            "ProductBrochures" => 7,
+            "ControlsManuals" => 8,
+            "SchematicDrawings" => 9,
+            "Warranty" => 10,
+            "Diagnostic" => 11,
+            "BluonGuidelines" => 12,
+            "Miscellaneous" => 13,
+            _ => 99
+        };
+    }
+
+    private string? GetDocumentTitle(string? url)
+    {
+        if (string.IsNullOrEmpty(url)) return null;
+
+        try
+        {
+            var uri = new Uri(url);
+            var filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
+            return !string.IsNullOrEmpty(filename) ? filename : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load saved Expanded Equipment Items state from localStorage
+        try
+        {
+            var savedState = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "expandedEquipment");
+            if (!string.IsNullOrEmpty(savedState))
+                expandedEquipment = System.Text.Json.JsonSerializer.Deserialize<HashSet<string>>(savedState) ?? new();
+            else
+                expandedEquipment = new();
+
+            // Load saved expanded groups state from localStorage
+            var savedGroupsState = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "expandedEquipmentGroups");
+            if (!string.IsNullOrEmpty(savedGroupsState))
+                expandedGroups = System.Text.Json.JsonSerializer.Deserialize<HashSet<string>>(savedGroupsState) ?? new();
+            else
+                expandedGroups = new();
+
+            // auto-reduce list size if over 48 items down to 15.  Randomly chosen, feel free to tweak.
+            if (expandedEquipment is not null && expandedEquipment.Any() && expandedEquipment.Count > 48)
+            {
+                HashSet<string> NewExpandedVisit = new HashSet<string>(
+                    expandedEquipment.Skip(expandedEquipment.Count - 15).Take(15)
+                );
+
+                expandedEquipment?.Clear(); expandedEquipment = null;
+                expandedEquipment = NewExpandedVisit;
+
+            }
+
+            // If 2 or fewer items total, expand everything to be nice and save a chap a tap!
+            if (EquipList is not null && (EquipList?.Count ?? 0) > 0 && (EquipList?.Count ?? 0) <= 2)
+            {
+                // Expand all equipment items
+                foreach (var eq in EquipList.Where(x => !x.IsRetired))
+                {
+                    var equipmentId = GetEquipmentId(eq);
+                    expandedEquipment.Add(equipmentId);
+                }
+
+                // Also expand all groups so the equipment is visible
+                var groups = EquipList
+                    .Where(x => !x.IsRetired && !string.IsNullOrWhiteSpace(x.EquipmentGroup))
+                    .Select(x => x.EquipmentGroup)
+                    .Distinct()
+                    .ToList();
+
+                foreach (var groupName in groups)
+                {
+                    if (!string.IsNullOrEmpty(groupName))
+                        expandedGroups.Add(groupName);
+                }
+            }
+        }
+        catch { }
+    }
+
+    private RenderFragment RenderEquipmentCard(WorkflowEquipment eq, bool isRetired) => __builder =>
+    {
+        var isExpanded = IsEquipmentExpanded(eq);
+
+        <div class="equipment-card @(!isExpanded ? "collapsed" : "") @(isRetired ? "retired-card" : "")">
+            <div class="equipment-header" @onclick="() => ToggleEquipment(eq)">
+                <div class="equipment-title">
+                    <i class="bi bi-gear-wide-connected"></i>
+                    <span>@(eq.UnitTag ?? "Equipment")</span>
+                    @if (isRetired)
+                    {
+                        <span class="retired-badge">RETIRED</span>
+                    }
+                    @if (!isExpanded && (!string.IsNullOrEmpty(eq.Make) || !string.IsNullOrEmpty(eq.Serial)))
+                    {
+                        <span class="collapsed-info">
+                            @if (!string.IsNullOrEmpty(eq.Make))
+                            {
+                                <span>@eq.Make.ToUpper() @eq.Model.Left(3)</span>
+                            }
+                            @if (!string.IsNullOrEmpty(eq.Make) && !string.IsNullOrEmpty(eq.Serial) && eq.Serial.Length >= 4)
+                            {
+                                <span class="separator">•</span>
+                            }
+                            @if (!string.IsNullOrEmpty(eq.Serial) && eq.Serial.Length >= 4)
+                            {
+                                <span>@eq.Serial.Right(3)</span>
+                            }
+                            else if (!string.IsNullOrEmpty(eq.Serial))
+                            {
+                                <span>@eq.Serial</span>
+                            }
+                        </span>
+                    }
+                </div>
+                @if (!string.IsNullOrEmpty(eq.EquipLocArea))
+                {
+                    <div class="equipment-location">
+                        <i class="bi bi-geo-alt"></i>
+                        <span>@eq.EquipLocArea</span>
+                    </div>
+                }
+            </div>
+
+            @if (isExpanded)
+            {
+                <div class="equipment-details">
+                    @if (!string.IsNullOrEmpty(eq.Make))
+                    {
+                        <div class="detail-row">
+                            <span class="detail-label">Make</span>
+                            <span class="detail-value">@eq.Make.ToUpper()</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(eq.Model))
+                    {
+                        <div class="detail-row">
+                            <span class="detail-label">Model</span>
+                            <span class="detail-value">@eq.Model.ToUpper()</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(eq.Serial))
+                    {
+                        <div class="detail-row">
+                            <span class="detail-label">Serial</span>
+                            <span class="detail-value">@eq.Serial.ToUpper()</span>
+                        </div>
+                    }
+                    @if (eq.MfgDate.HasValue)
+                    {
+                        <div class="detail-row">
+                            <span class="detail-label">Mfg Date</span>
+                            <span class="detail-value">@eq.MfgDate.Value.ToString("M/yyyy") @DateFormatOptions.TimeAgo(eq.MfgDate.Value)</span>
+                        </div>
+                    }
+
+                    @if (eq.Attributes != null && eq.Attributes.Count > 0)
+                    {
+                        @foreach (var attrib in eq.Attributes)
+                        {
+                            @if (!string.IsNullOrEmpty(attrib.Value))
+                            {
+                                <div class="detail-row">
+                                    <span class="detail-label">@attrib.Name</span>
+                                    <span class="detail-value">@attrib.Value</span>
+                                </div>
+                            }
+                        }
+                    }
+
+                    @if (eq.Consumables != null && eq.Consumables.Count > 0)
+                    {
+                        @foreach (var consumable in eq.Consumables)
+                        {
+                            @if (!string.IsNullOrEmpty(consumable.Value) && consumable.Quantity > 0)
+                            {
+                                <div class="detail-row qty-row">
+                                    <span class="detail-label">
+                                        Qty @(consumable.Quantity.HasValue
+                                    ? (consumable.Quantity % 1 == 0
+                                    ? consumable.Quantity.Value.ToString("0")
+                                    : consumable.Quantity.Value.ToString("0.###"))
+                                    : "")
+                                    </span>
+                                    <span class="detail-value qty-value">@consumable.Value.Replace("~", " #")</span>
+                                </div>
+                            }
+                        }
+                    }
+
+                    @if (!string.IsNullOrEmpty(eq.Notes))
+                    {
+                        <div class="detail-row notes-row">
+                            <span class="detail-label">Notes</span>
+                            <span class="detail-value notes-value">@((MarkupString)PageBase.TextToHtml(eq.Notes))</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="equipment-actions">
+                    @if (BluonEnabled && !isRetired)
+                    {
+                        <button class="action-button primary" @onclick="() => ShowModelSearch(eq)" @onclick:stopPropagation="true" disabled="@isSearching">
+                            @if (isSearching)
+                            {
+                                <div class="spinner-small"></div>
+                                <span>Searching...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-book"></i>
+                                <span>Manuals & Parts</span>
+                            }
+                        </button>
+
+                        <button class="action-button history" @onclick="() => ShowEquipmentUsages(eq)" @onclick:stopPropagation="true">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Prior Visits</span>
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    };
+}

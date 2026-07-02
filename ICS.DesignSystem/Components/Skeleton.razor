@@ -1,0 +1,23 @@
+@* Shimmering placeholder that reserves layout space while data loads.
+   Prefer over spinners for full-screen/section loads (perceived speed);
+   sized explicitly to prevent layout shift when real content arrives. *@
+@for (var i = 0; i < Count; i++)
+{
+    <span class="Skeleton @ShapeCss" style="@StyleAttribute" aria-hidden="true"></span>
+}
+
+@code {
+    public enum SkeletonShape { Text, Rect, Circle }
+
+    [Parameter] public SkeletonShape Shape { get; set; } = SkeletonShape.Text;
+    [Parameter] public string Width { get; set; } = "100%";
+    [Parameter] public string Height { get; set; } = "1em";
+    [Parameter] public int Count { get; set; } = 1;
+
+    private string ShapeCss => Shape.ToString();
+
+    private string StyleAttribute =>
+        Shape == SkeletonShape.Circle
+            ? $"width: {Width}; height: {Width};"
+            : $"width: {Width}; height: {Height};";
+}

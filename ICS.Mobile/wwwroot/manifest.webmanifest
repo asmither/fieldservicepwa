@@ -1,0 +1,46 @@
+{
+  "name": "ICSNext Tech App",
+  "short_name": "ICSNext",
+  "description": "An indispensible companion for ICS Technicians to leverage intelligent checkslists to minimize bs and maximize focus on solving hard problems",
+  "id": "ICSTech",
+  "start_url": "./",
+  "orientation": "portrait-primary",
+  "display_override": [ "fullscreen", "minimal-ui" ],
+  "display": "standalone",
+  "background_color": "#01B1E5",
+  "theme_color": "#00317e",
+  "prefer_related_applications": false,
+  "screenshots": [
+    {
+      "src": "images/appsshot1.jpg",
+      "sizes": "640x320",
+      "type": "image/jpg",
+      "form_factor": "wide",
+      "label": "ICSNext Tech1"
+    },
+    {
+      "src": "images/appsshot2.jpg",
+      "sizes": "320x640",
+      "type": "image/jpg",
+      "form_factor": "narrow",
+      "label": "ICSNext Tech2"
+    }
+  ],
+  "icons": [
+    {
+      "src": "images/icon-300.png",
+      "type": "image/png",
+      "sizes": "300x300"
+    },
+    {
+      "src": "images/icon-150.png",
+      "type": "image/png",
+      "sizes": "150x150"
+    },
+    {
+      "src": "images/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

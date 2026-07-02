@@ -1,0 +1,22 @@
+@* Friendly empty state: icon + headline + optional guidance + optional action.
+   Render when a list/section legitimately has no data instead of leaving a
+   blank screen. *@
+<div class="EmptyState">
+    <i class="bi @Icon" aria-hidden="true"></i>
+    <div class="Title">@Title</div>
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <div class="Message">@Message</div>
+    }
+    @if (ChildContent is not null)
+    {
+        <div class="Action">@ChildContent</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public string Icon { get; set; } = "bi-inbox";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

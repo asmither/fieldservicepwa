@@ -1,0 +1,24 @@
+@* Persistent bottom tab bar for the app's hub destinations. Renders an
+   in-flow spacer so page content never hides behind the fixed bar.
+   Active state comes from the router via NavLink — no wiring needed. *@
+
+<div class="TabBarSpacer" aria-hidden="true"></div>
+
+<nav class="AppTabBar" aria-label="Primary">
+    <NavLink class="Item" href="" Match="NavLinkMatch.All">
+        <i class="bi bi-house-door" aria-hidden="true"></i>
+        <span>Home</span>
+    </NavLink>
+    <NavLink class="Item" href="dispatch-list">
+        <i class="bi bi-truck-front" aria-hidden="true"></i>
+        <span>Dispatch</span>
+    </NavLink>
+    <NavLink class="Item" href="time">
+        <i class="bi bi-stopwatch" aria-hidden="true"></i>
+        <span>Time</span>
+    </NavLink>
+    <NavLink class="Item" href="settings">
+        <i class="bi bi-gear" aria-hidden="true"></i>
+        <span>Settings</span>
+    </NavLink>
+</nav>

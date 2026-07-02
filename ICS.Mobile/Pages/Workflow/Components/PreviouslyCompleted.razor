@@ -1,0 +1,56 @@
+﻿@using ICS.Portal.Data.Queries.Models
+
+<p>
+    This workflow has been previously completed.
+</p>
+
+@if (RecordExistsLocally.HasValue && RecordExistsLocally.Value == true)
+{
+    <p>
+        You can free up resources by deleting the local copy of this Checklist.
+    </p>
+
+    <div class="CenteredButtonContainer">
+        <button class="Button" @onclick="DeleteLocalCopy">Delete Local Copy</button>
+    </div>
+
+    @if (Workflow is not null)
+    {
+        <p>
+            You may also review the answers for this checklist.
+        </p>
+
+
+        <div class="CenteredButtonContainer">
+            <a class="Button" href="/workflow-runner/@Workflow.WorkflowResultId/true">Review</a>
+        </div>
+    }
+}
+
+@code {
+
+    private async Task DeleteLocalCopy()
+    {
+        if (OnDeleteLocalCopy.HasDelegate)
+            await OnDeleteLocalCopy.InvokeAsync();
+    }
+
+    [Parameter]
+    public bool? RecordExistsLocally { set; get; }
+
+    [Parameter]
+    public EventCallback OnDeleteLocalCopy { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public WorkflowResultDetailResult.Workflow? Workflow { set; get; }
+
+    private bool Initialized = false;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        Initialized = true;
+    }
+}

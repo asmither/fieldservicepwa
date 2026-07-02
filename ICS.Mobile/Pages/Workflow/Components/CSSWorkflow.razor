@@ -1,0 +1,1435 @@
+﻿<style>
+
+    body {
+        margin: 0;
+        padding: env(safe-area-inset-top) 1rem 1rem;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+    }
+
+
+    a:visited {
+        color: var(--accent-soft);
+    }
+
+    a:link {
+        color: var(--accent-soft);
+    }
+
+
+    .WorkflowName {
+        grid-area: WorkflowName;
+        font-size: var(--text-xl);
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        margin-bottom: var(--space-4);
+        font-weight: var(--weight-semibold);
+    }
+
+    .WorkflowFilesAndPhotosContainer {
+        margin: 1rem 0 2rem;
+    }
+
+        .WorkflowFilesAndPhotosContainer > .Image {
+        }
+
+            .WorkflowFilesAndPhotosContainer > .Image > img {
+                box-shadow: var(--elevation-1);
+                border-radius: var(--radius-md);
+                width: 100%;
+            }
+
+    /* Upload zones — override the global custom-file-upload look for workflow pages */
+    .custom-file-upload label {
+        background-color: var(--surface-card);
+        border: var(--border-hairline);
+        border-radius: var(--radius-lg);
+    }
+
+        .custom-file-upload label span {
+            color: var(--text-secondary);
+            font-size: var(--text-base);
+        }
+
+            .custom-file-upload label span i {
+                font-style: normal;
+            }
+
+            .custom-file-upload label span .icon {
+                color: var(--text-secondary);
+            }
+
+        .WorkflowFilesAndPhotosContainer > .ButtonWrapper {
+            display: flex;
+            justify-content: center;
+            color: transparent;
+            padding: .25rem;
+        }
+
+            .WorkflowFilesAndPhotosContainer > .ButtonWrapper > .Button {
+                background-color: rgba(0, 0, 0, 0.5);
+                border: var(--border-hairline);
+                box-shadow: var(--elevation-1);
+                margin: -6.5em;
+                border-radius: var(--radius-full);
+                width: 5rem;
+                height: 5rem;
+                cursor: pointer;
+            }
+
+                .WorkflowFilesAndPhotosContainer > .ButtonWrapper > .Button > .Image {
+                    color: var(--status-danger);
+                    font-size: 2rem;
+                }
+
+    .Consumable {
+        border: var(--border-hairline);
+        background-color: var(--surface-card);
+        border-radius: var(--radius-md);
+        color: var(--text-secondary);
+        margin: .9rem 0;
+        display: grid;
+        grid-template-columns: 1fr 3rem;
+        grid-template-areas:
+            "Name Image"
+            "Notes Image";
+        align-items: center;
+        padding: 1rem;
+    }
+
+        .Consumable.Selected {
+            border: 1px solid transparent;
+            background-color: var(--status-success);
+            color: var(--text-on-accent);
+            font-weight: var(--weight-semibold);
+            display: grid;
+            grid-template-columns: 1fr 3rem;
+            grid-template-areas:
+                "Name Image"
+                "Notes Image"
+                "Edit Edit";
+            align-items: center;
+        }
+
+
+        .Consumable > .Name {
+            grid-area: Name;
+            font-size: 1.3rem;
+            margin-left: 0.25rem;
+        }
+
+        .Consumable > .Image {
+            color: var(--SecondaryColor);
+            font-size: 1.3rem;
+            opacity: .5;
+            margin-right: 0.25rem;
+        }
+
+        .Consumable > .Notes {
+            grid-area: Notes;
+            font-size: 1.2rem;
+            margin-left: 0.25rem;
+        }
+
+        .Consumable > .Edit {
+            grid-area: Edit;
+            font-size: 1.5rem;
+            margin-left: 0.25rem;
+        }
+
+            .Consumable > .Edit > input {
+                font-size: 1.5rem;
+                width: 6rem;
+                border-radius: var(--PrimaryBorderRadius);
+                border: var(--PrimaryBorder);
+            }
+
+        .Consumable.Selected > .Image.Selected {
+            font-size: 1.65rem;
+            opacity: 100;
+            color: white;
+            font-weight: bolder;
+        }
+
+
+    .Option {
+        border: var(--border-hairline);
+        background-color: var(--surface-card);
+        border-radius: var(--radius-md);
+        color: var(--text-secondary);
+        margin: var(--space-3) 0;
+        display: grid;
+        grid-template-columns: auto auto;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-4);
+        min-height: var(--touch-target-primary);
+    }
+
+        .Option > .Name {
+            font-size: 1.3rem;
+            margin-left: 0.25rem;
+        }
+
+        .Option > .Image {
+            color: var(--SecondaryColor);
+            font-size: 1.3rem;
+            opacity: .5;
+            margin-right: 0.25rem;
+        }
+
+
+
+        .Option.Selected {
+            border: 1px solid transparent;
+            background-color: var(--status-success);
+            color: var(--text-on-accent);
+            font-weight: var(--weight-semibold);
+        }
+
+            .Option.Selected > .Image.Selected {
+                font-size: 1.65rem;
+                opacity: 1;
+                color: var(--text-on-accent);
+            }
+
+    .WorkflowInput {
+        font-size: var(--text-lg);
+        background-color: var(--surface-input);
+        color: var(--text-primary);
+        border: var(--border-hairline);
+        border-radius: var(--radius-md);
+        padding: var(--space-2) var(--space-3);
+        min-height: var(--touch-target);
+        line-height: 1.2;
+        outline: none;
+        width: 100%;
+        box-sizing: border-box;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+    }
+
+    .WorkflowPrompt {
+        font-size: var(--text-xl);
+        line-height: var(--leading-tight);
+        font-weight: var(--weight-semibold);
+        margin-bottom: var(--space-1);
+    }
+
+        .WorkflowPrompt.Smaller {
+            font-size: var(--text-base);
+            font-weight: var(--weight-semibold);
+        }
+
+
+    .WorkflowCaption > pre {
+        margin-top: .65rem;
+        font-size: 1.2rem;
+        color: var(--SecondaryColor);
+        font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+        white-space: pre-wrap;
+        margin-bottom: .5rem;
+        padding: 3px;
+        padding-bottom: .45rem;
+        background: radial-gradient(rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.05) 100%);
+        border-radius: 6px;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+    }
+
+    .WorkflowCaption > div {
+        margin-top: .65rem;
+        font-size: 1.2rem;
+        color: var(--SecondaryColor);
+        font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+        white-space: pre-wrap;
+        margin-bottom: .5rem;
+        padding: 3px;
+        padding-bottom: .45rem;
+        background: radial-gradient(rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.05) 100%);
+        border-radius: 6px;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+    }
+
+    .CompleteDialogText {
+        margin-top: .65rem;
+        font-size: 1.22rem;
+        color: var(--SecondaryColor);
+        font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+        white-space: pre-wrap;
+        margin-bottom: .5rem;
+        padding: 3px;
+        padding-bottom: .45rem;
+        background: radial-gradient(rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.05) 100%);
+        border-radius: 6px;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+    }
+
+
+    .WorkflowImageMedia {
+        margin: 2rem 0;
+        width: 100%;
+    }
+
+    .WorkflowNoteMedia {
+        margin: 2rem 0;
+        width: 100%;
+    }
+
+    .WorkflowImageMedia > .Image {
+        padding: .15rem;
+    }
+
+    .WorkflowImageMedia .Image > img {
+        width: 100%;
+        border-radius: 10px;
+        border: 2px solid rgba(220,220,220,.5);
+        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.30);
+    }
+
+    .WorkflowImageMedia > .ButtonWrapper {
+        display: flex;
+        justify-content: center;
+    }
+
+        .WorkflowImageMedia > .ButtonWrapper > .Button {
+            background-color: rgba(00,00,00, .50);
+            border: 2px solid rgba(128,128,128,.35);
+            box-shadow: 2px 2px 4px rgba(90, 90, 90, 0.15);
+            margin: -6.5em;
+            border-radius: 100%;
+            width: 4rem;
+            height: 4rem;
+            cursor: pointer;
+        }
+
+            .WorkflowImageMedia > .ButtonWrapper > .Button > .Image {
+                color: var(--ColorRed);
+                font-size: 2rem;
+            }
+
+    .WorkflowImageMedia > hr {
+        margin: .75rem 0;
+        color: white;
+    }
+
+    .TimeOnlyInput {
+        background: rgba(0,0,0,.5);
+        border-radius: 5px;
+        border: 3px solid rgba(255,255,255, .25);
+    }
+
+        .TimeOnlyInput .Display {
+            height: 5rem;
+            width: 100%;
+            box-sizing: border-box;
+            border: 2px solid rgba(60,60,60, .25);
+            border-radius: 2px;
+            background-color: rgba(0,0,0,.25);
+            box-shadow: inset 1px 0px 8px rgba(220, 220, 220, 0.50);
+            padding-left: 1.25rem;
+            font-size: 2rem;
+            display: grid;
+            font-weight: 800;
+            color: var(--SelectedColor);
+            grid-template-columns: auto 1fr;
+            align-items: center;
+        }
+
+            .TimeOnlyInput .Display .Time {
+                font-size: 1.75rem;
+                padding-left: 1rem;
+                letter-spacing: .2rem;
+                align-content: center;
+            }
+
+            .TimeOnlyInput .Display .TimeZone {
+                font-size: 1rem;
+                padding-right: 1rem;
+                text-align: right
+            }
+
+        .TimeOnlyInput .Buttons {
+            background-color: transparent;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            margin: 0.25em;
+            padding-bottom: 0.25em;
+            grid-column-gap: .25em;
+            grid-row-gap: .25em;
+        }
+
+            .TimeOnlyInput .Buttons .Button {
+                outline: none;
+                border: 1px dotted rgba(255,255,255, .5);
+                padding: 0.1em;
+                border-radius: 5px;
+                background-color: transparent;
+                color: var(--SecondaryColor);
+                width: 100%;
+                font-size: 2rem;
+            }
+
+                .TimeOnlyInput .Buttons .Button:active {
+                    border: 1px solid rgba(255,255,255, .5);
+                    background-color: var(--OffsetColorTrans);
+                    color: var(--PrimaryColor);
+                }
+
+
+    .DateOnlyInput {
+        background: rgba(0,0,0,.5);
+        border: 2px solid rgba(128,128,128, .25);
+        border-radius: 5px;
+    }
+
+        .DateOnlyInput .Display {
+            height: 5rem;
+            width: 100%;
+            padding: 0.1em;
+            box-sizing: border-box;
+            border: 2px solid rgba(60,60,60, .25);
+            border-radius: 2px;
+            background-color: rgba(0,0,0,.25);
+            box-shadow: inset 1px 0px 8px rgba(220, 220, 220, 0.50);
+            padding-left: 1.25rem;
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: .2rem;
+            align-content: center;
+            color: var(--SelectedColor);
+        }
+
+        .DateOnlyInput .Buttons {
+            background-color: transparent;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            margin: 0.25em;
+            padding: 0.3em;
+            grid-column-gap: 0.35em;
+            grid-row-gap: 0.35em;
+        }
+
+            .DateOnlyInput .Buttons .Button {
+                outline: none;
+                border: 1px dotted var(--SecondaryColor);
+                background-color: transparent;
+                border-radius: 5px;
+                color: var(--SecondaryColor);
+                width: 100%;
+                font-size: 2rem;
+            }
+
+                .DateOnlyInput .Buttons .Button:active {
+                    border: 1px solid rgba(255,255,255, .5);
+                    background-color: var(--OffsetColorTrans);
+                    color: var(--PrimaryColor);
+                }
+
+
+    .WorkflowStepContainer {
+        padding: 1rem;
+        border: var(--WorkflowBorder);
+        border-radius: 8px;
+        background-color: rgba(0,0,0,0.5);
+        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+        margin-bottom: 8rem;
+    }
+
+        .WorkflowStepContainer > hr {
+            margin: .75rem 0;
+            color: white;
+        }
+
+        .WorkflowStepContainer > .Content {
+            padding: 0;
+        }
+
+    .NumberInput {
+        background: rgba(0,0,0,.5);
+        border-radius: 5px;
+        border: 3px solid rgba(255,255,255, .25);
+    }
+
+        .NumberInput .Display {
+            height: 5rem;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 2px;
+            background-color: rgba(0,0,0,.25);
+            box-shadow: inset 1px 0px 5px rgba(220, 220, 220, 0.50);
+            padding-left: 1.25rem;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--SelectedColor);
+            letter-spacing: .2rem;
+            align-content: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .NumberInput .Buttons {
+            background-color: transparent;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr ifr;
+            margin: 0.25em;
+            padding-bottom: 0.25em;
+            grid-column-gap: .25em;
+            grid-row-gap: .25em;
+            grid-template-areas:
+                "Seven Eight Nine Minus"
+                "Four Five Six Clear"
+                "One Two Three AllClear"
+                "Zero Zero Decimal AllClear";
+        }
+
+            .NumberInput .Buttons .Button {
+                outline: none;
+                padding: 0.35em;
+                border-radius: 5px;
+                border: 1px dotted rgba(255,255,255, .5);
+                background-color: transparent;
+                color: var(--SecondaryColor);
+                font-size: 2rem;
+            }
+
+                .NumberInput .Buttons .Button:active {
+                    border: 1px solid rgba(255,255,255, .95);
+                    background-color: var(--OffsetColorTrans);
+                    color: var(--PrimaryColor);
+                }
+
+                .NumberInput .Buttons .Button.One {
+                    grid-area: One;
+                }
+
+                .NumberInput .Buttons .Button.Two {
+                    grid-area: Two;
+                }
+
+                .NumberInput .Buttons .Button.Three {
+                    grid-area: Three;
+                }
+
+                .NumberInput .Buttons .Button .Four {
+                    grid-area: Four;
+                }
+
+                .NumberInput .Buttons .Button.Five {
+                    grid-area: Five;
+                }
+
+                .NumberInput .Buttons .Button.Six {
+                    grid-area: Six;
+                }
+
+                .NumberInput .Buttons .Button.Seven {
+                    grid-area: Seven;
+                }
+
+                .NumberInput .Buttons .Button.Eight {
+                    grid-area: Eight;
+                }
+
+                .NumberInput .Buttons .Button.Nine {
+                    grid-area: Nine;
+                }
+
+                .NumberInput .Buttons .Button.Zero {
+                    grid-area: Zero;
+                }
+
+                .NumberInput .Buttons .Button.Clear {
+                    grid-area: Clear;
+                }
+
+                .NumberInput .Buttons .Button.AllClear {
+                    grid-area: AllClear;
+                }
+
+                .NumberInput .Buttons .Button.Minus {
+                    grid-area: Minus;
+                }
+
+                .NumberInput .Buttons .Button.Decimal {
+                    grid-area: Decimal;
+                }
+
+    /* Step navigation styles now live in Navigation.razor.css (scoped). */
+
+    .EquipmentContainer {
+        background-color: rgba(16,27,48,1);
+        border: 1px dotted rgba(255,255,255,.25);
+        box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.5);
+        color: var(--SecondaryColor);
+        border-radius: 6px;
+        margin-bottom: 1.5em;
+        margin-top: 1.2em;
+    }
+
+
+        .EquipmentContainer > .Content > .Lighter.Selected .Image {
+            color: var(--PrimaryColor);
+            font-size: 1.25em;
+        }
+
+
+        .EquipmentContainer.Selected, .EquipmentContainer.Lighter.Selected {
+            background-color: var(--SelectedColor);
+            border: 2px solid var(--SelectedColorBorder);
+        }
+
+
+            .EquipmentContainer.Selected.DimMe, .EquipmentContainer.Lighter.Selected.DimMe {
+                background-color: var(--SelectedColorDim);
+                border: 1px solid var(--SelectedColorBorder);
+            }
+
+
+        .EquipmentContainer > .Header {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            grid-template-areas:
+                "Name Option";
+            border-bottom: 1px solid rgba(255,255,255,.4);
+            align-items: center;
+            padding-top: 0.7rem;
+            padding-bottom: 0.7rem;
+            padding-left: 0.25rem;
+            padding-right: 0.25rem;
+            border-radius: 6px;
+        }
+
+            .EquipmentContainer > .Header > .Name {
+                grid-area: Name;
+                font-size: 1.40em;
+                font-weight: bolder;
+                color: var(--TertiaryColor);
+            }
+
+                .EquipmentContainer > .Header > .Name .EqTypeName {
+                    grid-area: Name;
+                    font-size: smaller;
+                    font-weight: normal;
+                    color: var(--SecondaryColor);
+                }
+
+            .EquipmentContainer > .Header > .Image {
+                padding-right: .25em;
+                cursor: pointer;
+            }
+
+
+
+        .EquipmentContainer.Selected > .Header > .Name {
+            color: white; /*var(--PrimaryColor); */
+        }
+
+        .EquipmentContainer.Selected > .Header .Image {
+            color: var(--PrimaryColor);
+            font-size: 1.15em;
+        }
+
+
+        .EquipmentContainer.Selected > .Header > .Name > .EqTypeName {
+            font-size: 0.9em;
+            color: var(--SecondaryColor);
+            font-style: italic;
+        }
+
+
+
+        .EquipmentContainer > .Header > .Button {
+            grid-area: Option;
+            color: var(--SelectedColor);
+            width: 5rem;
+            text-align: right;
+            font-size: 2rem;
+            font-weight: bolder;
+            line-height: 0;
+        }
+
+    .SelectedAlready {
+        text-decoration: line-through;
+    }
+
+    .EquipmentContainer > .Content > .MultiLineWithButton .Text {
+        grid-area: Text;
+        font-weight: normal;
+        font-size: 1.2em;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        cursor: pointer;
+    }
+
+
+
+    .EquipmentContainer > .Content > .Selected .MultiLineWithButton .Text, .EquipmentContainer.Selected > .Content > .MultiLineWithButton .Text {
+        color: var(--PrimaryColor);
+        font-weight: bolder;
+    }
+
+
+
+
+    .MultiLineWithButton > .EquipmentEditIcon {
+        font-size: 1.20rem;
+        color: var(--SecondaryColor);
+        margin-right: 0.25rem;
+    }
+
+    .EquipmentContainer > .Content > .Lighter.Selected .Image {
+        font-size: 1.30rem;
+        color: var(--PrimaryColor);
+    }
+
+    .MultiLineWithButton > .EquipmentEditIcon:is(:hover) {
+        font-size: 1.25rem;
+        color: var(--PrimaryColor);
+    }
+
+    .WorkflowEditItem {
+        margin: 1rem 0;
+    }
+
+        .WorkflowEditItem > .Prompt {
+            font-size: 1.25rem;
+            padding-bottom: 0.35rem;
+        }
+
+        .WorkflowEditItem > .Hints {
+            font-size: 1.1rem;
+            font-style: italic;
+            font-weight: 300;
+            padding-bottom: 0.35rem;
+        }
+
+            .WorkflowEditItem > .Hints .BluonButton {
+                padding: 5px 20px;
+                border-radius: 6px;
+                cursor: pointer;
+                color: var(--OffsetColor);
+                font-size: 1rem;
+                font-weight: bolder;
+                background-color: rgba(0,128,255,.08);
+                border: 2px solid rgba(220,220,255,.08);
+                box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+            }
+
+        .WorkflowEditItem > .DataPlateImage {
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+
+    .EquipmentContainer > .InfoText {
+        padding: .6rem;
+        text-align: center;
+        font-weight: normal;
+        letter-spacing: 1px;
+        font-style: italic;
+        background: #4F89A344;
+    }
+
+    .EquipmentContainer > .Content {
+        padding: 0 .3rem;
+    }
+
+    .CenteredButtonContainer {
+        width: 100%;
+        box-sizing: border-box;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+    }
+
+        .CenteredButtonContainer > .Button {
+            background-color: inherit;
+            border-radius: 1rem;
+            padding: 1rem;
+            font-size: larger;
+            text-align: center;
+            color: var(--SecondaryColor);
+            background-color: var(--SelectedSecondaryColor);
+            border: 2px solid var(--SelectedSecondaryColorBorder);
+            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+        }
+
+            .CenteredButtonContainer > .Button.Default {
+                background-color: var(--SelectedColor);
+                border: 2px solid var(--SelectedColorBorder);
+                font-weight: bolder;
+                color: var(--PrimaryColor);
+            }
+
+            .CenteredButtonContainer > .Button.Ok {
+                background-color: var(--OffsetColor);
+                border: 2px solid var(--OffsetColorTrans);
+                font-weight: bolder;
+            }
+
+
+    .EquipmentContainer > .Content > .SingleLineWithButton,
+    .EquipmentContainer > .Content > .MultiLineWithButton {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "Text Button";
+        align-items: center;
+        padding-top: .5em;
+        padding-bottom: 0.5em;
+        align-items: center;
+        font-size: 1.16rem;
+    }
+
+    .EquipmentContainer > .Content > .SingleLineWithButton {
+        border-bottom: 1px dotted #CCCCCC20;
+    }
+
+
+        .EquipmentContainer > .Content > .SingleLineWithButton .Text {
+            grid-area: Text;
+            font-size: smaller;
+            text-align: left;
+        }
+
+            .EquipmentContainer > .Content > .SingleLineWithButton .Text .EqValue {
+                max-height: 250px;
+                line-height: 1;
+                overflow-y: auto;
+                grid-area: Text;
+                font-size: 1.4em;
+                color: var(--OffsetColor);
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                text-align: left;
+                -webkit-user-select: text !important;
+                -moz-user-select: text !important;
+                -ms-user-select: text !important;
+                user-select: text !important;
+            }
+
+
+
+        .EquipmentContainer > .Content > .SingleLineWithButton .Button {
+            grid-area: Button;
+            font-size: 1.25rem;
+            color: var(--SecondaryColor);
+            width: 5rem;
+            text-align: right;
+            padding: .33rem;
+            cursor: pointer;
+        }
+
+            .EquipmentContainer > .Content > .SingleLineWithButton .Button:is(:hover) {
+                font-size: 1.3rem;
+                color: var(--PrimaryColor);
+            }
+
+        .EquipmentContainer > .Content > .SingleLineWithButton:last-of-type {
+            border-bottom: none;
+            padding-bottom: .5rem;
+        }
+
+    .EquipmentContainer > .Content > .SingleLineInfo {
+        padding: 2rem;
+        align-items: center;
+        font-size: 1rem;
+        text-align: center;
+    }
+
+    .EquipmentContainer > .Content > .DataPlateWithButton {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        grid-template-rows: auto;
+        grid-template-areas:
+            "Text Image Button";
+        align-items: center;
+        padding: .25rem;
+        align-items: center;
+        font-size: 1rem;
+        border-bottom: 1px dotted #07FFFF25;
+    }
+
+        .EquipmentContainer > .Content > .DataPlateWithButton > .Button {
+            grid-area: Button;
+            font-size: 1.25rem;
+            color: rgba(255,255,255,.55);
+            width: 5rem;
+            text-align: right;
+            padding: .33rem
+        }
+
+        .EquipmentContainer > .Content > .DataPlateWithButton > .Text {
+            grid-area: Text;
+        }
+
+        .EquipmentContainer > .Content > .DataPlateWithButton > .Image {
+            grid-area: Image;
+        }
+
+            .EquipmentContainer > .Content > .DataPlateWithButton > .Image > img {
+                width: 100%;
+                padding: 1rem;
+            }
+
+
+
+    .DataPlateNotes > .EqValue {
+        max-height: 350px;
+        overflow-y: auto;
+        font-size: 1.4em;
+        color: var(--OffsetColor);
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        text-align: left;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+        user-select: text !important;
+    }
+
+    ::-webkit-input-placeholder {
+        font-size: 70%;
+        font-weight: 100;
+        font-style: italic;
+    }
+
+    ::-moz-placeholder {
+        font-size: 70%;
+        font-weight: 100;
+        font-style: italic;
+    }
+
+    :-ms-input-placeholder {
+        font-size: 70%;
+        font-weight: 100;
+        font-style: italic;
+    }
+
+    :-moz-placeholder {
+        font-size: 70%;
+        font-weight: 100;
+        font-style: italic;
+    }
+
+
+
+    /* ===== TOOLBAR STYLES ===== */
+
+    .EquipmentToolbar {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        background: rgba(0, 0, 0, 0.35);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .SearchContainer {
+        display: flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        gap: 0.5rem;
+    }
+
+        .SearchContainer > i {
+            color: var(--SecondaryColor);
+            font-size: 1.1rem;
+            opacity: 0.7;
+        }
+
+    .SearchInput {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 1.20rem;
+        outline: none;
+        -webkit-user-select: text;
+        user-select: text;
+    }
+
+        .SearchInput::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 1.05rem;
+            font-style: italic;
+        }
+
+    .ClearSearchBtn {
+        background: transparent;
+        border: none;
+        color: var(--SecondaryColor);
+        font-size: 1.1rem;
+        padding: 0.25rem;
+        cursor: pointer;
+        opacity: 0.7;
+    }
+
+        .ClearSearchBtn:active {
+            opacity: 1;
+            color: var(--ColorRed);
+        }
+
+    .ToolbarActions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+
+    .ToolbarBtn {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.75rem;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px;
+        color: var(--SecondaryColor);
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+        .ToolbarBtn i {
+            font-size: 1.1rem;
+        }
+
+        .ToolbarBtn .BtnLabel {
+            font-size: 0.85rem;
+        }
+
+        .ToolbarBtn:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .ToolbarBtn.Active {
+            background: var(--MultiSelectedColor);
+            border-color: var(--MultiSelectedColorBorder);
+            color: var(--PrimaryColor);
+            font-weight: 600;
+        }
+
+        .ToolbarBtn.SortByTag {
+            background: var(--ThemeColor);
+            border-color: var(--TertiaryColorTrans);
+            color: var(--PrimaryColor);
+            font-weight: 600;
+        }
+
+        .ToolbarBtn.Active.MultiSelbtn {
+            background: var(--MultiSelectedColor);
+            border-color: var(--MultiSelectedColorBorder);
+        }
+
+
+
+    /* ===== MULTI-SELECT BAR ===== */
+
+    .MultiSelectBar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.6rem 0.75rem;
+        background: linear-gradient(135deg, rgba(124, 177, 59, 0.25) 0%, rgba(79, 137, 163, 0.25) 100%);
+        border: 1px solid var(--SelectedColorTrans);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .SelectionInfo {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .SelectCount {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--MultiSelectedColor);
+    }
+
+    .SelectActions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .SelectActionBtn {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.5rem 0.6rem;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px;
+        color: var(--SecondaryColor);
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+
+        .SelectActionBtn i {
+            font-size: 1.1rem;
+        }
+
+        .SelectActionBtn:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .SelectActionBtn.Primary {
+            /* background: #FFCC02; */
+            border-color: var(--MultiSelectedColor);
+            color: #ffcc02;
+            font-weight: 600;
+            padding: 0.5rem 0.75rem;
+        }
+
+            .SelectActionBtn.Primary:active:is(:hover) {
+                background: var(--MultiSelectedColor);
+                box-shadow: 0 0 0 0.4rem rgba(124, 177, 59, 0.35), 0 0 10px 2px var(--MultiSelectedColor);
+                animation: pulse-shadow 0.5s;
+            }
+
+    .SelectActionBtn.Disabled {
+        opacity: 0.4;
+        pointer-events: none;
+    }
+
+    @@keyframes pulse-shadow {
+        0% {
+            box-shadow: 0 0 0 0.4rem rgba(124, 177, 59, 0.65), 0 0 10px 2px var(--MultiSelectedColor);
+        }
+
+        50% {
+            box-shadow: 0 0 0 0.7rem rgba(124, 177, 59, 0.85), 0 0 20px 4px var(--MultiSelectedColor);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0.4rem rgba(124, 177, 59, 0.35), 0 0 10px 2px var(--MultiSelectedColor);
+        }
+    }
+
+    /* ===== MULTI-SELECT CHECKBOX IN EQUIPMENT ITEMS ===== */
+
+    .MultiSelectCheckbox {
+        margin-right: 0.5rem;
+        font-size: 1.4rem;
+        color: var(--MultiSelectedColor);
+    }
+
+        .MultiSelectCheckbox .bi-check-square-fill {
+            color: var(--MultiSelectedColor);
+        }
+
+    .EquipmentContainer.MultiSelected {
+        border: 2px solid var(--MultiSelectedColorBorder) !important;
+        /* background: linear-gradient(135deg, rgba(124, 177, 59, 0.15) 0%, rgba(16, 27, 48, 1) 100%) !important; */
+        background: var(--MultiSelectedColorBorder) !important;
+    }
+
+        .EquipmentContainer.MultiSelected > .Header {
+            background: rgba(124, 177, 59, 0.1);
+        }
+
+    /* ===== NO RESULTS MESSAGE ===== */
+
+    .NoResultsMessage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        text-align: center;
+        color: var(--SecondaryColor);
+        gap: 0.75rem;
+    }
+
+        .NoResultsMessage > i {
+            font-size: 2.5rem;
+            opacity: 0.5;
+        }
+
+        .NoResultsMessage > p {
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .NoResultsMessage .Button {
+            margin-top: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.95rem;
+        }
+
+    /* ===== POPUP OVERLAY ===== */
+
+    .PopupOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.75);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        z-index: 10;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .PopupContainer {
+        width: 100%;
+        max-width: 100%;
+        background: linear-gradient(180deg, rgba(30, 45, 70, 0.98) 0%, rgba(16, 27, 48, 0.98) 100%);
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-bottom: none;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+        .PopupContainer.MoveGroupPopup {
+            max-height: 85vh;
+        }
+
+    .PopupHeader {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        position: sticky;
+        top: 0;
+        background: rgba(30, 45, 70, 0.98);
+        z-index: 3;
+    }
+
+        .PopupHeader > span {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--SecondaryColor);
+        }
+
+    .PopupCloseBtn {
+        background: transparent;
+        border: none;
+        color: var(--SecondaryColor);
+        font-size: 1.3rem;
+        padding: 0.5rem;
+        cursor: pointer;
+        opacity: 0.7;
+    }
+
+        .PopupCloseBtn:active {
+            opacity: 1;
+        }
+
+    .PopupContent {
+        padding: 1rem 1.25rem 2rem;
+    }
+
+    .PopupInfo {
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    /* ===== BULK ACTION BUTTONS ===== */
+
+    .PopupActionBtn {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.5rem;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        color: var(--SecondaryColor);
+        font-size: 1.1rem;
+        cursor: pointer;
+        text-align: left;
+        transition: all 0.15s ease;
+    }
+
+        .PopupActionBtn > i {
+            font-size: 1.3rem;
+            width: 1.5rem;
+            text-align: center;
+        }
+
+        .PopupActionBtn:active {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(0.98);
+        }
+
+    /* ===== GROUP LIST IN MOVE POPUP ===== */
+
+    .GroupList {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        max-height: 35vh;
+        overflow-y: auto;
+        margin-bottom: 1rem;
+        padding: 0.25rem;
+    }
+
+    .GroupOption {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.9rem 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        color: var(--SecondaryColor);
+        font-size: 1.05rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+        .GroupOption > i {
+            font-size: 1.2rem;
+            color: var(--OffsetColor);
+        }
+
+        .GroupOption > span:first-of-type {
+            flex: 1;
+        }
+
+        .GroupOption .GroupCount {
+            font-size: 0.85rem;
+            opacity: 0.6;
+        }
+
+        .GroupOption:active {
+            background: rgba(79, 137, 163, 0.3);
+            border-color: var(--OffsetColorTrans);
+        }
+
+        .GroupOption.Ungrouped {
+            border-style: dashed;
+            opacity: 0.8;
+        }
+
+            .GroupOption.Ungrouped > i {
+                color: var(--SecondaryColor);
+            }
+
+    /* ===== NEW GROUP SECTION ===== */
+
+    .NewGroupSection {
+        padding-top: 0.5rem;
+    }
+
+    .SectionDivider {
+        display: flex;
+        align-items: center;
+        margin: 1rem 0;
+    }
+
+        .SectionDivider::before,
+        .SectionDivider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .SectionDivider > span {
+            padding: 0 0.75rem;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+    .NewGroupInput {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+        .NewGroupInput > input {
+            padding: 0.85rem 1rem;
+        }
+
+    .CreateGroupBtn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.9rem 1rem;
+        background: var(--SelectedSecondaryColor);
+        border: 1px solid var(--SelectedSecondaryColorBorder);
+        border-radius: 8px;
+        color: var(--SecondaryColor);
+        font-size: 1.05rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+        .CreateGroupBtn:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .CreateGroupBtn:active:not(:disabled) {
+            background: var(--SelectedColor);
+            color: var(--PrimaryColor);
+        }
+
+        .CreateGroupBtn > i {
+            font-size: 1.2rem;
+        }
+
+    .ErrorText {
+        color: var(--ColorRed);
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        text-align: center;
+    }
+
+    /* ===== HEADER ADJUSTMENTS FOR MULTI-SELECT ===== */
+
+    .EquipmentContainer > .Header {
+        display: flex;
+        align-items: center;
+    }
+
+        .EquipmentContainer > .Header > .Name {
+            flex: 1;
+        }
+
+        .EquipmentContainer > .Header > .Image {
+            flex-shrink: 0;
+        }
+
+</style>

@@ -1,0 +1,162 @@
+﻿<style>
+    .NotesSeparator {
+        justify-self: center;
+        width: 100%;
+        margin-top: 0.5em;
+        margin-bottom: 0.8em;
+        border-top: 2px dashed var(--ColorGray);
+    }
+</style>
+@if (ItemType > 0)
+{
+    <div class="HomePageNewsItem">
+
+        @if (ItemType == 1)
+        {
+            <div class="Date">@Date:&nbsp; @Title</div>
+            @if (!string.IsNullOrEmpty(Caption))
+            {
+                <div class="Text" style="font-weight: bolder;">
+                    @if (!string.IsNullOrEmpty(Link))
+                    {
+                        @if (LinkType == 0) LinkHelper = "";
+
+                        <a href="@(string.Concat(LinkHelper,Link))">
+                            <span>
+                                <i>@Caption</i>
+                            </span>
+                        </a>
+
+                    }
+                    else
+                    {
+                        @if (!string.IsNullOrEmpty(Caption))
+                        {
+                            <i>@Caption</i>
+                        }
+                    }
+
+                    @if (!string.IsNullOrEmpty(NewsBody))
+                    {
+                        <div style="color: var(--SecondaryColor); margin-top: 6px; font-size: smaller;">
+                            @((MarkupString)PageBase.TextToHtml(NewsBody))
+                        </div>
+                        <div class="NotesSeparator" />
+                    }
+                </div>
+            }
+
+
+        }
+
+        @if (ItemType == 2)
+        {
+            @if (!string.IsNullOrEmpty(ImageFileName))
+            {
+                <div class="Date">@Date:&nbsp; @Title</div>
+
+
+                <div class="NewsImg" style="font-weight: bolder;">
+                    <img src="@string.Concat("https://interiorcsstorage.blob.core.windows.net/images/", ImageFileName)"
+                         class="rounded mx-auto d-block"
+                         alt="@(Caption ?? "")" onerror="this.onerror=null;this.src='/images/icon-150.png';">
+                </div>
+                @if (!string.IsNullOrEmpty(Caption))
+                {
+                    <div class="Text">
+                        <i>@Caption</i>
+
+                        @if (!string.IsNullOrEmpty(NewsBody))
+                        {
+                            <div style="color: var(--SecondaryColor); margin-top: 6px;">
+                                @((MarkupString)PageBase.TextToHtml(NewsBody))
+                            </div>
+                            <div class="NotesSeparator" />
+                        }
+                    </div>
+                }
+            }
+        }
+
+        @if (ItemType == 3)
+        {
+            @if (!string.IsNullOrEmpty(Link))
+            {
+                <div class="Date">@Date:&nbsp; @Title</div>
+                <div class="Text">
+                    @if (LinkType == 0) LinkHelper = "";
+                    @if (string.IsNullOrEmpty(Caption)) Caption = "Click to Learn More";
+                    <a href="@(string.Concat(LinkHelper,Link))"><i>@Caption</i></a>
+                    @if (!string.IsNullOrEmpty(NewsBody))
+                    {
+                        <div style="color: var(--SecondaryColor); margin-top: 6px;">
+                            @((MarkupString)PageBase.TextToHtml(NewsBody))
+                        </div>
+
+                    }
+                    <div class="NotesSeparator" />
+                </div>
+            }
+        }
+
+        @if (ItemType == 4)
+        {
+            @if (!string.IsNullOrEmpty(Link))
+            {
+                <div class="Date">@Date:&nbsp; @Title</div>
+                <div class="Text">
+                    @if (LinkType == 0) LinkHelper = "";
+                    <a href="@(string.Concat(LinkHelper,Link))"><i>@Caption</i></a>
+
+                    @if (!string.IsNullOrEmpty(NewsBody))
+                    {
+                        <div style="color: var(--SecondaryColor); margin-top: 6px;">
+                            @((MarkupString)PageBase.TextToHtml(NewsBody))
+                        </div>
+                        <div class="NotesSeparator" />
+                    }
+                </div>
+            }
+        }
+
+    </div>
+}
+
+@code {
+
+
+    [Parameter]
+    [EditorRequired]
+    public int? ItemType { set; get; } = 0;
+
+    [Parameter]
+    [EditorRequired]
+    public string? Date { set; get; } = DateTime.Now.ToShortDateString();
+
+    [Parameter]
+    [EditorRequired]
+    public string? Title { set; get; } = String.Empty;
+
+    [Parameter]
+    [EditorRequired]
+    public string? NewsBody { set; get; } = String.Empty;
+
+    [Parameter]
+    [EditorRequired]
+    public string? Caption { set; get; } = String.Empty;
+
+    [Parameter]
+    [EditorRequired]
+    public string? Link { set; get; } = String.Empty;
+
+    [Parameter]
+    [EditorRequired]
+    public int? LinkType { set; get; } = 0;
+
+    [Parameter]
+    public string? ImageFileName { set; get; } = "";
+
+    [Parameter]
+    [EditorRequired]
+    public string? LinkHelper { set; get; } = String.Empty;
+}

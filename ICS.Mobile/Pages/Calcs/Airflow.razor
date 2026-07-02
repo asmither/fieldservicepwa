@@ -1,0 +1,351 @@
+@page "/airflow"
+@inherits AirflowCalcPage
+@using ICS.Mobile.Components
+@using ICS.Mobile.Pages.Airflow
+@using ICS.Mobile.DataModels.Custom;
+@using static ICS.Mobile.DataModels.Custom.HVACCalculations;
+
+
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/calc-theme.css" rel="stylesheet">
+
+<style>
+    /* Token bridge — map Bootstrap onto the ICS design tokens (guide rule 7). */
+    .container-fluid {
+        color: var(--text-primary);
+        --bs-body-color: var(--text-primary);
+        --bs-body-color-rgb: 255, 255, 255;
+        --bs-body-bg: var(--surface-input);
+        --bs-emphasis-color: var(--text-primary);
+        --bs-heading-color: var(--text-primary);
+        --bs-secondary-color: var(--text-muted);
+        --bs-secondary-bg: var(--surface-raised-subtle);
+        --bs-tertiary-color: var(--text-muted);
+        --bs-tertiary-bg: var(--surface-raised-subtle);
+        --bs-border-color: rgba(255, 255, 255, 0.15);
+        --bs-border-color-translucent: rgba(255, 255, 255, 0.09);
+        --bs-link-color: var(--accent-soft);
+        --bs-link-hover-color: var(--accent);
+        --bs-primary-rgb: 41, 148, 208; /* --brand-500 */
+        --bs-box-shadow-sm: var(--elevation-1);
+    }
+
+        .container-fluid .card {
+            --bs-card-bg: var(--surface-card);
+            --bs-card-border-color: rgba(255, 255, 255, 0.09);
+            --bs-card-cap-bg: rgba(255, 255, 255, 0.04);
+            --bs-card-border-radius: var(--radius-md);
+        }
+
+        .container-fluid .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--text-primary);
+            --bs-table-border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .container-fluid .bg-light {
+            --bs-bg-opacity: 0.08;
+        }
+
+        .container-fluid .bg-warning {
+            color: rgba(0, 0, 0, 0.85); /* keep dark-on-amber in both themes */
+        }
+
+        .container-fluid .form-select {
+            --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgba(255,255,255,0.75)' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        }
+</style>
+
+<PageHeaderBasic Title="Airflow Calculator" Icon="bi-wind">
+    <RoundButtonGreen Icon="bi-arrow-left" OnClick="HomePageClick" />
+</PageHeaderBasic>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+
+            <!-- Header -->
+            <div class="text-center mb-4">
+                @* <div class="d-flex align-items-center justify-content-center mb-3">
+                    <svg class="me-3" width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #198754;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <h1 class="h2 mb-0">Airflow Calculator</h1>
+                </div>
+                <p class="text-muted">
+                    Quick estimation of system airflow for HVAC performance evaluation
+                </p> *@
+                <div class="alert alert-info border-start border-4 border-info">
+                    <small>
+                        <strong>Note:</strong> This calculator provides quick estimates using simplified assumptions.
+                        For precise analysis, verify measurements with professional tools such as manometers or anemometers.
+                        Particularly useful for evaluating aging R-22 systems where airflow issues are common.
+                    </small>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Input Section -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0 d-flex align-items-center">
+                                <svg class="me-2" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                System Parameters
+                            </h5>
+                        </div>
+                        <div class="card-body">
+
+                            <div class="mb-3">
+                                <label class="form-label">System Capacity (BTU/hr)</label>
+                                <input type="number" class="form-control" @bind="Inputs.SystemCapacity" @bind:event="oninput" @onchange="OnInputChanged" />
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label">Supply Air Temp (°F)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.SupplyAirTemp" @bind:event="oninput" @onchange="OnInputChanged" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Return Air Temp (°F)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.ReturnAirTemp" @bind:event="oninput" @onchange="OnInputChanged" />
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label">System Type</label>
+                                    <select class="form-select" @bind="Inputs.SystemType" @bind:after="OnInputChanged">
+                                        <option value="Air Conditioning">Air Conditioning</option>
+                                        <option value="Heat Pump">Heat Pump</option>
+                                        <option value="Furnace">Furnace</option>
+                                        <option value="Package Unit">Package Unit</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Refrigerant Type</label>
+                                    <select class="form-select" @bind="Inputs.RefrigerantType" @bind:after="OnInputChanged">
+                                        <option value="R-410A">R-410A</option>
+                                        <option value="R-22">R-22</option>
+                                        <option value="R-134a">R-134a</option>
+                                        <option value="R-407C">R-407C</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Static Pressure (inches WC)</label>
+                                <input type="number" step="0.1" class="form-control" @bind="Inputs.StaticPressure" @bind:event="oninput" @onchange="OnInputChanged" />
+                                <div class="form-text">Typical range: 0.3 - 0.8 inches WC</div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label">Duct Diameter (inches)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.DuctDiameter" @bind:event="oninput" @onchange="OnInputChanged" />
+                                    <div class="form-text">Optional - for velocity calc</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Measured CFM</label>
+                                    <input type="number" class="form-control" @bind="Inputs.MeasuredCFM" @bind:event="oninput" @onchange="OnInputChanged" />
+                                    <div class="form-text">Optional - for comparison</div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" @bind="Inputs.IsR22System" @bind:after="OnInputChanged" id="r22Check">
+                                    <label class="form-check-label" for="r22Check">
+                                        R-22 System (Additional Aging System Analysis)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn btn-success w-100" @onclick="CalculateAirflow">
+                                <svg class="me-2" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                Calculate Airflow
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0 d-flex align-items-center">
+                                @GetStatusIcon()
+                                <span class="ms-2">Airflow Analysis</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+
+                            @if (Results != null)
+                            {
+                                <!-- Airflow Status -->
+                                <div class="alert @GetStatusAlertClass() border-start border-4 border-success">
+                                    <h6 class="alert-heading">Airflow Status</h6>
+                                    <p class="mb-1 fw-bold @GetStatusColorClass()">
+                                        @Results.AirflowStatus
+                                    </p>
+                                    <small class="text-muted">
+                                        Efficiency: @Results.AirflowEfficiency.ToString("F1")%
+                                    </small>
+                                </div>
+
+                                <!-- Key Calculations -->
+                                <div class="card mb-3">
+                                    <div class="card-body py-3">
+                                        <h6 class="card-title">Key Calculations</h6>
+                                        <div class="row g-2 small">
+                                            <div class="col-6"><strong>System Capacity:</strong></div>
+                                            <div class="col-6">@Results.SystemTons.ToString("F1") tons</div>
+
+                                            <div class="col-6"><strong>Temperature ΔT:</strong></div>
+                                            <div class="col-6">@Results.TemperatureDifferential.ToString("F1")°F</div>
+
+                                            <div class="col-6"><strong>Calculated CFM:</strong></div>
+                                            <div class="col-6">@Results.CalculatedCFM.ToString("F0") CFM</div>
+
+                                            <div class="col-6"><strong>CFM per Ton:</strong></div>
+                                            <div class="col-6">@Results.CFMPerTon.ToString("F0") CFM/ton</div>
+
+
+                                            @if (Results.Velocity > 0)
+                                            {
+                                                <div class="col-6">
+                                                    <strong>
+                                                        Duct Velocity:
+                                                    </strong>
+                                                </div>
+                                                <div class="col-6">@Results.Velocity.ToString("F0") ft/min</div>
+                                            }
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Static Pressure Analysis -->
+                                <div class="card mb-3">
+                                    <div class="card-body py-3">
+                                        <h6 class="card-title">Static Pressure Analysis</h6>
+                                        <div class="row g-2 small">
+                                            <div class="col-6"><strong>Current:</strong></div>
+                                            <div class="col-6 @GetStaticPressureColorClass()">@Inputs.StaticPressure" WC</div>
+
+                                            <div class="col-6"><strong>Status:</strong></div>
+                                            <div class="col-6 @GetStaticPressureColorClass()">@GetStaticPressureStatus()</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Recommendation -->
+                                <div class="card mb-3">
+                                    <div class="card-body py-3">
+                                        <h6 class="card-title">Recommendation</h6>
+                                        <p class="mb-0 small">@Results.Recommendation</p>
+                                    </div>
+                                </div>
+
+                                <!-- General Warnings -->
+                                @if (Results.Warnings.Any())
+                                {
+                                    <div class="alert alert-warning border-start border-4 border-warning mb-3">
+                                        <h6 class="alert-heading d-flex align-items-center ">
+                                            <svg class="me-2" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L4.316 15.5c-.77.833.192 2.5 1.732 2.5z ">
+
+                                                </path>
+                                            </svg>
+                                            Airflow Issues
+                                        </h6> <ul class="mb-0 small">
+                                            @foreach (var warning in Results.Warnings)
+                                            {
+                                                <li> @warning</li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                                <!-- R-22 Specific Issues -->
+                                @if (Results.R22SpecificIssues.Any())
+                                {
+                                    <div class="alert alert-danger border-start border-4 border-danger">
+                                        <h6 class="alert-heading d-flex align-items-center">
+                                            <svg class="me-2" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"> </path>
+                                            </svg>
+                                            R-22 System Concerns
+                                        </h6>
+                                        <ul class=" mb-0 small">
+                                            @foreach (var issue in Results.R22SpecificIssues)
+                                            {
+                                                <li> @issue </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-center py-5 text-muted">
+                                    <svg class="mb-3 opacity-50" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                    <p>Enter system parameters and click "Calculate Airflow" to see analysis</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guidelines Section -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-success">
+                        <div class="card-header bg-success bg-opacity-10">
+                            <h5 class="card-title mb-0 text-success">Airflow Guidelines & Formula</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-4">
+                                    <h6 class="text-success">Standard CFM per Ton:</h6>
+                                    <ul class="small mb-0">
+                                        <li><strong>Optimal:</strong> 400 CFM/ton</li>
+                                        <li><strong>Acceptable:</strong> 350-450 CFM/ton</li>
+                                        <li><strong>Minimum:</strong> 300 CFM/ton</li>
+                                        <li><strong>High:</strong> 450+ CFM/ton</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6 class="text-info">Calculation Formula:</h6>
+                                    <ul class="small mb-0">
+                                        <li><strong>CFM = BTU/hr ÷ (1.08 × ΔT)</strong></li>
+                                        <li>ΔT = Return Air - Supply Air</li>
+                                        <li>1.08 = Standard air factor</li>
+                                        <li>Typical ΔT: 18-22°F (cooling)</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6 class="text-warning">Common R-22 Issues:</h6>
+                                    <ul class="small mb-0">
+                                        <li>Dirty evaporator coils</li>
+                                        <li>Clogged air filters</li>
+                                        <li>Aging ductwork leaks</li>
+                                        <li>Blower motor degradation</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>

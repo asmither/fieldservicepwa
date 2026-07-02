@@ -1,0 +1,247 @@
+﻿@namespace ICS.Mobile.Pages.BluonBrowse.Components
+@using ICS.Portal.Data.Custom
+@using static ICS.Portal.Data.Custom.BluonBase
+
+<div class="mobile-specifications-viewer">
+    @if (Specifications != null)
+    {
+        var specDict = Specifications.ToDictionary();
+        var groupedSpecs = GroupSpecifications(specDict);
+
+        @foreach (var group in groupedSpecs)
+        {
+            <div class="spec-group">
+                <div class="spec-group-header" @onclick="() => ToggleGroup(group.Key)">
+                    <span class="group-title">
+                        <i class="bi @GetGroupIcon(group.Key)"></i>
+                        @group.Key
+                    </span>
+                    <i class="bi @(IsGroupExpanded(group.Key) ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                </div>
+
+                @if (IsGroupExpanded(group.Key))
+                {
+                    <div class="spec-group-content">
+                        @foreach (var spec in group.Value.OrderBy(kvp => kvp.Key))
+                        {
+                            @if (!string.IsNullOrWhiteSpace(spec.Value?.ToString()))
+                            {
+                                <div class="spec-item">
+                                    <span class="spec-label">@FormatLabel(spec.Key):</span>
+                                    <span class="spec-value">@FormatValue(spec.Value)</span>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <div class="no-specifications">
+            <i class="bi bi-info-circle"></i>
+            No specifications available for this part.
+        </div>
+    }
+</div>
+
+<style>
+    .mobile-specifications-viewer {
+        padding: 1rem;
+    }
+
+    .spec-group {
+        margin-bottom: 0.75rem;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .spec-group-header {
+        padding: 0.75rem;
+        background: #f8f9fa;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        color: var(--bluon-dark);
+        transition: background-color 0.2s;
+    }
+
+        .spec-group-header:hover {
+            background: #e9ecef;
+        }
+
+    .group-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .spec-group-content {
+        padding: 0.75rem;
+        background: white;
+    }
+
+    .spec-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.375rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+        .spec-item:last-child {
+            border-bottom: none;
+        }
+
+    .spec-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+        font-weight: 500;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .spec-value {
+        font-size: 0.75rem;
+        color: var(--bluon-dark);
+        font-weight: 600;
+        text-align: right;
+        margin-left: 0.75rem;
+        word-break: break-word;
+    }
+
+    .no-specifications {
+        padding: 1rem;
+        text-align: center;
+        color: #6c757d;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    /* Highlight important electrical specs */
+    .spec-item:has(.spec-label:contains("voltage")),
+    .spec-item:has(.spec-label:contains("current")),
+    .spec-item:has(.spec-label:contains("power")),
+    .spec-item:has(.spec-label:contains("capacity")) {
+        background: #f0f8ff;
+    }
+</style>
+
+@code {
+    [Parameter] public PartSpecifications? Specifications { get; set; }
+
+    private HashSet<string> ExpandedGroups = new HashSet<string> { "General" }; // "Electrical",
+
+    private Dictionary<string, Dictionary<string, object?>> GroupSpecifications(Dictionary<string, object?> specs)
+    {
+        var grouped = new Dictionary<string, Dictionary<string, object?>>();
+
+        // Define specification categories
+        var electricalKeys = new[] { "voltage", "current", "power", "wattage", "amperage", "phase", "frequency", "electrical" };
+        var dimensionKeys = new[] { "width", "height", "depth", "length", "diameter", "size", "dimension" };
+        var capacityKeys = new[] { "capacity", "btu", "ton", "tonnage", "cfm", "flow", "rate", "volume" };
+        var materialKeys = new[] { "material", "finish", "coating", "construction", "type" };
+        var temperatureKeys = new[] { "temperature", "temp", "operating", "ambient", "range" };
+
+        foreach (var spec in specs)
+        {
+            var key = spec.Key.ToLower();
+            var category = "General";
+
+            if (electricalKeys.Any(k => key.Contains(k)))
+                category = "Electrical";
+            else if (dimensionKeys.Any(k => key.Contains(k)))
+                category = "Dimensions";
+            else if (capacityKeys.Any(k => key.Contains(k)))
+                category = "Capacity";
+            else if (materialKeys.Any(k => key.Contains(k)))
+                category = "Materials";
+            else if (temperatureKeys.Any(k => key.Contains(k)))
+                category = "Temperature";
+
+            if (!grouped.ContainsKey(category))
+                grouped[category] = new Dictionary<string, object?>();
+
+            grouped[category][spec.Key] = spec.Value;
+        }
+
+        return grouped;
+    }
+
+    private string GetGroupIcon(string groupName)
+    {
+        return groupName switch
+        {
+            "Electrical" => "bi-lightning-fill",
+            "Dimensions" => "bi-rulers",
+            "Capacity" => "bi-speedometer2",
+            "Materials" => "bi-tools",
+            "Temperature" => "bi-thermometer",
+            _ => "bi-gear-fill"
+        };
+    }
+
+    private bool IsGroupExpanded(string groupName)
+    {
+        return ExpandedGroups.Contains(groupName);
+    }
+
+    private void ToggleGroup(string groupName)
+    {
+        if (ExpandedGroups.Contains(groupName))
+            ExpandedGroups.Remove(groupName);
+        else
+            ExpandedGroups.Add(groupName);
+    }
+
+    private string FormatLabel(string key)
+    {
+        // Convert camelCase and snake_case to readable format
+        var formatted = key
+            .Replace("_", " ")
+            .Replace("-", " ");
+
+        // Add spaces before capital letters in camelCase
+        var result = "";
+        for (int i = 0; i < formatted.Length; i++)
+        {
+            if (i > 0 && char.IsUpper(formatted[i]))
+                result += " ";
+            result += formatted[i];
+        }
+
+        // Capitalize first letter of each word
+        return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(result.ToLower());
+    }
+
+    private string FormatValue(object? value)
+    {
+        if (value == null) return "";
+
+        var stringValue = value.ToString();
+        if (string.IsNullOrWhiteSpace(stringValue)) return "";
+
+        // Add units for common electrical specifications
+        var lowerKey = stringValue.ToLower();
+        if (IsNumeric(stringValue))
+        {
+            // This is a simplified approach - in practice you'd want more sophisticated unit detection
+            return stringValue;
+        }
+
+        return stringValue;
+    }
+
+    private bool IsNumeric(string value)
+    {
+        return double.TryParse(value, out _);
+    }
+}

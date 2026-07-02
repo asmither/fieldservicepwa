@@ -1,0 +1,130 @@
+﻿@if (Message is not null)
+{
+    <style>
+        .alert {
+            margin: 0;
+            padding: var(--space-3) var(--space-4);
+            border: 0;
+            font-size: var(--text-sm);
+            line-height: var(--leading-normal);
+            border-radius: var(--radius-md);
+        }
+
+            .alert .btn-close {
+                text-shadow: none !important;
+                width: 40px;
+                padding: 0;
+                opacity: 1;
+                margin-top: 3px;
+                line-height: 1em;
+                height: 36px !important;
+                outline: 0 !important;
+                box-shadow: none !important;
+                background: none;
+            }
+
+                .alert .btn-close:hover, .alert .btn-close:active, .alert .btn-close:focus {
+                    outline: 0 !important;
+                }
+
+                .alert .btn-close:hover {
+                    opacity: .7;
+                }
+
+                .alert .btn-close:before, .alert .btn-close:after {
+                    position: absolute;
+                    width: 16px;
+                    height: 2px;
+                    left: 12px;
+                    top: 16px;
+                    content: '';
+                    display: block;
+                    background: #FFF;
+                    border-radius: 20px;
+                }
+
+                .alert .btn-close:before {
+                    transform: rotate(45deg);
+                }
+
+                .alert .btn-close:after {
+                    transform: rotate(-45deg);
+                }
+
+            .alert .alert-title {
+                margin: 4px 0;
+                font-size: 15px;
+                font-weight: 500;
+            }
+
+            .alert.alert-dismissible {
+                padding-right: 56px;
+            }
+
+
+        .alert-danger {
+            background: rgba(225, 85, 57, 0.16);
+            color: var(--text-primary);
+            border: var(--border-hairline);
+        }
+
+            .alert-danger a {
+                color: var(--text-primary) !important;
+                text-decoration: underline;
+            }
+
+            .alert-danger .alert-title {
+                color: var(--text-primary);
+            }
+
+            .alert-danger .close {
+                color: var(--text-primary);
+            }
+
+        .alert-outline-danger {
+            background: transparent;
+            color: #FF396F;
+            border: 2px solid #FF396F;
+        }
+
+            .alert-outline-danger a {
+                color: #FF396F !important;
+                text-decoration: underline !important;
+            }
+
+            .alert-outline-danger .alert-title {
+                color: #FF396F;
+            }
+
+            .alert-outline-danger .btn-close {
+                color: #FF396F;
+                opacity: 1;
+            }
+
+                .alert-outline-danger .btn-close:before, .alert-outline-danger .btn-close:after {
+                    background: #FF396F;
+                }
+
+    </style>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @Message
+        @if (OnDismissClick.HasDelegate)
+        {
+            <button type="button" class="btn-close" aria-label="Dismiss" @onclick="OnClick"></button>
+        }
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string? Message { set; get; }
+
+    [Parameter]
+    public EventCallback OnDismissClick { set; get; }
+
+    private async Task OnClick()
+    {
+        await OnDismissClick.InvokeAsync();
+    }
+}

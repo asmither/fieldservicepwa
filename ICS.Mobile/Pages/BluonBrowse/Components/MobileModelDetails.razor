@@ -1,0 +1,447 @@
+﻿@namespace ICS.Mobile.Pages.BluonBrowse.Components
+@using ICS.Portal.Data.Custom
+
+<div class="model-details-container">
+    @if (Model != null)
+    {
+        <!-- Model Info Card -->
+        <div class="model-info-card">
+            <h5>@Model.Model</h5>
+            <div class="model-badges">
+                <span class="badge bg-primary">@Model.BrandName</span>
+                <span class="badge bg-info">@Model.SystemType</span>
+                @if (Model.FunctionalPartsCount > 0)
+                {
+                    <span class="badge bg-secondary">@Model.FunctionalPartsCount parts</span>
+                }
+                @if (Model.ManualsCount > 0)
+                {
+                    <span class="badge bg-warning">@Model.ManualsCount docs</span>
+                }
+            </div>
+            @if (!string.IsNullOrEmpty(Model.ModelNotes))
+            {
+                <p class="model-notes">@Model.ModelNotes</p>
+            }
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-container">
+            <div class="tab-headers">
+                <button class="tab-header @(ActiveTab == "parts" ? "active" : "")"
+                        @onclick='() => SetActiveTab("parts")'>
+                    <i class="bi bi-gear-fill"></i>
+                    <span>Parts (@(Parts?.Count ?? 0))</span>
+                </button>
+                <button class="tab-header @(ActiveTab == "docs" ? "active" : "")"
+                        @onclick='() => SetActiveTab("docs")'>
+                    <i class="bi bi-file-text-fill"></i>
+                    <span>Documentation (@(GetDocumentCount()))</span>
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                @if (ActiveTab == "parts")
+                {
+                    <!-- Parts Tab -->
+                    <div class="parts-section">
+                        <div class="section-header">
+                            <h6><i class="bi bi-gear-fill"></i> Model Parts</h6>
+                            @if ((Parts?.Count ?? 0) > 5)
+                            {
+                                <input type="text"
+                                       class="parts-filter"
+                                       placeholder="Filter parts..."
+                                       @bind="FilterTerm"
+                                       @bind:event="oninput" />
+                            }
+                        </div>
+
+                        @if (IsLoading)
+                        {
+                            <div class="loading-indicator">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Loading parts...</span>
+                                </div>
+                                
+                            </div>
+                        }
+                        else if (FilteredParts?.Any() == true)
+                        {
+                            <div class="parts-list">
+                                @foreach (var part in FilteredParts)
+                                {
+                                    <div class="part-card" @onclick="() => SelectPart(part)">
+                                        <div class="part-header">
+                                            <span class="part-number">@part.Number</span>
+                                            @if (part.ReplacementsCount > 0)
+                                            {
+                                                <span class="replacements-badge">@part.ReplacementsCount</span>
+                                            }
+                                        </div>
+                                        <div class="part-description">
+                                            @(string.IsNullOrWhiteSpace(part.Description) ? part.Type : part.Description)
+                                        </div>
+                                        <div class="part-meta">
+                                            <span class="meta-tag">@part.Type</span>
+                                            @if (!string.IsNullOrEmpty(part.Subtype))
+                                            {
+                                                <span class="meta-tag">@part.Subtype</span>
+                                            }
+                                            <span class="meta-tag">@part.Brand</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <i class="bi bi-gear"></i>
+                                <p>No parts found</p>
+                            </div>
+                        }
+                    </div>
+                }
+                else if (ActiveTab == "docs")
+                {
+                    <!-- Documentation Tab -->
+                    <div class="documentation-section">
+                        @if (IsLoadingDocs)
+                        {
+                            <div class="loading-indicator">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Loading documentation...</span>
+                                </div>
+                                <span>Loading documentation...</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <MobileDocumentationViewer ModelManuals="@ModelManuals"
+                                                       OnDocumentOpen="@OnDocumentOpen" />
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .model-details-container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .model-info-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        -webkit-user-select: all;
+        -moz-user-select: all;
+        -ms-user-select: element;
+        user-select: all;
+    }
+
+        .model-info-card h5 {
+            margin: 0 0 0.5rem 0;
+            color: var(--bluon-primary);
+            font-size: 1.125rem;
+        }
+
+    .model-badges {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    .bg-primary {
+        background: var(--bluon-primary);
+        color: white;
+    }
+
+    .bg-info {
+        background: var(--bluon-info);
+        color: white;
+    }
+
+    .bg-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .bg-warning {
+        background: #ffc107;
+        color: #212529;
+    }
+
+    .model-notes {
+        margin: 0.5rem 0 0 0;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    .tabs-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--bluon-bg-card) !important;
+        background-color: var(--bluon-bg-card) !important;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    .tab-headers {
+        display: flex;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .tab-header {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: #6c757d;
+        user-select: none;
+    }
+
+        .tab-header:hover {
+            background: #e9ecef;
+            color: var(--bluon-primary);
+        }
+
+        .tab-header.active {
+            background: white;
+            color: var(--bluon-primary);
+            border-bottom-color: var(--bluon-primary);
+            font-weight: 600;
+        }
+
+        .tab-header:active {
+            transform: scale(0.98);
+        }
+
+    .tab-content {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: lightblue;
+    }
+
+    .parts-section,
+    .documentation-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        overflow: hidden;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        gap: 1rem;
+    }
+
+        .section-header h6 {
+            margin: 0;
+            color: var(--bluon-dark);
+        }
+
+    .parts-filter {
+        flex: 1;
+        max-width: 200px;
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        font-size: 0.875rem;
+    }
+
+    .parts-list {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e0 #f7fafc;
+    }
+
+        .parts-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .parts-list::-webkit-scrollbar-track {
+            background: #f7fafc;
+        }
+
+        .parts-list::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+
+    .part-card {
+        padding: 0.75rem;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #fafafa;
+    }
+
+        .part-card:hover {
+            border-color: var(--bluon-primary);
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .part-card:active {
+            transform: translateY(0);
+        }
+
+    .part-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+    }
+
+    .part-number {
+        font-family: monospace;
+        font-weight: 600;
+        color: var(--bluon-primary);
+        font-size: 1.25rem;
+    }
+
+    .replacements-badge {
+        background: var(--bluon-success);
+        color: white;
+        font-size: 0.625rem;
+        padding: 0.125rem 0.375rem;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .part-description {
+        font-size: 1.1rem;
+        color: #495057;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+    }
+
+    .part-meta {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.5rem;
+    }
+
+    .meta-tag {
+        padding: 0.125rem 0.375rem;
+        border-radius: 4px;
+    }
+
+    .loading-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 2rem;
+        color: #6c757d;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding: 2rem;
+        color: #6c757d;
+        text-align: center;
+    }
+
+        .empty-state i {
+            font-size: 2rem;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            margin: 0;
+        }
+</style>
+
+@code {
+    [Parameter] public BluonBrands.BrandModels.Datum? Model { get; set; }
+    [Parameter] public List<BluonBrands.BrandPartsAndOem.Datum>? Parts { get; set; }
+    [Parameter] public BluonModels.ModelManuals.Root? ModelManuals { get; set; }
+    [Parameter] public EventCallback<BluonBrands.BrandPartsAndOem.Datum> OnPartSelected { get; set; }
+    [Parameter] public EventCallback<string> OnDocumentOpen { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public bool IsLoadingDocs { get; set; }
+
+    private string ActiveTab = "parts";
+    private string FilterTerm = "";
+
+    private IEnumerable<BluonBrands.BrandPartsAndOem.Datum>? FilteredParts =>
+        string.IsNullOrWhiteSpace(FilterTerm) ? Parts :
+        Parts?.Where(p =>
+            (p.Number?.Contains(FilterTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (p.Description?.Contains(FilterTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (p.Type?.Contains(FilterTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    private async Task SelectPart(BluonBrands.BrandPartsAndOem.Datum part)
+    {
+        await OnPartSelected.InvokeAsync(part);
+    }
+
+    private void SetActiveTab(string tab)
+    {
+        ActiveTab = tab;
+    }
+
+    private int GetDocumentCount()
+    {
+        if (ModelManuals?.Data?.Manuals == null) return 0;
+
+        var manuals = ModelManuals.Data.Manuals;
+        return (manuals.ServiceFacts?.Count ?? 0) +
+               (manuals.PartsManuals?.Count ?? 0) +
+               (manuals.WiringDiagram?.Count ?? 0) +
+               (manuals.Iom?.Count ?? 0) +
+               (manuals.ProductData?.Count ?? 0) +
+               (manuals.Nomenclature?.Count ?? 0) +
+               (manuals.ProductBrochures?.Count ?? 0) +
+               (manuals.ControlsManuals?.Count ?? 0) +
+               (manuals.SchematicDrawings?.Count ?? 0) +
+               (manuals.Warranty?.Count ?? 0) +
+               (manuals.Diagnostic?.Count ?? 0) +
+               (manuals.BluonGuidelines?.Count ?? 0) +
+               (manuals.Misc?.Count ?? 0);
+    }
+}

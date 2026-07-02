@@ -1,0 +1,102 @@
+@using Blazored.Video
+@if (Initialized)
+{
+    <div class="WorkflowImageMedia">
+        <div class="WorkflowPrompt Smaller">@ImageLabelOrDefault</div>
+        @if (_isLoadingFromServer)
+        {
+            <div class="custom-file-upload">
+                <label for="loading">
+                    <span>
+                        <strong>
+                            <i>Loading...</i>
+                            <i class="icon bi bi-cloud-arrow-down"></i>
+                        </strong>
+                    </span>
+                </label>
+            </div>
+        }
+        else if (image is not null && image.ContentType is not null && image.Data is not null)
+        {
+            <div class="Image">
+                @if (image.IsVideo())
+                {
+                    <center>
+                        <BlazoredVideo controls="true" style="width: 100%; max-height: 200px; object-fit: contain;" playsInline>
+                            <source src="@image.GetURL()" />
+
+                        </BlazoredVideo>
+                    </center>
+                }
+                else if (image.IsImage())
+                {
+                    <img src="@image.Base64Version()" alt="@image.ImageLabel">
+                }
+                else
+                {
+                    <div class="file-upload-display" style="text-align: center; padding: 1.5rem 1rem 3rem 1rem;">
+                        @if (image.ContentType?.Contains("pdf") == true)
+                        {
+                            <i class="icon bi bi-file-earmark-pdf" style="font-size: 3rem; color: #dc3545;"></i>
+                        }
+                        else if (image.IsVideo() || image.ContentType?.Contains("video") == true)
+                        {
+                            <i class="icon bi bi-file-earmark-play" style="font-size: 3rem; color: #0d6efd;"></i>
+                        }
+                        else
+                        {
+                            <i class="icon bi bi-file-earmark" style="font-size: 3rem; color: #6c757d;"></i>
+                        }
+                        <br />
+                        <a href="@image.GetURL()" target="_blank" style="word-break: break-all;">
+                            @(GetDisplayFileName(image))
+                        </a>
+                    </div>
+                }
+
+
+            </div>
+            <div class="ButtonWrapper">
+                <button class="Button" @onclick="() => DeleteImage(image)">
+                    <i class="Image icon bi bi-trash"></i>
+                </button>
+            </div>
+        }
+        else if (image is not null)
+        {
+            <div class="custom-file-upload">
+                @if (WorkflowStep is not null && WorkflowStep!.RequireCamera.Equals(true))
+                {
+                    <InputFile id="@image.Id" OnChange="FileChanged" accept="image/*" capture="camera"></InputFile>
+                }
+                else
+                {
+                    <InputFile id="@image.Id" OnChange="FileChanged"></InputFile>
+                }
+                @if (IsBusy)
+                {
+                    <label for="@image.Id">
+                        <span>
+                            <strong>
+                                <i>One Moment Please</i>
+                                <i class="icon bi bi-cloud-arrow-up"></i>
+
+                            </strong>
+                        </span>
+                    </label>
+                }
+                else
+                {
+                    <label for="@image.Id"><span><strong><i>@RequirementText</i><i class="icon bi-camera"></i></strong></span></label>
+                }
+            </div>
+        }
+    </div>
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @ErrorMessage
+        </div>
+    }
+    <ICS.Mobile.Components.ICSDialogBox @ref="DialogBox" />
+}

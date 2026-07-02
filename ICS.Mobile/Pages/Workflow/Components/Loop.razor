@@ -1,0 +1,67 @@
+﻿@using ICS.Mobile.Components
+@inherits WorkflowComponentsBasePage
+@layout EmptyLayout
+
+@if (Initialized)
+{
+    @if (loopExitType == 1)
+    {
+        <!--TODO Add logic for set iterations-->
+        <p>You completed one of X - X iteration(s) remaining.</p>
+    }
+    else if (loopExitType == 2)
+    {
+        if (Input!.Value == loopContinueText)
+        {
+            <div class="Option Selected">
+                <div class="Name">@loopContinueText</div>
+                <i class="Image Selected bi-check2-square"></i>
+            </div>
+        }
+        else
+        {
+            <div class="Option" @onclick="() => SetValue(loopContinueText)">
+                <div class="Name">@loopContinueText</div>
+                <i class="Image bi-square"></i>
+            </div>
+        }
+
+        if (Input!.Value == loopExitText)
+        {
+            <div class="Option Selected">
+                <div class="Name">@loopExitText</div>
+                <i class="Image Selected bi-check2-square"></i>
+            </div>
+        }
+        else
+        {
+            <div class="Option" @onclick="() => SetValue(loopExitText)">
+                <div class="Name">@loopExitText</div>
+                <i class="Image bi-square"></i>
+            </div>
+        }
+    }
+
+    <CommonError Message="@ErrorMessage"/>
+
+    @if (WorkflowStep!.ImageRequirementId != 0 || WorkflowStep.NoteRequirementId != 0)
+    {
+        @if (WorkflowStep.NoteRequirementId != 0)
+        {
+            <NoteMedia Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" NoteChanged="NoteChanged" NoteLabel="@WorkflowStep!.NoteLabel"></NoteMedia>
+        }
+
+        @if (WorkflowStep.ImageRequirementId != 0)
+        {
+            <ImageMedia Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" ImageChanged="ImageChanged" ImageLabel="@WorkflowStep!.ImageLabel" OnWorkingStateChange="OnImageWorkingStateChanged"></ImageMedia>
+        }
+    }
+
+    <Navigation NextDisabled="NextDisabled" PreviousDisabled="PreviousDisabled" OnNextClick="OnMoveNext" OnPreviousClick="OnMovePrevious"></Navigation>
+}
+else
+{
+    <ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICSLoadingSpinner>
+}

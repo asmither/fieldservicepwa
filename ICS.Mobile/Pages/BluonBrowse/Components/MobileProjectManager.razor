@@ -1,0 +1,293 @@
+﻿@namespace ICS.Mobile.Pages.BluonBrowse.Components
+@using ICS.Mobile.Pages.BluonBrowse
+
+<div class="modal-overlay" @onclick="CloseModal">
+    <div class="modal-content" @onclick:stopPropagation="true">
+        <div class="modal-header">
+            <h5>Projects</h5>
+            <button class="close-button" @onclick="OnClose">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            @if (ShowCreateForm)
+            {
+                <div class="create-form">
+                    <h6>Create New Project</h6>
+                    <div class="form-group">
+                        <input type="text"
+                               class="form-input"
+                               placeholder="Project Name"
+                               @bind="NewProject.Name" />
+                    </div>
+                    <div class="form-group">
+                        <input type="text"
+                               class="form-input"
+                               placeholder="Customer Name (optional)"
+                               @bind="NewProject.CustomerName" />
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary"
+                                @onclick="CreateNewProject"
+                                disabled="@string.IsNullOrWhiteSpace(NewProject.Name)">
+                            Create
+                        </button>
+                        <button class="btn btn-secondary" @onclick="() => ShowCreateForm = false">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <button class="btn btn-primary btn-block" @onclick="() => ShowCreateForm = true">
+                    <i class="bi bi-plus"></i> Create New Project
+                </button>
+            }
+
+            <div class="projects-list">
+                @if (Projects?.Any() == true)
+                {
+                    @foreach (var project in Projects.OrderByDescending(p => p.CreatedDate))
+                    {
+                        <div class="project-item @(CurrentProject?.Id == project.Id ? "active" : "")">
+                            <div class="project-info">
+                                <div class="project-name">@project.Name</div>
+                                @if (!string.IsNullOrEmpty(project.CustomerName))
+                                {
+                                    <div class="project-customer">@project.CustomerName</div>
+                                }
+                                <div class="project-meta">
+                                    <span>@project.CreatedDate.ToString("MMM dd")</span>
+                                    <span>•</span>
+                                    <span>@project.Parts.Count parts</span>
+                                </div>
+                            </div>
+                            <div class="project-actions">
+                                @if (CurrentProject?.Id == project.Id)
+                                {
+                                    <span class="current-badge">Current</span>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline"
+                                            @onclick="() => SelectProject(project)">
+                                        Select
+                                    </button>
+                                }
+                            </div>
+                        </div>
+
+                        @if (CurrentProject?.Id == project.Id && project.Parts.Any())
+                        {
+                            <div class="project-parts">
+                                <h6>Parts in Project</h6>
+                                @foreach (var part in project.Parts)
+                                {
+                                    <div class="project-part-item">
+                                        <div class="part-info">
+                                            <span class="part-number">@part.PartNumber</span>
+                                            <span class="part-qty">Qty: @part.Quantity</span>
+                                        </div>
+                                        <button class="remove-button"
+                                                @onclick="() => RemovePart(project, part)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="bi bi-folder"></i>
+                        <p>No projects yet</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .close-button {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #6c757d;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .create-form {
+        background: var(--bluon-light);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+        .create-form h6 {
+            margin: 0 0 0.75rem 0;
+            color: var(--bluon-dark);
+        }
+
+    .form-group {
+        margin-bottom: 0.75rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        font-size: 0.875rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-block {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .projects-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .project-item {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .project-item.active {
+            border-color: var(--bluon-primary);
+            background: #f0f7ff;
+        }
+
+    .project-name {
+        font-weight: 600;
+        color: var(--bluon-dark);
+        font-size: 0.875rem;
+    }
+
+    .project-customer {
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+
+    .project-meta {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+
+    .current-badge {
+        background: var(--bluon-success);
+        color: white;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    .project-parts {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-top: -0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+        .project-parts h6 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+
+    .project-part-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.375rem 0;
+        border-bottom: 1px solid #e9ecef;
+        -webkit-user-select: all;
+        -moz-user-select: all;
+        -ms-user-select: element;
+        user-select: all;
+    }
+
+        .project-part-item:last-child {
+            border-bottom: none;
+        }
+
+    .part-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .part-qty {
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+
+    .remove-button {
+        background: none;
+        border: none;
+        color: var(--bluon-danger);
+        padding: 0.25rem;
+    }
+</style>
+
+@code {
+    [Parameter] public List<MobileProject>? Projects { get; set; }
+    [Parameter] public MobileProject? CurrentProject { get; set; }
+    [Parameter] public EventCallback<MobileProject> OnProjectSelected { get; set; }
+    [Parameter] public EventCallback<MobileProject> OnProjectCreated { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private bool ShowCreateForm = false;
+    private MobileProject NewProject = new();
+
+    private void CloseModal(MouseEventArgs e)
+    {
+        OnClose.InvokeAsync();
+    }
+
+    private async Task SelectProject(MobileProject project)
+    {
+        await OnProjectSelected.InvokeAsync(project);
+    }
+
+    private async Task CreateNewProject()
+    {
+        if (string.IsNullOrWhiteSpace(NewProject.Name)) return;
+
+        await OnProjectCreated.InvokeAsync(NewProject);
+        NewProject = new MobileProject();
+        ShowCreateForm = false;
+    }
+
+    private void RemovePart(MobileProject project, MobileProjectPart part)
+    {
+        project.Parts.Remove(part);
+        StateHasChanged();
+    }
+}

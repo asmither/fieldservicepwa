@@ -1,0 +1,145 @@
+@using ICS.Mobile.Services
+@using ICS.Mobile.Pages.Settings
+@inherits ICS.Mobile.Pages.PageBase
+@inject IUpdateService UpdateService
+@inject SettingsService Settings
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+<CSSSettings />
+<div class="Title">App Updates</div>
+<div class="Content">
+    @if (updateAvailable)
+    {
+        <button type="button" class="CardRow" @onclick="HandleUpdate">
+            <span class="UpdateReady">Install update now</span>
+            <i class="bi bi-cloud-download" aria-hidden="true"></i>
+        </button>
+    }
+    else
+    {
+        <button type="button" class="CardRow" @onclick="CheckForUpdate" disabled="@isChecking">
+            <span>@(isChecking ? "Checking…" : "Check for Update")</span>
+            @if (isChecking)
+            {
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            }
+            else
+            {
+                <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+            }
+        </button>
+    }
+
+    <div class="UpdateNote @(isError ? "Error" : string.Empty)">
+        @if (!string.IsNullOrEmpty(statusMessage))
+        {
+            @statusMessage
+        }
+        else
+        {
+            <text>Version @Settings.AppVersion</text>
+        }
+    </div>
+</div>
+
+
+@code {
+    [Parameter] public bool ShowUpdateButton { get; set; } = true;
+    [Parameter] public bool AutoCheck { get; set; } = true;
+    [Parameter] public UpdateStrategy Strategy { get; set; } = UpdateStrategy.Force;
+
+    private bool updateAvailable = false;
+    private bool isChecking = false;
+    private string statusMessage = "";
+    private bool isError = false;
+
+    public enum UpdateStrategy
+    {
+        Soft,   // Try to activate waiting SW
+        Force,  // Clear everything and reload  ** Best for our ICS app!
+        Smart   // Try soft first, then force if needed
+    }
+
+    private async Task CheckForUpdate()
+    {
+        try
+        {
+            isChecking = true;
+            statusMessage = "";
+            isError = false;
+            StateHasChanged();
+
+            var hasUpdate = await UpdateService.CheckForUpdateAsync();
+
+            if (hasUpdate)
+            {
+                updateAvailable = true;
+                statusMessage = "";
+            }
+            else
+            {
+                updateAvailable = false;
+                statusMessage = $"You're up to date — version {Settings.AppVersion}";
+                isError = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Couldn't check for updates: {ex.Message}";
+            isError = true;
+        }
+        finally
+        {
+            isChecking = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleUpdate()
+    {
+        try
+        {
+            statusMessage = "Updating…";
+            isError = false;
+            StateHasChanged();
+
+            switch (Strategy)
+            {
+                case UpdateStrategy.Soft:
+                    var success = await UpdateService.SoftUpdateAsync();
+                    if (!success)
+                    {
+                        await UpdateService.ForceUpdateAsync();
+                    }
+                    break;
+
+                case UpdateStrategy.Force:
+                    await UpdateService.ForceUpdateAsync();
+                    break;
+
+                case UpdateStrategy.Smart:
+                    var softSuccess = await UpdateService.SoftUpdateAsync();
+                    if (!softSuccess)
+                    {
+                        var confirmed = await JS.InvokeAsync<bool>("confirm", "Ready to fully update?");
+                        if (confirmed)
+                        {
+                            await UpdateService.ForceUpdateAsync();
+                        }
+                    }
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Update failed: {ex.Message}";
+            isError = true;
+            StateHasChanged();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await UpdateService.DisposeAsync();
+    }
+}

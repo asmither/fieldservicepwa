@@ -1,0 +1,43 @@
+﻿<div class="DispatchDetailNotesAccordion">
+    <div class="Header">
+        <div class="Title" @onclick="Toggle">@Title</div>
+        <button class="Button Transparent" @onclick="Toggle">
+            <img src="/images/icon-accordian-arrow.png" />
+        </button>
+    </div>
+    @if (IsOpen)
+    {
+        <div class="Content">
+            @ChildContent
+        </div>
+    }
+
+    <hr class="Border" />
+
+</div>
+
+@code {
+
+    private async Task Toggle()
+    {
+        IsOpen = !IsOpen;
+
+        if (OnOpenOrCloseCallback.HasDelegate)
+            await OnOpenOrCloseCallback.InvokeAsync(IsOpen);
+
+    }
+
+    [Parameter]
+    public bool IsOpen { set; get; }
+
+    [Parameter]
+    public string? Title { set; get; }
+
+    [Parameter]
+    public EventCallback<bool> OnOpenOrCloseCallback { get; set; } 
+
+
+    [Parameter]
+    public RenderFragment? ChildContent { set; get; }
+
+}

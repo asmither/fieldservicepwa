@@ -1,0 +1,823 @@
+﻿@using ICS.Portal.Data.Enumerations
+@inject IJSRuntime JS
+<style>
+
+    .ReviewBasicItem {
+        border: 1px solid rgba(255,255,255,.5);
+        margin-bottom: 1rem;
+        border-radius: 10px;
+        background-color: rgba(0,0,0,0.5);
+        padding: 0.5rem;
+    }
+
+        .ReviewBasicItem .Prompt {
+            font-size: 1.25rem;
+            font-weight: bold;
+            padding-bottom: 0;
+            margin-bottom: .35rem;
+            color: #BBBBBB;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+        }
+
+            .ReviewBasicItem .Prompt > .EquipLabel {
+                font-size: 1.0rem;
+                font-weight: normal;
+                color: #AAAAAA;
+            }
+
+
+        .ReviewBasicItem .NoteLabel {
+            margin-top: .15rem;
+            margin-bottom: .25rem;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+        }
+
+        .ReviewBasicItem .Note {
+            padding-bottom: 1rem;
+            line-height: 115%;
+            margin-left: 0.33rem;
+            font-size: 1.3rem;
+            color: white;
+            -webkit-user-select: all !important;
+            -moz-user-select: all !important;
+            -ms-user-select: element !important;
+            user-select: all !important;
+        }
+
+        .ReviewBasicItem .Image {
+            width: 100%;
+            box-sizing: border-box;
+            padding-bottom: .5rem;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+        }
+
+        .ReviewBasicItem .ImageLabel {
+            margin-top: .15rem;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+        }
+
+        .ReviewBasicItem .Answer {
+            font-size: 1.3rem;
+            padding-bottom: 0;
+            line-height: 133%;
+            margin-left: 0.5rem;
+            margin-bottom: .35rem;
+            -webkit-user-select: all !important;
+            -moz-user-select: all !important;
+            -ms-user-select: element !important;
+            user-select: all !important;
+            color: white;
+        }
+
+        .ReviewBasicItem > .Block {
+            background: rgba(255,255,255,.1);
+            border-radius: 0.35rem;
+            margin: 0.25rem;
+            padding: 0.25rem;
+        }
+</style>
+<div class="ReviewContainer">
+    @if (WorkflowReviewItemList is not null)
+    {
+        @foreach (var item in WorkflowReviewItemList)
+        {
+            @switch ((WorkflowDataTypes)item.DataType)
+            {
+
+                case WorkflowDataTypes.Split:
+                case WorkflowDataTypes.AutoSwitch:
+
+                    <div class="ReviewBasicItem">
+                        <div class="Prompt">
+                            <span>@item.Prompt</span>
+                            @if (item.LoopIndex > 0)
+                            {
+                                <span class="EquipLabel">
+                                    <br /><small>
+                                        <i>
+                                            <span>  (</span>
+                                            <span>@((item.LoopIndex).ToString()):&nbsp;</span>
+                                            @CurrentEquipmentName(null, item.LoopIndex)
+                                            <span>)</span>
+                                        </i>
+                                    </small>
+                                </span>
+                            }
+
+                        </div>
+                        <div class="Answer">
+                            <p>
+                                @item.Value
+                            </p>
+                        </div>
+                    </div>
+                    break;
+
+                case WorkflowDataTypes.ParallelSplit:
+                    <div class="ReviewBasicItem">
+                        <div class="Prompt">
+                            <span>@item.Prompt</span>
+                            @if (item.LoopIndex > 0)
+                            {
+                                <span class="EquipLabel">
+                                    <br /><small>
+                                        <i>
+                                            <span>  (</span>
+                                            <span>@((item.LoopIndex).ToString()):&nbsp;</span>
+                                            @CurrentEquipmentName(null, item.LoopIndex)
+                                            <span>)</span>
+                                        </i>
+                                    </small>
+                                </span>
+                            }
+
+                        </div>
+                        <div class="Answer">
+                            <p>
+                                @if (RenderParrPromptHasMultiplevalues(item.DisplayValue))
+                                {
+                                    <small><i>@RenderParrPromptValues(item.DisplayValue) sub-items selected:</i></small>
+                                    <br />
+                                    @((MarkupString)PageBase.TextToHtml(item.DisplayValue))
+                                }
+                                else
+                                {
+                                    @((MarkupString)PageBase.TextToHtml(@item.DisplayValue))
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    break;
+
+                case WorkflowDataTypes.Date:
+                case WorkflowDataTypes.LargeText:
+                case WorkflowDataTypes.SmallText:
+                case WorkflowDataTypes.Numeric:
+                case WorkflowDataTypes.DataQuery:
+                case WorkflowDataTypes.SequenceQuery:
+
+                case WorkflowDataTypes.Information:
+
+                case WorkflowDataTypes.Choice:
+
+                case WorkflowDataTypes.Calculator:
+                    <div class="ReviewBasicItem">
+                        <div class="Prompt">
+                            <span>@item.Prompt</span>
+                            @if (item.LoopIndex > 0)
+                            {
+                                <span class="EquipLabel">
+                                    <br /><small>
+                                        <i>
+                                            <span>  (</span>
+                                            <span>@((item.LoopIndex).ToString()):&nbsp;</span>
+                                            @CurrentEquipmentName(null, item.LoopIndex)
+                                            <span>)</span>
+                                        </i>
+                                    </small>
+                                </span>
+                            }
+
+                        </div>
+                        <div class="Answer">
+
+                            <p>
+                                @if (!string.IsNullOrWhiteSpace(item.DisplayValue))
+                                {
+                                    @item.DisplayValue
+                                }
+                                else
+                                {
+                                    @item.Value
+                                }
+                            </p>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(item.ImageFileName))
+                        {
+                            if (!string.IsNullOrEmpty(item.ImageLabel))
+                            {
+                                <div class="ImageLabel">@item.ImageLabel</div>
+                            }
+                            @if (item.ImageData is not null && item.ImageData.IsVideo())
+                            {
+                                <center>
+                                    <video class="Image" controls>
+                                        <source src="@item.ImageDataSource" type="@item.ImageData.ContentType">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </center>
+                            }
+                            else if (item.ImageData is not null && item.ImageData.IsImage())
+                            {
+                                <ImageWithSave Title="@item.ImageLabel" FileName="@item.ImageFileName" ImageBase64="@item.ImageData.Base64Version()" ShowDownload=@ShowDownload></ImageWithSave>
+                            }
+                            else
+                            {
+                                <br />
+                                <a href="@item.ImageDataSource" alt="@item.ImageLabel" target="_blank">@item.ImageLabel</a>
+                            }
+                        }
+                        @if (!string.IsNullOrEmpty(item.Note))
+                        {
+                            if (!string.IsNullOrEmpty(item.NoteLabel))
+                            {
+                                <div class="NoteLabel">@item.NoteLabel:</div>
+                            }
+                            <div class="Note">@item.Note</div>
+                        }
+
+                    </div>
+
+                    break;
+                case WorkflowDataTypes.Boolean:
+                    <div class="ReviewBasicItem">
+                        <div class="Prompt">
+                            <span>@item.Prompt</span>
+                            @if (item.LoopIndex > 0)
+                            {
+                                <span class="EquipLabel">
+                                    <br /><small>
+                                        <i>
+                                            <span>  (</span>
+                                            <span>@((item.LoopIndex).ToString()):&nbsp;</span>
+                                            @CurrentEquipmentName(null, item.LoopIndex)
+                                            <span>)</span>
+                                        </i>
+                                    </small>
+                                </span>
+                            }
+
+                        </div>
+                        <div class="Answer">
+                            <p>@(item.DisplayValue)</p>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(item.ImageFileName))
+                        {
+                            if (!string.IsNullOrEmpty(item.ImageLabel))
+                            {
+                                <div class="ImageLabel">@item.ImageLabel</div>
+                            }
+                            @if (item.ImageData is not null && item.ImageData.IsVideo())
+                            {
+                                <center>
+                                    <video class="Image" controls>
+                                        <source src="@item.ImageDataSource" type="@item.ImageData.ContentType">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </center>
+                            }
+                            else if (item.ImageData is not null && item.ImageData.IsImage())
+                            {
+                                <ImageWithSave Title="@item.ImageLabel" FileName="@item.ImageFileName" ImageBase64="@item.ImageData.Base64Version()" ShowDownload=@ShowDownload></ImageWithSave>
+                            }
+                            else
+                            {
+                                <br />
+                                <a href="@item.ImageDataSource" alt="@item.ImageLabel" target="_blank">@item.ImageLabel</a>
+                            }
+                        }
+                        @if (!string.IsNullOrEmpty(item.Note))
+                        {
+                            if (!string.IsNullOrEmpty(item.NoteLabel))
+                            {
+                                <div class="NoteLabel">@item.NoteLabel:</div>
+                            }
+                            <div class="Note">@item.Note</div>
+                        }
+
+                    </div>
+
+                    break;
+                case WorkflowDataTypes.Consumable:
+                    <div class="ReviewBasicItem">
+                        <div class="Prompt">
+                            <span>@item.Prompt</span>
+                            @if (item.LoopIndex > 0)
+                            {
+                                <span class="EquipLabel">
+                                    <br /><small>
+                                        <i>
+                                            <span>  (</span>
+                                            <span>@((item.LoopIndex).ToString()):&nbsp;</span>
+                                            @CurrentEquipmentName(null, item.LoopIndex)
+                                            <span>)</span>
+                                        </i>
+                                    </small>
+                                </span>
+                            }
+
+                        </div>
+
+                        @foreach (var consumable in item.ValueAsConsumables())
+                        {
+                            <div class="Answer">
+                                <p>Qty @consumable.Quantity: @consumable.Value</p>
+                            </div>
+                        }
+
+                    </div>
+                    break;
+                case WorkflowDataTypes.ConsumableItems:
+                    <div class="ReviewBasicItem">
+                        <div class="Prompt">
+                            <span>@item.Prompt</span>
+                            @if (item.LoopIndex > 0)
+                            {
+                                <span class="EquipLabel">
+                                    <br /><small>
+                                        <i>
+                                            <span>  (</span>
+                                            <span>@((item.LoopIndex).ToString()):&nbsp;</span>
+                                            @CurrentEquipmentName(null, item.LoopIndex)
+                                            <span>)</span>
+                                        </i>
+                                    </small>
+                                </span>
+                            }
+
+                        </div>
+
+                        @foreach (var consumable in item.ValueAsConsumableItems())
+                        {
+                            <div class="Answer">
+                                @if (!string.IsNullOrEmpty(consumable.Notes))
+                                {
+                                    <p>Qty @consumable.Quantity: @consumable.Name<br />Notes: @consumable.Notes</p>
+
+                                }
+                                else
+                                {
+                                    <p>Qty @consumable.Quantity: @consumable.Name</p>
+                                }
+                            </div>
+                        }
+
+                    </div>
+                    break;
+                case WorkflowDataTypes.TruckStockItems:
+                    <div class="ReviewBasicItem">
+                        <div class="Prompt">
+                            <span>@item.Prompt</span>
+                            @if (item.LoopIndex > 0)
+                            {
+                                <span class="EquipLabel">
+                                    <br /><small>
+                                        <i>
+                                            <span>  (</span>
+                                            <span>@((item.LoopIndex).ToString()):&nbsp;</span>
+                                            @CurrentEquipmentName(null, item.LoopIndex)
+                                            <span>)</span>
+                                        </i>
+                                    </small>
+                                </span>
+                            }
+
+                        </div>
+                        @foreach (var tsi in item.ValueAsTruckStockItems())
+                        {
+                            <div class="Answer">
+                                @if (!string.IsNullOrEmpty(tsi.Notes))
+                                {
+                                    <p>Qty @tsi.Quantity: @tsi.Name<br />Notes: @tsi.Notes</p>
+
+                                }
+                                else
+                                {
+                                    <p>Qty @tsi.Quantity: @tsi.Name</p>
+                                }
+                            </div>
+                        }
+                    </div>
+                    break;
+                case WorkflowDataTypes.Equipment:
+                    <div class="ReviewBasicItem">
+                        <div class="Prompt">
+                            <span>@item.Prompt</span>
+                            @if (item.LoopIndex > 0)
+                            {
+                                <span class="EquipLabel">
+                                    <small>
+                                        <i>
+                                            <span>&nbsp;  (</span>
+                                            @if (item.WorkflowVersion == 1)
+                                            {
+                                                <span>@((item.LoopIndex).ToString() + 1)</span>
+
+                                            }
+                                            else
+                                            {
+                                                <span>@((item.LoopIndex).ToString())</span>
+                                            }
+
+                                            <span>)</span>
+                                        </i>
+                                    </small>
+                                </span>
+                            }
+
+                        </div>
+
+                        @if (item.SelectedEquipment is not null)
+                        {
+                            <div>
+
+                                <div class="Answer">
+                                    @* @item.SelectedEquipment.Make
+                @if (!string.IsNullOrEmpty(item.SelectedEquipment.TypeName))
+                {
+                <span  (</span>
+
+                @item.SelectedEquipment.TypeName
+
+                <span>)<br /><br /></span>
+
+                } *@
+                                    @CurrentEquipmentName(item.SelectedEquipment, item.LoopIndex)
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(item.SelectedEquipment.UnitImage1FileName))
+                                {
+                                    @if (item.EquipmentImages.ContainsKey(item.SelectedEquipment.UnitImage1FileName))
+                                    {
+                                        <div class="Prompt">
+                                            Unit Image 1:<br />
+                                            <ImageWithSave Title="Unit 1" FileName="@item.SelectedEquipment.UnitImage1FileName" ImageBase64="@item.EquipmentImages[item.SelectedEquipment.UnitImage1FileName]" ShowDownload=@ShowDownload></ImageWithSave>
+                                        </div>
+                                    }
+                                }
+                                @if (!string.IsNullOrEmpty(item.SelectedEquipment.UnitImage2FileName))
+                                {
+                                    @if (item.EquipmentImages.ContainsKey(item.SelectedEquipment.UnitImage2FileName))
+                                    {
+                                        <div class="Prompt">
+                                            Unit Image 2:<br />
+                                            <ImageWithSave Title="Unit 2" FileName="@item.SelectedEquipment.UnitImage2FileName" ImageBase64="@item.EquipmentImages[item.SelectedEquipment.UnitImage2FileName]" ShowDownload=@ShowDownload></ImageWithSave>
+                                        </div>
+                                    }
+                                }
+                                @if (!string.IsNullOrEmpty(item.SelectedEquipment.DataPlateFileName))
+                                {
+                                    @if (item.EquipmentImages.ContainsKey(item.SelectedEquipment.DataPlateFileName))
+                                    {
+                                        <div class="Prompt">
+                                            Dataplate:<br />
+                                            <ImageWithSave Title="Dataplate" FileName="@item.SelectedEquipment.DataPlateFileName" ImageBase64="@item.EquipmentImages[item.SelectedEquipment.DataPlateFileName]" ShowDownload=@ShowDownload></ImageWithSave>
+                                        </div>
+                                    }
+                                }
+                                @if (!string.IsNullOrEmpty(item.SelectedEquipment.Make))
+                                {
+                                    <div>
+                                        <span class="Prompt">
+                                            Manufacturer:
+                                        </span>
+                                        <span class="Answer">
+                                            @item.SelectedEquipment.Make
+                                        </span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(item.SelectedEquipment.Model))
+                                {
+                                    <div>
+                                        <span class="Prompt">
+                                            Model:
+                                        </span>
+                                        <span class="Answer">
+                                            @item.SelectedEquipment.Model
+                                        </span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(item.SelectedEquipment.Serial))
+                                {
+                                    <div>
+                                        <span class="Prompt">
+                                            Serial:
+                                        </span>
+                                        <span class="Answer">
+                                            @item.SelectedEquipment.Serial
+                                        </span>
+                                    </div>
+                                }
+                                @if (item.SelectedEquipment.MfgDate.HasValue)
+                                {
+                                    <div>
+                                        <span class="Prompt">
+                                            Manufactured:
+                                        </span>
+                                        <span class="Answer">
+                                            @item.SelectedEquipment.MfgDate.Value.ToString("MM/dd/yyyy")
+                                        </span>
+                                    </div>
+                                }
+                                @if (item.SelectedEquipment.InstallationDate.HasValue)
+                                {
+                                    <div>
+                                        <span class="Prompt">
+                                            Installed:
+                                        </span>
+                                        <span class="Answer">
+                                            @item.SelectedEquipment.InstallationDate.Value.ToString("MM/dd/yyyy")
+                                        </span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(item.SelectedEquipment.TypeName))
+                                {
+                                    <div>
+                                        <span class="Prompt">
+                                            EQ Type:
+                                        </span>
+                                        <span class="Answer">
+                                            @item.SelectedEquipment.TypeName
+                                        </span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(item.SelectedEquipment.UnitTag))
+                                {
+                                    <div>
+                                        <span class="Prompt">
+                                            Unit Tag:
+                                        </span>
+                                        <span class="Answer">
+                                            @item.SelectedEquipment.UnitTag
+                                        </span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(item.SelectedEquipment.EquipLocArea))
+                                {
+                                    <div>
+                                        <span class="Prompt">
+                                            Location:
+                                        </span>
+                                        <span class="Answer">
+                                            @item.SelectedEquipment.EquipLocArea
+                                        </span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(item.SelectedEquipment.EquipmentGroup))
+                                {
+                                    <div>
+                                        <span class="Prompt">
+                                            Group:
+                                        </span>
+                                        <span class="Answer">
+                                            @item.SelectedEquipment.EquipmentGroup
+                                        </span>
+                                    </div>
+                                }
+                                <div>
+                                    <span class="Prompt">
+                                        Retired:
+                                    </span>
+                                    <span class="Answer">
+                                        @(item.SelectedEquipment.IsRetired ? "Yes" : "No")
+                                    </span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(item.SelectedEquipment.Notes))
+                                {
+                                    <div>
+                                        <span class="NoteLabel">
+                                            Notes:
+                                        </span>
+                                        <span class="Note">
+                                            @((MarkupString)PageBase.TextToHtml(item.SelectedEquipment.Notes))
+                                        </span>
+                                    </div>
+                                }
+
+                                @if (item.SelectedEquipment.Attributes is not null && item.SelectedEquipment.Attributes.Any(a => !string.IsNullOrEmpty(a.Value)))
+                                {
+                                    <br />
+                                    <div class="Prompt">
+                                        <b>Attributes</b>
+                                    </div>
+
+                                    foreach (var attr in item.SelectedEquipment.Attributes.Where(a => !string.IsNullOrEmpty(a.Value)))
+                                    {
+                                        <div>
+                                            <span class="Prompt">
+                                                @attr.Name:
+                                            </span>
+                                            <span class="Answer">
+                                                @attr.Value
+                                            </span>
+                                        </div>
+                                    }
+                                }
+
+                                @if (item.SelectedEquipment.Consumables is not null && item.SelectedEquipment.Consumables.Any(c => !string.IsNullOrEmpty(c.Value)))
+                                {
+                                    <br />
+                                    <div class="Prompt">
+                                        <b>Consumables</b>
+                                    </div>
+
+                                    @foreach (var cons in item.SelectedEquipment.Consumables.Where(c => !string.IsNullOrEmpty(c.Value)))
+                                    {
+
+                                        <div>
+                                            <span class="Prompt">
+                                                @cons.Name:
+                                            </span>
+                                            <span class="Answer">
+                                                @cons.Value
+                                            </span>
+                                        </div>
+                                    }
+                                }
+
+                            </div>
+                        }
+
+                    </div>
+
+                    break;
+                case WorkflowDataTypes.Time:
+                    <div class="ReviewBasicItem">
+                        <div class="Prompt">
+                            <span>@item.Prompt</span>
+                            @if (item.LoopIndex > 0)
+                            {
+                                <span class="EquipLabel">
+                                    <br /><small>
+                                        <i>
+                                            <span>  (</span>
+                                            <span>@((item.LoopIndex).ToString()):&nbsp;</span>
+                                            @CurrentEquipmentName(null, item.LoopIndex)
+                                            <span>)</span>
+                                        </i>
+                                    </small>
+                                </span>
+                            }
+
+                        </div>
+                        <div class="Answer">
+                            <p>@item.ValueOrDisplayValue</p>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(item.ImageFileName))
+                        {
+                            if (!string.IsNullOrEmpty(item.ImageLabel))
+                            {
+                                <div class="ImageLabel">@item.ImageLabel</div>
+                            }
+                            @if (item.ImageData is not null && item.ImageData.IsVideo())
+                            {
+                                <center>
+                                    <video class="Image" controls>
+                                        <source src="@item.ImageDataSource" type="@item.ImageData.ContentType">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </center>
+                            }
+                            else if (item.ImageData is not null && item.ImageData.IsImage())
+                            {
+                                <ImageWithSave Title="@item.ImageLabel" FileName="@item.ImageData.GeneratedFileName" ImageBase64="@item.ImageData.Base64Version()" ShowDownload=@ShowDownload></ImageWithSave>
+                            }
+                            else
+                            {
+                                <br />
+                                <a href="@item.ImageDataSource" alt="@item.ImageLabel" target="_blank">@item.ImageLabel</a>
+                            }
+                        }
+                        @if (!string.IsNullOrEmpty(item.Note))
+                        {
+                            if (!string.IsNullOrEmpty(item.NoteLabel))
+                            {
+                                <div class="NoteLabel">@item.NoteLabel:</div>
+                            }
+                            <div class="Note">@item.Note</div>
+                        }
+
+                    </div>
+                    break;
+                case WorkflowDataTypes.Photos:
+                case WorkflowDataTypes.Files:
+                    <div class="ReviewBasicItem">
+                        <div class="Prompt">
+                            <span>@item.Prompt</span>
+                            @if (item.LoopIndex > 0)
+                            {
+                                <span class="EquipLabel">
+                                    <br /><small>
+                                        <i>
+                                            <span>  (</span>
+                                            <span>@((item.LoopIndex).ToString()):&nbsp;</span>
+                                            @CurrentEquipmentName(null, item.LoopIndex)
+                                            <span>)</span>
+                                        </i>
+                                    </small>
+                                </span>
+                            }
+
+                        </div>
+                        @if (item.ImageLabels != null && item.ImageDatas is not null && item.ImageDatas.Length > 0 && item.ImageLabels.Length > 0)
+                        {
+                            @for (int idx = 0; idx != item.ImageDatas.Length; idx++)
+                            {
+                                
+                                @if (item.ImageDatas[idx] is not null && item.ImageDatas[idx]?.Data?.Length > 0)
+                                {
+
+                                    if (!string.IsNullOrEmpty(item.ImageLabels[idx]))
+                                    {
+                                        <div class="ImageLabel">@item.ImageLabels[idx]:</div>
+                                    }
+
+                                    @if (item.ImageDatas[idx].IsImage())
+                                    {
+                                        <ImageWithSave Title="@item.ImageLabels[idx]" FileName="@item.ImageDatas[idx].GeneratedFileName" ImageBase64="@item.ImageDatas[idx].Base64Version()" ShowDownload=@ShowDownload></ImageWithSave>
+                                    }
+                                    else if (item.ImageDatas[idx].IsVideo())
+                                    {
+                                        <center>
+                                            <video class="Image" controls>
+                                                <source src="@item.ImageDatasSource(idx)" type="@item.ImageDatas[idx].ContentType">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        </center>
+                                    }
+                                    else
+                                    {
+                                        <br />
+                                        <a href="@item.ImageDatasSource(idx)" alt="@item.ImageLabels[idx]" target="_blank">Tap for Your Uploaded File</a>
+                                    }
+                                }
+
+                            }
+                        }
+                        @if (!string.IsNullOrEmpty(item.Note))
+                        {
+                            if (!string.IsNullOrEmpty(item.NoteLabel))
+                            {
+                                <div class="NoteLabel">@item.NoteLabel:</div>
+                            }
+                            <div class="Note">@item.Note</div>
+                        }
+                    </div>
+                    break;
+                case WorkflowDataTypes.Signature:
+                    <div class="ReviewBasicItem">
+                        <div class="Prompt">
+                            <span>@item.Prompt</span>
+                            @if (item.LoopIndex > 0)
+                            {
+                                <span class="EquipLabel">
+                                    <br /><small>
+                                        <i>
+                                            <span>  (</span>
+                                            <span>@((item.LoopIndex).ToString()):&nbsp;</span>
+                                            @CurrentEquipmentName(null, item.LoopIndex)
+                                            <span>)</span>
+                                        </i>
+                                    </small>
+                                </span>
+                            }
+
+                        </div>
+                        @if (!string.IsNullOrEmpty(item.Value))
+                        {
+                            <br />
+                            <ImageWithSave Title="Signature" FileName="@item.Value" ImageBase64="@item.ImageData?.Base64Version()" ShowDownload=@ShowDownload></ImageWithSave>
+                        }
+                        @if (!string.IsNullOrEmpty(item.Note))
+                        {
+                            if (!string.IsNullOrEmpty(item.NoteLabel))
+                            {
+                                <div class="NoteLabel">@item.NoteLabel:</div>
+                            }
+                            <div class="Note">@item.Note</div>
+                        }
+                    </div>
+
+                    break;
+            }
+        }
+    }
+</div>
+<div class="py-2" />
+<ICS.Mobile.Components.ICSDialogBox @ref="DialogBox" />
+@if (Workflow is not null && Workflow.Completed is null && AllowEdit)
+{
+    <div class="CenteredButtonContainer">
+        <button class="Button" @onclick="Edit">Edit Checklist</button>
+    </div>
+
+    <div class="CenteredButtonContainer">
+        <button class="Button Default" @onclick="Complete">Complete Checklist</button>
+    </div>
+}
+

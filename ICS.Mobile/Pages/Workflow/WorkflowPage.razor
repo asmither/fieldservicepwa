@@ -1,0 +1,178 @@
+﻿@page "/workflow-runner"
+@page "/workflow-runner/{WorkflowResultId:int}"
+@page "/workflow-runner/{WorkflowResultId:int}/{inReview:bool}"
+
+@layout EmptyLayout
+
+@using System.Text.Json;
+@using ICS.Mobile.Components
+@using ICS.Mobile.Pages.Workflow.Components
+@using ICS.Portal.Data.Enumerations;
+@using ICS.Portal.Data.Queries.Models;
+@using ICS.Portal.Data.Custom;
+@* @using ICS.Mobile.Components.ScratchPad; *@
+
+<CSSWorkflow />
+<ICSDialogBox @ref="DialogBox" />
+
+@if (Initialized)
+{
+    <SyncIndicator />
+    @* <ScratchPadOverlay @ref="scratchPadRef" CurrentUserId="@CurrentUserId" /> *@
+    @* <ScratchPadFab CurrentUserId="@CurrentUserId" /> *@
+
+
+    <PageHeaderTabbed @ref=wfHeader TabTextTop="@CustomerTitle" TabTextBottom="@CustomerNumber">
+        <RoundButtonGreen OnClick="ReturnToSender"></RoundButtonGreen>
+    </PageHeaderTabbed>
+
+    <div class="WorkflowName">@Workflow!.Prompt</div>
+
+    switch (WorkflowRunnerMode)
+    {
+
+        @* case WorkflowRunnerModes.PreviouslyCompleted:
+                <StepContainer Prompt="Checklist Complete">
+                    <PreviouslyCompleted Workflow="Workflow" RecordExistsLocally="WorkflowExistsLocally" OnDeleteLocalCopy="OnDeleteLocalCopy" />
+                </StepContainer>
+                break; *@
+        case WorkflowRunnerModes.CompleteOrReview:
+            <StepContainer Prompt="Checklist Complete">
+                <CompleteOrReview Workflow="Workflow" OnComplete="OnComplete" OnReview="OnReview" OnEdit="OnEdit" />
+            </StepContainer>
+            break;
+
+        case WorkflowRunnerModes.CompleteSync:
+            <StepContainer Prompt="Checklist Complete">
+                <CompleteSync Workflow="Workflow" OnDeleteLocalCopy="OnDeleteLocalCopy" />
+            </StepContainer>
+            break;
+
+        case WorkflowRunnerModes.Error:
+            <StepContainer Prompt="Checklist Error">
+                <CommonError Message="@Error"></CommonError>
+            </StepContainer>
+            break;
+
+        case WorkflowRunnerModes.InReview:
+            <StepContainer Prompt="Checklist Review">
+                <Review Workflow="Workflow" WorkflowReviewItemList="WorkflowReviewItemList" OnComplete="OnComplete" OnEdit="OnEdit" ShowDownload="ShowDownloadSaveButton"></Review>
+            </StepContainer>
+            break;
+
+        case WorkflowRunnerModes.InProgress:
+
+            @if (WorkflowStep is not null)
+            {
+                <StepContainer CSSControlDisplay="@CSSControlDisplay" CSSSpinnerDisplay="@CSSSpinnerDisplay" Prompt="@WorkflowStep.Prompt" Caption="@WorkflowStep.HelpText">
+
+                    @if (Media is not null && Media.Count != 0)
+                    {
+                        <StepMedia Media="Media" />
+                    }
+
+                    @switch ((WorkflowDataTypes)WorkflowStep.WorkflowDataTypeId)
+                    {
+                        case WorkflowDataTypes.Boolean:
+                            <Boolean Workflow="Workflow" WorkflowStep="WorkflowStep" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails"></Boolean>
+                            break;
+                        case WorkflowDataTypes.Choice:
+                            <Choice StepOptions="StepOptions" WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" />
+                            break;
+
+                        case WorkflowDataTypes.DataQuery:
+                            <DataQuery WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" />
+                            break;
+
+                        case WorkflowDataTypes.Date:
+                            <Date WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" />
+                            break;
+
+                        case WorkflowDataTypes.LargeText:
+                            <LargeText WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" />
+                            break;
+
+                        case WorkflowDataTypes.Photos:
+                            <Photos WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails"></Photos>
+                            break;
+
+                        case WorkflowDataTypes.Numeric:
+                            <Numeric WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" />
+                            break;
+
+                        case WorkflowDataTypes.SmallText:
+                            <SmallText WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" />
+                            break;
+
+                        case WorkflowDataTypes.Time:
+                            <Time WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" />
+                            break;
+
+                        case WorkflowDataTypes.Files:
+                            <Files WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails"></Files>
+                            break;
+
+                        case WorkflowDataTypes.Split:
+                            <Split WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" />
+                            break;
+
+                        case WorkflowDataTypes.ParallelSplit:
+
+                            <ParallelSplit WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" Runner="runner"></ParallelSplit>
+                            break;
+
+                        case WorkflowDataTypes.Equipment:
+                            <Equipment WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" runner="runner"></Equipment>
+                            break;
+
+                        case WorkflowDataTypes.Signature:
+                            <Signature WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails"></Signature>
+                            break;
+
+                        case WorkflowDataTypes.Information:
+                            <Information WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" />
+                            break;
+
+                        case WorkflowDataTypes.Loop:
+                            <Loop WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" />
+                            break;
+
+                        case WorkflowDataTypes.SequenceQuery:
+                            <SequenceQuery WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" />
+                            break;
+
+                        case WorkflowDataTypes.Workflow:
+                            <Workflow WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails"></Workflow>
+                            break;
+                        case WorkflowDataTypes.Consumable:
+                            <ConsumablePicker WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" Consumables="Consumables" />
+                            break;
+                        case WorkflowDataTypes.TruckStockItems:
+                            <TruckStockItems WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" Items="TruckStockItems"></TruckStockItems>
+                            break;
+                        case WorkflowDataTypes.ConsumableItems:
+                            <ConsumableItems WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" Attributes="@runner.Lookups.AttributeResult"></ConsumableItems>
+                            break;
+                        case WorkflowDataTypes.EquipmentType:
+                            <EquipmentType WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails" Runner="runner"></EquipmentType>
+                            break;
+                        case WorkflowDataTypes.Calculator:
+                            <Calculator WorkflowStep="WorkflowStep" Workflow="Workflow" Input="Input" OnMoveNext="MoveNext" OnMovePrevious="MovePrevious" StepDetails="StepDetails"></Calculator>
+                            break;
+
+                    }
+
+                </StepContainer>
+
+            }
+
+            break;
+    }
+}
+
+else
+{
+    <ICS.Mobile.Components.ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICS.Mobile.Components.ICSLoadingSpinner>
+}

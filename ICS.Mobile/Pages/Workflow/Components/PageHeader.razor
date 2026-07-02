@@ -1,0 +1,56 @@
+﻿<div class="WorkflowPageHeader">
+    <button class="BackButton Transparent" @onclick="() => Click()">
+        <img class="Image" src="/images/button-back-arrow-trans.png" />
+    </button>
+    <div class="CustomerNameAndNumber">
+        <div class="CustomerNumber">@CustomerNumber</div>
+        <div class="CustomerName">@CustomerName</div>
+    </div>
+    <div class="WorkflowName">@WorkflowName</div>
+</div>
+
+@code {
+
+    private void Click()
+    {
+        if (OnBackClick.HasDelegate) 
+            OnBackClick.InvokeAsync(); 
+    }
+
+    [Parameter]
+    [EditorRequired]
+    public string? CustomerName { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public string? CustomerNumber { set; get; }
+
+    [Parameter]
+    public string? WorkflowName { set; get; }
+
+    [Parameter]
+    public string ReturnURL { set; get; } = "/";
+
+    [Parameter]
+    public EventCallback OnBackClick { set; get; }
+
+
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrEmpty(CustomerName))
+        {
+            CustomerName = "";
+        }
+
+        if (string.IsNullOrEmpty(CustomerNumber))
+        {
+            CustomerNumber = "";
+        }
+
+        if (string.IsNullOrEmpty(WorkflowName))
+        {
+            WorkflowName = "";
+        }
+
+    }
+}

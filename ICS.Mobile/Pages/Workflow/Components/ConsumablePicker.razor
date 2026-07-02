@@ -1,0 +1,56 @@
+﻿@using ICS.Mobile.Components
+@using ICS.Portal.Data.Queries.Models
+@inherits WorkflowComponentsBasePage
+@layout EmptyLayout
+
+
+@if (Initialized)
+{
+    if (Consumables is not null)
+    {
+        @foreach (var consumable in Consumables)
+        {
+            @if (consumable.IsSelected)
+            {
+                <div class="Consumable Selected" @onclick="() => SetValue(consumable)">
+                    <div class="Name">(@consumable.OriginalQuantity) @consumable.ValueValue</div>
+                    <div class="Notes">@consumable.Notes</div>
+                    <i class="Image Selected bi-check2-square"></i>
+                    <br />
+                    <div class="Edit">
+                        Replace:<input id="@consumable.Uid" type="number" max="@consumable.OriginalQuantity" value="@consumable.Quantity" @onchange="@((ChangeEventArgs args) => SetQuantity(consumable, args))" @onclick:stopPropagation="true" @onclick:preventDefault="true">
+                        <span> of @consumable.OriginalQuantity available.</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="Consumable" @onclick="() => SetValue(consumable)">
+                    <div class="Name">(@consumable.Quantity) @consumable.ValueValue</div>
+                    <div class="Notes">@consumable.Notes</div>
+                    <i class="Image bi-square"></i>
+                </div>
+            }
+        }
+    }
+    <CommonError Message="@ErrorMessage" />
+
+    @if (WorkflowStep.NoteRequirementId != 0)
+    {
+        <NoteMedia Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" NoteChanged="NoteChanged" NoteLabel="@WorkflowStep!.NoteLabel"></NoteMedia>
+    }
+
+    @if (WorkflowStep.ImageRequirementId != 0)
+    {
+        <ImageMedia Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" ImageChanged="ImageChanged" ImageLabel="@WorkflowStep!.ImageLabel" OnWorkingStateChange="OnImageWorkingStateChanged"></ImageMedia>
+    }
+
+    <Navigation NextDisabled="false" PreviousDisabled="false" OnNextClick="OnMoveNext" OnPreviousClick="OnMovePrevious"></Navigation>
+
+}
+else
+{
+    <ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICSLoadingSpinner>
+}

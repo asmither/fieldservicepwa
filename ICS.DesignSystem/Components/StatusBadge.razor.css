@@ -1,0 +1,60 @@
+.StatusBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--text-on-accent);
+    white-space: nowrap;
+}
+
+    .StatusBadge i {
+        font-size: 1.1em;
+        line-height: 1;
+    }
+
+.StatusBadge.Pending {
+    background: var(--status-pending);
+}
+
+.StatusBadge.Traveling {
+    background: var(--status-traveling);
+}
+
+.StatusBadge.Working {
+    background: var(--status-working);
+}
+
+.StatusBadge.Complete {
+    background: var(--status-complete);
+}
+
+.StatusBadge.Approved {
+    background: var(--status-success);
+}
+
+.StatusBadge.Declined {
+    background: var(--status-danger);
+}
+
+.StatusBadge.Review {
+    background: var(--status-info);
+}
+
+.StatusBadge.Synced {
+    background: var(--status-success);
+}
+
+.StatusBadge.Failed {
+    background: var(--status-danger);
+}
+
+.StatusBadge.Neutral {
+    background: var(--surface-raised-subtle);
+    color: var(--text-secondary);
+    border: var(--border-subtle);
+}

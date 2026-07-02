@@ -1,0 +1,124 @@
+﻿@using ICS.Mobile.Helpers
+@using ICS.Portal.Data.Custom
+<ICS.Mobile.Components.ICSDialogBox @ref="DialogBox" />
+<div class="top-menu-container">
+    <div class="top-menu-icon-button" @onclick="OnGoBackClick">
+        <i class="icon bi bi-arrow-left"></i>
+    </div>
+    <div class="top-menu-title">
+        @Title
+    </div>
+    @if (DataManager.SyncCount != 0)
+    {
+        <div class="top-menu-icon-button" @onclick="() => SyncCheck()">
+            <i class="icon bi bi-cloud-upload">
+                <span class="top-menu-badge">@DataManager.SyncCount</span>
+            </i>
+        </div>
+    }
+    else
+    {
+        <div class="top-menu-icon-button">
+            <i class="bi bi-cloud-check"></i>
+        </div>
+    }
+</div>
+
+@code {
+
+    #region Parameters
+
+    [Parameter]
+    [EditorRequired]
+    public string? Title { set; get; } = "Workflow Name";
+
+    [Parameter]
+    public bool IsReviewing { set; get; } = false;
+
+    [Parameter]
+    public bool ForceRefreshOnBackLink { set; get; } = false;
+
+    [Parameter]
+    public int WorkOrderDispatchId { set; get; } = 0;
+
+    [Parameter]
+    public string BackLinkURL { set; get; } = "/dispatch-list";
+
+    #endregion Parameters
+
+    #region Inject
+
+    [Inject]
+    private JSUI ui { set; get; } = default!;
+
+    [Inject]
+    private NavigationManager nm { set; get; } = default!;
+
+    [Inject]
+    private IWorkflowData DataManager { set; get; } = default!;
+
+    private Mobile.Components.ICSDialogBox DialogBox;
+
+    #endregion Inject
+
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrEmpty(Title))
+        {
+            throw new ArgumentNullException(nameof(Title));
+        }
+        DataManager.OnSyncCountChanged += RaiseStateChanged;
+    }
+
+    private void Dispose()
+    {
+        DataManager.OnSyncCountChanged -= RaiseStateChanged;
+    }
+
+    private void RaiseStateChanged(int count)
+    {
+        StateHasChanged();
+    }
+
+    private async Task OnGoBackClick()
+    {
+        string linkURL = BackLinkURL;
+
+        if (WorkOrderDispatchId > 0)
+        {
+            linkURL += $"/{WorkOrderDispatchId}";
+            if (ForceRefreshOnBackLink)
+            {
+                linkURL = string.Concat(linkURL, "/1");
+            }
+        }
+
+        if (IsReviewing)
+        {
+            nm.NavigateTo(linkURL);
+        }
+        else
+        {
+            if (await Confirm("Are you sure you want to leave this checklist?", "Active Checklist"))
+            {
+                nm.NavigateTo(linkURL);
+            }
+        }
+    }
+    private async Task<bool> Confirm(string message, string heading = "Please Confirm", string okbtn = "Yes", string cancelbtn = "No")
+    {
+        if (string.IsNullOrEmpty(heading)) heading = "FYI";
+        int ret = await DialogBox.WaitForDialogResultAsync(header: heading, prompt: message, okLabel: okbtn, cancelLabel: cancelbtn, defaultButton: 2);
+        if (ret == 2)
+            return false;
+        else
+            return true;
+    }
+    private async Task SyncCheck()
+    {
+        if (await Confirm("Are you sure you want to leave this checklist and go to sync status?", "Active Checklist"))
+        {
+            nm.NavigateTo("/sync");
+        }
+    }
+}

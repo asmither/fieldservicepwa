@@ -1,0 +1,32 @@
+﻿@using ICS.Mobile.Components
+@using ICS.Portal.Data.Queries.Models
+@inherits WorkflowComponentsBasePage
+@layout EmptyLayout
+
+@if (Initialized)
+{
+    <p>Completing this step will create a new workflow. You can see this new workflow in the workflow active list.</p>
+
+    <CommonError Message="@ErrorMessage" />
+
+    @if (WorkflowStep!.ImageRequirementId != 0 || WorkflowStep.NoteRequirementId != 0)
+    {
+        @if (WorkflowStep.NoteRequirementId != 0)
+        {
+            <NoteMedia Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" NoteChanged="NoteChanged" NoteLabel="@WorkflowStep!.NoteLabel"></NoteMedia>
+        }
+
+        @if (WorkflowStep.ImageRequirementId != 0)
+        {
+            <ImageMedia Workflow="Workflow" WorkflowStep=WorkflowStep Input="Input" ImageChanged="ImageChanged" ImageLabel="@WorkflowStep!.ImageLabel" OnWorkingStateChange="OnImageWorkingStateChanged"></ImageMedia>
+        }
+    }
+
+    <Navigation NextDisabled="NextDisabled" PreviousDisabled="PreviousDisabled" OnNextClick="OnMoveNext" OnPreviousClick="OnMovePrevious"></Navigation>
+}
+else
+{
+    <ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICSLoadingSpinner>
+}

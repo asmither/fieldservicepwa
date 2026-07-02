@@ -1,0 +1,427 @@
+@page "/rptchart"
+@inherits RPTCalcPage
+@using ICS.Mobile.Components
+@using ICS.Mobile.Pages.RPTChart
+@using ICS.Mobile.DataModels.Custom;
+@using static ICS.Mobile.DataModels.Custom.HVACCalculations;
+
+
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/calc-theme.css" rel="stylesheet">
+
+<style>
+    /* Token bridge — map Bootstrap onto the ICS design tokens (guide rule 7). */
+    .container-fluid {
+        color: var(--text-primary);
+        --bs-body-color: var(--text-primary);
+        --bs-body-color-rgb: 255, 255, 255;
+        --bs-body-bg: var(--surface-input);
+        --bs-emphasis-color: var(--text-primary);
+        --bs-heading-color: var(--text-primary);
+        --bs-secondary-color: var(--text-muted);
+        --bs-secondary-bg: var(--surface-raised-subtle);
+        --bs-tertiary-color: var(--text-muted);
+        --bs-tertiary-bg: var(--surface-raised-subtle);
+        --bs-border-color: rgba(255, 255, 255, 0.15);
+        --bs-border-color-translucent: rgba(255, 255, 255, 0.09);
+        --bs-link-color: var(--accent-soft);
+        --bs-link-hover-color: var(--accent);
+        --bs-primary-rgb: 41, 148, 208; /* --brand-500 */
+        --bs-box-shadow-sm: var(--elevation-1);
+    }
+
+        .container-fluid .card {
+            --bs-card-bg: var(--surface-card);
+            --bs-card-border-color: rgba(255, 255, 255, 0.09);
+            --bs-card-cap-bg: rgba(255, 255, 255, 0.04);
+            --bs-card-border-radius: var(--radius-md);
+        }
+
+        .container-fluid .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--text-primary);
+            --bs-table-border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .container-fluid .bg-light {
+            --bs-bg-opacity: 0.08;
+        }
+
+        .container-fluid .bg-warning {
+            color: rgba(0, 0, 0, 0.85); /* keep dark-on-amber in both themes */
+        }
+
+        .container-fluid .form-select {
+            --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgba(255,255,255,0.75)' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        }
+</style>
+
+<PageHeaderBasic Title="Refrigerant P-T Lookup" Icon="bi-graph-up">
+    <RoundButtonGreen Icon="bi-arrow-left" OnClick="HomePageClick" />
+</PageHeaderBasic>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <div class="alert alert-info border-start border-4 border-info">
+                    <small>
+                        Uses factory-verified pressure-temperature relationships for 14 commercial refrigerants.
+                        Enter pressure to get exact saturation temperature, or temperature to get pressure.
+                    </small>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Input Section -->
+                <div class="col-md-6">
+
+                    <!-- Refrigerant Selection -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary bg-opacity-10">
+                            <h5 class="card-title mb-0 text-primary">Commercial Refrigerant Selection</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Refrigerant Type</label>
+                                <select class="form-select" @bind="Inputs.RefrigerantType" @bind:after="OnInputChanged">
+                                    <option value="R-410A">R-410A - Standard Commercial (Most Common)</option>
+                                    <option value="R-22">R-22 - Legacy Systems (Expensive)</option>
+                                    <option value="R-134A">R-134A - Chiller Applications</option>
+                                    <option value="R-32">R-32 - High Efficiency (A2L)</option>
+                                    <option value="R-454B">R-454B - Low GWP R-410A Replacement (A2L)</option>
+                                    <option value="R-427A">R-427A - R-22 Replacement</option>
+                                    <option value="R-407C">R-407C - R-22 Replacement</option>
+                                    <option value="R-422B">R-422B - R-22 Replacement</option>
+                                    <option value="R-438A">R-438A - R-22 Replacement</option>
+                                    <option value="R-404A">R-404A - Commercial Refrigeration</option>
+                                    <option value="R-448A">R-448A - Low GWP Replacement</option>
+                                    <option value="R-449A">R-449A - Low GWP Replacement</option>
+                                    <option value="R-454C">R-454C - Low GWP Alternative</option>
+                                    <option value="R-513A">R-513A - Low GWP R-134a Replacement</option>
+                                </select>
+                                <div class="form-text">@GetRefrigerantDescription()</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lookup Mode -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success bg-opacity-10">
+                            <h5 class="card-title mb-0 text-success">Lookup Method</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="lookupMode" value="Pressure to Temperature"
+                                           checked="@(Inputs.LookupMode == "Pressure to Temperature")"
+                                           @onchange="@(() => { Inputs.LookupMode = "Pressure to Temperature"; OnInputChanged(); })"
+                                           id="pressureToTemp">
+                                    <label class="form-check-label" for="pressureToTemp">
+                                        <strong>Pressure → Temperature</strong> (Most Common)
+                                    </label>
+                                    <div class="form-text">Enter pressure reading to get saturation temperature</div>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="lookupMode" value="Temperature to Pressure"
+                                           checked="@(Inputs.LookupMode == "Temperature to Pressure")"
+                                           @onchange="@(() => { Inputs.LookupMode = "Temperature to Pressure"; OnInputChanged(); })"
+                                           id="tempToPressure">
+                                    <label class="form-check-label" for="tempToPressure">
+                                        <strong>Temperature → Pressure</strong> (Design Calculations)
+                                    </label>
+                                    <div class="form-text">Enter temperature to get corresponding pressure</div>
+                                </div>
+                            </div>
+
+                            @if (Inputs.LookupMode == "Pressure to Temperature")
+                            {
+                                <div class="row g-3">
+                                    <div class="col-md-8">
+                                        <label class="form-label">Pressure Reading</label>
+                                        <input type="number" step="0.1" class="form-control" @bind="Inputs.InputPressure" @bind:after="OnInputChanged" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Unit</label>
+                                        <select class="form-select" @bind="Inputs.PressureUnit" @bind:after="OnInputChanged">
+                                            <option value="PSIG">PSIG (Gauge)</option>
+                                            <option value="PSIA">PSIA (Absolute)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Temperature (°F)</label>
+                                        <input type="number" step="0.1" class="form-control" @bind="Inputs.InputTemperature" @bind:after="OnInputChanged" />
+                                        <div class="form-text">Saturation temperature for the refrigerant</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- System Context (Optional) -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-secondary bg-opacity-10">
+                            <h5 class="card-title mb-0 text-secondary">System Context (Optional)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">System Type</label>
+                                    <select class="form-select" @bind="Inputs.SystemType">
+                                        <option value="Unknown">Unknown</option>
+                                        <option value="Rooftop Unit">Rooftop Unit</option>
+                                        <option value="Split System">Split System</option>
+                                        <option value="Chiller">Chiller</option>
+                                        <option value="Heat Pump">Heat Pump</option>
+                                        <option value="VRF System">VRF System</option>
+                                        <option value="Package Unit">Package Unit</option>
+                                        <option value="Process Cooling">Process Cooling</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">System Capacity (BTU/hr)</label>
+                                    <input type="number" class="form-control" @bind="Inputs.SystemCapacity" step="6000" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Application Notes</label>
+                                    <input type="text" class="form-control" @bind="Inputs.ApplicationNotes" placeholder="e.g., Condenser pressure reading, evaporator temperature check" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-primary btn-lg w-100 mb-4" @onclick="PerformLookup">
+                        <svg class="me-2" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        Lookup P-T Value
+                    </button>
+                </div>
+
+                <!-- Results Section -->
+                <div class="col-md-6">
+                    <div class="position-sticky" style="top: 1rem;">
+
+                        @if (Results != null && Results.IsValidLookup)
+                        {
+                            <!-- Main Result -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-primary">
+                                    <h5 class="card-title mb-0 text-white">
+                                        <svg class="me-2" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                        </svg>
+                                        @Results.RefrigerantType P-T Lookup Result
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    @if (Inputs.LookupMode == "Pressure to Temperature")
+                                    {
+                                        <div class="text-center mb-3">
+                                            <h2 class="display-4 text-primary mb-0">@Results.ResultTemperature.ToString("F1")°F</h2>
+                                            <p class="text-muted">Saturation Temperature</p>
+                                        </div>
+                                        <div class="row g-2 small">
+                                            <div class="col-6"><strong>Input Pressure:</strong></div>
+                                            <div class="col-6">@Inputs.InputPressure @Inputs.PressureUnit</div>
+                                            <div class="col-6"><strong>Absolute Pressure:</strong></div>
+                                            <div class="col-6">@Results.PressurePSIA.ToString("F1") PSIA</div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center mb-3">
+                                            <h2 class="display-4 text-primary mb-0">@Results.ResultPressure.ToString("F1") PSIG</h2>
+                                            <p class="text-muted">Saturation Pressure</p>
+                                        </div>
+                                        <div class="row g-2 small">
+                                            <div class="col-6"><strong>Input Temperature:</strong></div>
+                                            <div class="col-6">@Inputs.InputTemperature.ToString("F1")°F</div>
+                                            <div class="col-6"><strong>Absolute Pressure:</strong></div>
+                                            <div class="col-6">@Results.PressurePSIA.ToString("F1") PSIA</div>
+                                        </div>
+                                    }
+
+                                    <hr>
+                                    <div class="row g-2 small">
+                                        <div class="col-6"><strong>Lookup Method:</strong></div>
+                                        <div class="col-6">@Results.LookupMethod</div>
+                                        <div class="col-6"><strong>Data Quality:</strong></div>
+                                        <div class="col-6 @GetDataQualityClass()">@Results.DataQuality</div>
+                                        @if (Results.InterpolationError > 0)
+                                        {
+                                            <div class="col-6"><strong>Est. Error:</strong></div>
+                                            <div class="col-6">±@Results.InterpolationError.ToString("F2")°F</div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Refrigerant Information -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-info">
+                                    <h6 class="card-title mb-0 text-white">Refrigerant Properties</h6>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="text-primary">@Results.RefrigerantName</h6>
+                                    <p class="mb-2"><strong>Safety Class:</strong> @Results.SafetyClassification</p>
+                                    <p class="mb-2"><strong>Typical Use:</strong> @Results.TypicalApplications</p>
+                                    <p class="mb-0"><small class="text-muted">@Results.RefrigerantProperties</small></p>
+                                </div>
+                            </div>
+
+                            <!-- Operating Notes -->
+                            @if (Results.OperatingNotes.Any())
+                            {
+                                <div class="card mb-4">
+                                    <div class="card-header bg-warning">
+                                        <h6 class="card-title mb-0 text-dark">Operating Notes</h6>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        @foreach (var note in Results.OperatingNotes)
+                                        {
+                                            <div class="p-2 border-bottom">
+                                                <small>• @note</small>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- System Context Results -->
+                            @if (!string.IsNullOrEmpty(Inputs.SystemType) && Inputs.SystemType != "Unknown")
+                            {
+                                <div class="card">
+                                    <div class="card-header bg-secondary">
+                                        <h6 class="card-title mb-0 text-white">System Context</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-2 small">
+                                            <div class="col-6"><strong>System Type:</strong></div>
+                                            <div class="col-6">@Inputs.SystemType</div>
+
+                                            @if (Inputs.SystemCapacity > 0)
+                                            {
+                                                <div class="col-6"><strong>Capacity:</strong></div>
+                                                <div class="col-6">@((Inputs.SystemCapacity / 12000).ToString("F1")) tons</div>
+                                            }
+
+                                            @if (!string.IsNullOrEmpty(Inputs.ApplicationNotes))
+                                            {
+                                                <div class="col-12 mt-2"><strong>Notes:</strong></div>
+                                                <div class="col-12"><small>@Inputs.ApplicationNotes</small></div>
+                                            }
+                                        </div>
+
+                                        <div class="mt-3">
+                                            <small class="text-muted">@GetSystemContextAdvice()</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else if (Results != null && !Results.IsValidLookup)
+                        {
+                            <!-- Error State -->
+                            <div class="card">
+                                <div class="card-header bg-danger">
+                                    <h6 class="card-title mb-0 text-white">Lookup Error</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-danger mb-3">Unable to find corresponding value for the entered input.</p>
+                                    <div class="alert alert-warning">
+                                        <h6 class="alert-heading">Possible Issues:</h6>
+                                        <ul class="mb-0 small">
+                                            <li>Input value outside refrigerant operating range</li>
+                                            <li>Very low or very high pressure/temperature</li>
+                                            <li>Check input units (PSIG vs PSIA)</li>
+                                        </ul>
+                                    </div>
+                                    <small class="text-muted">Operating range for @Inputs.RefrigerantType: -48°F to 120°F</small>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- No Results State -->
+                            <div class="card">
+                                <div class="card-body text-center py-5">
+                                    <svg class="mb-3 opacity-50" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                        <circle cx="12" cy="12" r="1"></circle>
+                                    </svg>
+                                    <h5 class="text-muted">P-T Chart Ready</h5>
+                                    <p class="text-muted">Select refrigerant and enter pressure or temperature for instant lookup</p>
+                                    <small class="text-muted">14 commercial refrigerants supported with verified data</small>
+                                </div>
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reference Guide -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary bg-opacity-10">
+                            <h5 class="card-title mb-0 text-primary">Commercial Refrigerant Reference</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-3">
+                                    <h6 class="text-primary">Most Common:</h6>
+                                    <ul class="small mb-0">
+                                        <li><strong>R-410A:</strong> Standard commercial HVAC</li>
+                                        <li><strong>R-134a:</strong> Chiller applications</li>
+                                        <li><strong>R-22:</strong> Legacy systems (expensive)</li>
+                                        <li><strong>R-32:</strong> High efficiency (A2L)</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-success">Typical Pressures (70°F):</h6>
+                                    <ul class="small mb-0">
+                                        <li><strong>R-410A:</strong> ~225 PSIG</li>
+                                        <li><strong>R-22:</strong> ~152 PSIG</li>
+                                        <li><strong>R-134a:</strong> ~108 PSIG</li>
+                                        <li><strong>R-32:</strong> ~210 PSIG</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-warning">Low GWP Alternatives:</h6>
+                                    <ul class="small mb-0">
+                                        <li><strong>R-454B:</strong> R-410A replacement</li>
+                                        <li><strong>R-513A:</strong> R-134a replacement</li>
+                                        <li><strong>R-448A:</strong> Low GWP commercial</li>
+                                        <li><strong>R-449A:</strong> R-404A replacement</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-info">Usage Tips:</h6>
+                                    <ul class="small mb-0">
+                                        <li>Always verify gauge reading accuracy</li>
+                                        <li>Consider altitude corrections</li>
+                                        <li>Check for gauge vs absolute pressure</li>
+                                        <li>Verify refrigerant type on nameplate</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>

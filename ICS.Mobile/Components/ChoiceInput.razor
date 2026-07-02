@@ -1,0 +1,58 @@
+﻿@using ICS.Portal.Data.Queries.Models
+
+@if(Initialized)
+{
+    @foreach(var option in StepOptions)
+    {
+        @if(option.Value == Value)
+        {
+            <div class="Option Selected" @onclick="() => SetValue(option.Value)">
+                <div class="Name">@option.Prompt</div>
+                <i class="Image Selected bi-check2-square"></i>
+            </div>
+        }
+        else
+        {
+            <div class="Option" @onclick="() => SetValue(option.Value)">
+                <div class="Name">@option.Prompt</div>
+                <i class="Image bi-square"></i>
+            </div>
+        }
+    }
+}
+
+@code {
+    private bool Initialized = false;
+
+    [Parameter]
+    [EditorRequired]
+    public string? Value { set; get; }
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { set; get; }
+
+    [Parameter]
+    [EditorRequired]
+    public List<WorkflowResultDetailResult.WorkflowStepOption>? StepOptions { set; get; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        Initialized = true;
+    }
+
+    private void SetValue(string? value)
+    {
+        if(Value == value)
+        {
+            Value = null;
+            ValueChanged.InvokeAsync(Value);
+        }
+        else
+        {
+            Value = value;
+            ValueChanged.InvokeAsync(Value);
+        }
+    }
+}

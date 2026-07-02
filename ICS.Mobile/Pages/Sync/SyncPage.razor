@@ -1,0 +1,162 @@
+@page "/sync"
+@using ICS.Mobile.Components
+@using ICS.Mobile.Pages.Settings
+@using ICS.Mobile.Services.ServiceModels
+@using ICS.Portal.Data.Commands.Models
+@using ICS.Portal.Data.Custom
+@using ICS.Portal.Data.Images
+<CSSSettings />
+
+<PageHeaderBasic Title="Sync Events" Icon="bi-cloud-arrow-up">
+    <RoundButtonGreen Icon="bi-arrow-left" OnClick="OnCloseClick" />
+</PageHeaderBasic>
+
+<CommonError Message="@Error" OnDismissClick="() => Error = null"></CommonError>
+@if (Initialized)
+{
+    <div class="SettingsItemContainer">
+        <div class="Title">Connection Status</div>
+        <div class="Content">
+            @if (InternetConnected)
+            {
+                <div class="Line">Connected<span></span></div>
+            }
+            else
+            {
+                <div class="Line">No Internet<span></span></div>
+            }
+        </div>
+    </div>
+
+    @if (SyncCount == 0)
+    {
+        <div class="SettingsItemContainer">
+            <div class="Title">Records In Queue</div>
+            <div class="Content">
+                <div class="Line">No Records To Send</div>
+            </div>
+        </div>
+    }
+    else
+    {
+        @if (SyncRecords.ContainsKey(nameof(WorkflowStepResultValueSaveInput)))
+        {
+            <div class="SettingsItemContainer">
+                <div class="Title">Workflow Steps</div>
+                <div class="Content">
+                    @foreach (var item in SyncRecords[nameof(WorkflowStepResultValueSaveInput)])
+                    {
+                        <div class="LineWithButton">
+                            <div class="Line">@string.Concat("Sync Id: ", @item.Id, " - Record Id:", @item.RecordId)</div>
+                            @if (InternetConnected)
+                            {
+                                <button class="Button Transparent" @onclick="() => RetrySync(nameof(WorkflowStepResultValueSaveInput), item)" style="padding-top: 1rem">
+                                    <SyncIcon></SyncIcon>
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (SyncRecords.ContainsKey(nameof(ImageInsertInput)))
+        {
+            <div class="SettingsItemContainer">
+                <div class="Title">Images</div>
+                <div class="Content">
+                    @foreach (var item in SyncRecords[nameof(ImageInsertInput)])
+                    {
+                        <div class="LineWithButton">
+                            <div class="Line">@string.Concat("Sync Id: ", @item.Id, " - Record Id:", @item.RecordId, " -Size:", item.Size)</div>
+                            @if (InternetConnected)
+                            {
+                                <button class="Button Transparent" @onclick="() => RetrySync(nameof(ImageInsertInput), item)" style="padding-top: 1rem">
+                                    <SyncIcon></SyncIcon>
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (SyncRecords.ContainsKey(nameof(WorkflowResultCompleteInput)))
+        {
+            @if (AllowCompleteEvent)
+            {
+                <div class="SettingsItemContainer">
+                    <div class="Title">Workflow Completions</div>
+                    <div class="Content">
+                        @foreach (var item in SyncRecords[nameof(WorkflowResultCompleteInput)])
+                        {
+
+                            <div class="LineWithButton">
+                                <div class="Line">@string.Concat("Sync Id: ", @item.Id, " - Record Id:", @item.RecordId)</div>
+                                @if (InternetConnected)
+                                {
+                                    <button class="Button Transparent" @onclick="() => RetrySync(nameof(WorkflowResultCompleteInput), item)" style="padding-top: 1rem">
+                                        <SyncIcon></SyncIcon>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="SettingsItemContainer">
+                    <div class="Title">Workflow Completions</div>
+                    <div class="Content">
+                        <div class="Line">Must send all other events (Excluding Scratch Pad) before complete events.</div>
+                    </div>
+                </div>
+            }
+        }
+        @if (SyncRecords.ContainsKey(nameof(ScratchPadData)))
+        {
+            <div class="SettingsItemContainer">
+                <div class="Title">Scratch Pad Data</div>
+                <div class="Content">
+                    @foreach (var item in SyncRecords[nameof(ScratchPadData)])
+                    {
+                        <div class="LineWithButton">
+                            <div class="Line">@string.Concat("Sync Id: ", @item.Id, " - Record Id:", @item.RecordId)</div>
+                            @if (InternetConnected)
+                            {
+                                <button class="Button Transparent" @onclick="() => RetrySync(nameof(ScratchPadData), item)" style="padding-top: 1rem">
+                                    <SyncIcon></SyncIcon>
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        @if (SyncRecords.ContainsKey(nameof(ScratchPadBlob)))
+        {
+            <div class="SettingsItemContainer">
+                <div class="Title">Scratch Pad Blobs</div>
+                <div class="Content">
+                    @foreach (var item in SyncRecords[nameof(ScratchPadBlob)])
+                    {
+                        <div class="LineWithButton">
+                            <div class="Line">@string.Concat("Sync Id: ", @item.Id, " - Record Id:", @item.RecordId, " -Size:", item.Size)</div>
+                            @if (InternetConnected)
+                            {
+                                <button class="Button Transparent" @onclick="() => RetrySync(nameof(ScratchPadBlob), item)" style="padding-top: 1rem">
+                                    <SyncIcon></SyncIcon>
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+}
+else
+{
+    <ICSLoadingSpinner></ICSLoadingSpinner>
+}

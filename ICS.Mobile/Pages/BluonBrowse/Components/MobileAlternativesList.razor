@@ -1,0 +1,424 @@
+﻿@namespace ICS.Mobile.Pages.BluonBrowse.Components
+@using ICS.Portal.Data.Custom
+
+<div class="mobile-alternatives-list">
+    @if (Alternatives?.Any() == true)
+    {
+        @foreach (var alt in Alternatives.OrderByDescending(a => a.Score))
+        {
+            <div class="alternative-card @GetCardClass(alt)">
+                <div class="alt-header">
+                    <div class="alt-info">
+                        <div class="alt-main">
+                            <span class="alt-number">@alt.Details?.Number</span>
+                            @if (alt.Details?.MfgType == "OEM")
+                            {
+                                <span class="oem-badge">OEM</span>
+                            }
+                        </div>
+                        <div class="alt-scores">
+                            <span class="score-badge @GetScoreClass(alt.Score)">
+                                @(alt.Score ?? 0)
+                            </span>
+                            <span class="match-type">@alt.Type</span>
+                        </div>
+                    </div>
+                    @* <button class="btn btn-success btn-sm"
+                            @onclick="() => AddToProject(alt)"
+                            title="Add to project">
+                        <i class="bi bi-plus"></i>
+                    </button> *@
+                    <button class="btn btn-success btn-sm"
+                            @onclick="() => AddToProject(alt)"
+                            title="Add to Scratchpad">
+                        <i class="bi bi-clipboard-data-fill"></i>
+                    </button>
+                </div>
+
+                <div class="alt-description">
+                    @(alt.Details?.Description ?? "No description available")
+                </div>
+
+                <div class="alt-meta">
+                    <div class="meta-row">
+                        <span class="meta-label">Type:</span>
+                        <span class="meta-value">@alt.Details?.Type@(!string.IsNullOrEmpty(alt.Details?.Subtype) ? $" / {alt.Details.Subtype}" : "")</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Brand:</span>
+                        <span class="meta-value">@alt.Details?.Brand</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(alt.Details?.Subcategory))
+                    {
+                        <div class="meta-row">
+                            <span class="meta-label">Category:</span>
+                            <span class="meta-value">@alt.Details.Subcategory</span>
+                        </div>
+                    }
+                    @if ((alt.Details?.ReplacementsCount ?? 0) > 0)
+                    {
+                        <div class="meta-row">
+                            <span class="meta-label">Replacements:</span>
+                            <span class="meta-value">
+                                <span class="replacements-badge">@alt.Details.ReplacementsCount total</span>
+                                @if ((alt.Details?.ReplacementsAftermarketCount ?? 0) > 0)
+                                {
+                                    <span class="replacements-badge aftermarket">@alt.Details.ReplacementsAftermarketCount aftermarket</span>
+                                }
+                            </span>
+                        </div>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(alt.Note))
+                {
+                    <div class="alt-note">
+                        <i class="bi bi-info-circle"></i>
+                        <span>@alt.Note</span>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(alt.ScoreDetail))
+                {
+                    <div class="score-detail">
+                        <small class="text-muted">@alt.ScoreDetail</small>
+                    </div>
+                }
+
+                <!-- Key Specifications Comparison -->
+                @if (alt.Details?.Specifications != null && OriginalPart != null && ShowKeySpecs(alt) && HasKeySpecDifferences(alt))
+                {
+                    <div class="key-specs-comparison">
+                        <button class="specs-toggle" @onclick="() => ToggleSpecs(alt.Details.Id)">
+                            <i class="bi bi-gear-fill"></i>
+                            Key Specs
+                            <i class="bi @(IsSpecsExpanded(alt.Details.Id) ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                        </button>
+
+                        @if (IsSpecsExpanded(alt.Details.Id))
+                        {
+                            <div class="specs-content">
+                                <MobileSpecsComparison OriginalSpecs="@GetOriginalSpecs()"
+                                                       AlternativeSpecs="@alt.Details.Specifications" />
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <div class="no-alternatives">
+            <i class="bi bi-info-circle"></i>
+            No alternative parts available.
+        </div>
+    }
+</div>
+
+<style>
+    .mobile-alternatives-list {
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        @* max-height: 60vh; *@
+        overflow-y: auto;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .alternative-card {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 0.75rem;
+        @* background: white; *@
+        transition: all 0.2s;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+        .alternative-card.recommended {
+            border-color: var(--bluon-success);
+            @* background: #f8fff8; *@
+        }
+
+        .alternative-card.high-score {
+            border-color: var(--bluon-primary);
+         @*    background: #f0f8ff; *@
+        }
+
+    .alt-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+    }
+
+    .alt-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .alt-main {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .alt-number {
+        font-family: monospace;
+        font-weight: 600;
+        color: var(--bluon-dark);
+        font-size: 1.3rem;
+    }
+
+    .oem-badge {
+        background: var(--bluon-primary);
+        color: white;
+        font-size: 0.625rem;
+        padding: 0.125rem 0.375rem;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .alt-scores {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .score-badge {
+        font-size: 0.625rem;
+        padding: 0.125rem 0.375rem;
+        border-radius: 10px;
+        font-weight: 600;
+        min-width: 24px;
+        text-align: center;
+
+    }
+
+        .score-badge.high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .score-badge.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .score-badge.low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+    .match-type {
+        font-size: 0.625rem;
+        padding: 0.125rem 0.375rem;
+        background: #e9ecef;
+        color: #495057;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+
+    .alt-description {
+        font-size: 1.1rem;
+        color: #495057;
+        margin-bottom: 0.75rem;
+        line-height: 1.3;
+    }
+
+    .alt-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.75rem;
+    }
+
+    .meta-label {
+        color: #6c757d;
+        font-weight: 500;
+        min-width: 80px;
+    }
+
+    .meta-value {
+        color: var(--bluon-dark);
+        font-weight: 600;
+        text-align: right;
+        display: flex;
+        gap: 0.25rem;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .replacements-badge {
+        background: var(--bluon-success);
+        color: cornflowerblue;
+        font-size: 0.5rem;
+        padding: 0.1rem 0.3rem;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+        .replacements-badge.aftermarket {
+            background: var(--bluon-info);
+        }
+
+    .alt-note {
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        background: #e7f3ff;
+        border-left: 3px solid var(--bluon-info);
+        border-radius: 0 4px 4px 0;
+        font-size: 0.75rem;
+        color: #495057;
+        display: flex;
+        align-items: start;
+        gap: 0.375rem;
+    }
+
+    .score-detail {
+        @* margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #f8f9fa; *@
+        font-size: smaller;
+    }
+
+    .key-specs-comparison {
+        margin-top: 0.75rem;
+        border-top: 1px solid #e9ecef;
+        padding-top: 0.75rem;
+    }
+
+    .specs-toggle {
+        background: none;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.75rem;
+        color: var(--bluon-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        width: 100%;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .specs-toggle:hover {
+            background: #f8f9fa;
+            border-color: var(--bluon-primary);
+        }
+
+    .specs-content {
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+
+    .no-alternatives {
+        text-align: center;
+        color: #6c757d;
+        padding: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+</style>
+
+@code {
+    [Parameter] public List<BluonParts.PartAlternatives.Datum>? Alternatives { get; set; }
+    [Parameter] public BluonBrands.BrandPartsAndOem.Datum? OriginalPart { get; set; }
+    [Parameter] public EventCallback<BluonParts.PartAlternatives.Datum> OnAddToProject { get; set; }
+
+    private HashSet<string> ExpandedSpecs = new HashSet<string>();
+
+    private async Task AddToProject(BluonParts.PartAlternatives.Datum alt)
+    {
+        await OnAddToProject.InvokeAsync(alt);
+    }
+
+    private string GetCardClass(BluonParts.PartAlternatives.Datum alt)
+    {
+        var score = alt.Score ?? 0;
+        var type = alt.Type?.ToLower() ?? "";
+
+        if (type.Contains("recommended") || score >= 4)
+            return "recommended";
+        else if (score >= 3)
+            return "high-score";
+
+        return "";
+    }
+
+    private string GetScoreClass(int? score)
+    {
+        if (!score.HasValue) return "low";
+        return score.Value switch
+        {
+            >= 3 => "high",
+            >= 2 => "medium",
+            _ => "low"
+        };
+    }
+
+    private bool ShowKeySpecs(BluonParts.PartAlternatives.Datum alt)
+    {
+        // Only show specs comparison for high-scoring alternatives
+        return (alt.Score ?? 0) >= 2 && alt.Details?.Specifications != null;
+    }
+
+    private void ToggleSpecs(string partId)
+    {
+        if (ExpandedSpecs.Contains(partId))
+            ExpandedSpecs.Remove(partId);
+        else
+            ExpandedSpecs.Add(partId);
+    }
+
+    private bool IsSpecsExpanded(string partId)
+    {
+        return ExpandedSpecs.Contains(partId);
+    }
+
+    private BluonBase.PartSpecifications? GetOriginalSpecs()
+    {
+        // This would need to be passed in or retrieved from the original part's full info
+        // For now, return null - in the full implementation, you'd pass this from the parent
+        return null;
+    }
+
+    private bool HasKeySpecDifferences(BluonParts.PartAlternatives.Datum alt)
+    {
+        // Only show Key Specs if there are meaningful differences to display
+        // This is a simplified check - in a full implementation you'd compare the actual specs
+        var originalSpecs = GetOriginalSpecs();
+        if (originalSpecs == null || alt.Details?.Specifications == null) return false;
+
+        // For now, only show if the alternative has specifications
+        // In the full implementation, you'd check for actual differences
+        return true;
+    }
+}

@@ -1,0 +1,128 @@
+﻿@namespace ICS.Mobile.Pages.BluonBrowse.Components
+@using ICS.Portal.Data.Custom
+
+<div class="search-results-container">
+    <div class="results-header">
+        @* <h5>Model Search Results</h5> *@
+        <p class="results-count">Found @(Models?.Count ?? 0) 
+            @if ((Models?.Count ?? 0) > 1) {
+                <span> models for </span>
+            } 
+            else
+            {
+                <span> model for </span>
+            }
+            "@SearchTerm"
+        </p>
+    </div>
+
+    @if (IsLoading)
+    {
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Searching models...</p>
+        </div>
+    }
+    else if (Models?.Any() == true)
+    {
+        <div class="model-list">
+            @foreach (var model in Models)
+            {
+                <div class="model-result-card" @onclick="() => SelectModel(model)">
+                    <div class="model-header">
+                        <div class="model-name">@model.Model</div>
+                        <div class="model-brand">@model.BrandName</div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(model.ModelNotes))
+                    {
+                        <div class="model-notes">@model.ModelNotes</div>
+                    }
+
+                    <div class="model-meta">
+                        <span class="meta-item">
+                            <i class="bi bi-box"></i> @model.SystemType
+                        </span>
+                        <span class="meta-item">
+                            <i class="bi bi-gear"></i> @model.FunctionalPartsCount parts
+                        </span>
+                        @if (model.ManualsCount > 0)
+                        {
+                            <span class="meta-item">
+                                <i class="bi bi-file-text"></i> @model.ManualsCount docs
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-search"></i>
+            <p>No models found matching "@SearchTerm"</p>
+            <p class="text-muted">Try different search terms</p>
+        </div>
+    }
+</div>
+
+<style>
+    .model-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .model-result-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .model-result-card:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+        }
+
+    .model-header {
+        margin-bottom: 0.5rem;
+    }
+
+    .model-name {
+        font-weight: 600;
+        color: var(--bluon-primary);
+        font-size: 1.175rem;
+    }
+
+    .model-brand {
+        font-size: 0.95rem;
+        color: #6c757d;
+    }
+
+    .model-meta {
+        font-size: 0.9rem;
+    }
+
+    .model-notes {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+        font-style: italic;
+    }
+</style>
+
+@code {
+    [Parameter] public List<BluonBrands.BrandSeriesOems.Datum>? Models { get; set; }
+    [Parameter] public string SearchTerm { get; set; } = "";
+    [Parameter] public EventCallback<BluonBrands.BrandSeriesOems.Datum> OnModelSelected { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+
+    private async Task SelectModel(BluonBrands.BrandSeriesOems.Datum model)
+    {
+        await OnModelSelected.InvokeAsync(model);
+    }
+}

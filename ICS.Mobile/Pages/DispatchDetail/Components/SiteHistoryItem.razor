@@ -1,0 +1,393 @@
+﻿<style>
+    /* Dark Mode Site History Item Styling */
+    .site-history-container {
+        background: #1a1a1a;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+    }
+
+        .site-history-container:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+            transform: translateY(-1px);
+        }
+
+    /* Main Content Area */
+    .site-history-content {
+        background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
+        padding: 16px;
+        display: grid;
+        grid-template-columns: minmax(120px, 1fr) minmax(100px, 0.8fr) minmax(150px, 1.5fr);
+        gap: 16px;
+        align-items: center;
+        transition: background 0.3s ease;
+    }
+
+        .site-history-content:hover {
+            background: linear-gradient(135deg, #333333 0%, #282828 100%);
+        }
+
+    /* Employee Section */
+    .site-employee {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .site-employee-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #666;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+        .site-employee-label i {
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+    .site-employee-value {
+        color: #e2b629;
+        font-weight: 600;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Date Section */
+    .site-date {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        text-align: center;
+    }
+
+    .site-date-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        color: #666;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+        .site-date-label i {
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+    .site-date-value {
+        color: #ccc;
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    /* Workflow Section */
+    .site-workflow {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        text-align: right;
+    }
+
+    .site-workflow-label {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        color: #666;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+        .site-workflow-label i {
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+    .site-workflow-value {
+        color: #4a9eff;
+        font-weight: 500;
+        font-size: 1.10rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 6px 12px;
+        border-radius: 6px;
+        background: rgba(74, 158, 255, 0.05);
+        border: 1px solid rgba(74, 158, 255, 0.2);
+    }
+
+        .site-workflow-value:hover {
+            color: #6ab7ff;
+            background: rgba(74, 158, 255, 0.1);
+            border-color: rgba(74, 158, 255, 0.4);
+            transform: translateX(-2px);
+        }
+
+        .site-workflow-value i {
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .site-workflow-value:hover i {
+            opacity: 1;
+        }
+
+    /* Compact Mode for smaller items */
+    .site-history-container.compact .site-history-content {
+        padding: 12px;
+        grid-template-columns: minmax(100px, 1fr) minmax(80px, 0.7fr) minmax(120px, 1.3fr);
+        gap: 12px;
+    }
+
+    .site-history-container.compact .site-employee-value,
+    .site-history-container.compact .site-date-value,
+    .site-history-container.compact .site-workflow-value {
+        font-size: 0.9rem;
+    }
+
+    /* Status Indicator */
+    .workflow-status {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #4caf50;
+        display: inline-block;
+        margin-left: 6px;
+        animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    /* Empty State Styling */
+    .site-empty-value {
+        color: #555;
+        font-style: italic;
+        font-size: 0.85rem;
+    }
+
+    /* Mobile Responsiveness - Portrait Mode */
+    @@media (max-width: 640px) {
+        .site-history-content {
+            padding: 12px;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        /* Stack elements vertically on mobile */
+        .site-employee,
+        .site-date,
+        .site-workflow {
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+        }
+
+        .site-workflow {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .site-date-label,
+        .site-workflow-label {
+            justify-content: flex-start;
+        }
+
+        .site-workflow-value {
+            justify-content: flex-start;
+            
+        }
+        /* Show labels inline on mobile */
+        .site-employee,
+        .site-date,
+        .site-workflow {
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .site-employee-label,
+        .site-date-label,
+        .site-workflow-label {
+            margin: 0;
+        }
+    }
+
+    /* Tablet Responsiveness */
+    @@media (min-width: 641px) and (max-width: 768px) {
+        .site-history-content {
+            grid-template-columns: minmax(100px, 1fr) minmax(80px, 0.8fr) minmax(120px, 1.2fr);
+            gap: 12px;
+            padding: 14px;
+        }
+
+        .site-employee-value,
+        .site-date-value,
+        .site-workflow-value {
+            font-size: 0.95rem;
+        }
+    }
+
+    /* AltCompact Layout for Very tiny screenz */
+    @@media (max-width: 380px) {
+        .site-history-content {
+            padding: 10px;
+            gap: 10px;
+        }
+
+        .site-employee,
+        .site-date,
+        .site-workflow {
+            grid-template-columns: 1fr;
+            gap: 4px;
+        }
+
+        .site-employee-label,
+        .site-date-label,
+        .site-workflow-label {
+            font-size: 0.7rem;
+        }
+
+        .site-employee-value,
+        .site-date-value {
+            font-size: 0.9rem;
+        }
+
+        .site-workflow-value {
+            font-size: 0.85rem;
+            
+        }
+    }
+
+    
+    @@media (prefers-color-scheme: light) {
+        /* sorry no light mode for you */
+    }
+
+    /* Hover Effects Enhancement */
+    @@media (hover: hover) {
+        .site-workflow-value {
+            position: relative;
+        }
+    }
+</style>
+
+<div class="site-history-container">
+    <div class="site-history-content">
+        <!-- Employee Section -->
+        <div class="site-employee">
+            @if (!string.IsNullOrEmpty(EmpName))
+            {
+                <div class="site-employee-label">
+                    <i class="bi bi-person-fill"></i>
+                    Taken By
+                </div>
+                <div class="site-employee-value">
+                    @EmpName
+                </div>
+            }
+            else
+            {
+                <div class="site-employee-label">
+                    <i class="bi bi-person-fill"></i>
+                    Taken By
+                </div>
+                <div class="site-empty-value">Unknown</div>
+            }
+        </div>
+
+        <!-- Date Section -->
+        <div class="site-date">
+            @if (!string.IsNullOrEmpty(Completed))
+            {
+                <div class="site-date-label">
+                    <i class="bi bi-calendar-check"></i>
+                    Date
+                </div>
+                <div class="site-date-value">
+                    @Completed
+                </div>
+            }
+            else
+            {
+                <div class="site-date-label">
+                    <i class="bi bi-calendar"></i>
+                    Date
+                </div>
+                <div class="site-empty-value">Not Set</div>
+            }
+        </div>
+
+        <!-- Workflow Section -->
+        <div class="site-workflow">
+            @if (!string.IsNullOrEmpty(WorkflowName))
+            {
+                <div class="site-workflow-label">
+                    <i class="bi bi-diagram-3"></i>
+                    Workflow
+                </div>
+                <div class="site-workflow-value" @onclick="GoToWorkflowClick">
+                    @WorkflowName
+                    <i class="bi bi-arrow-right-short"></i>
+                </div>
+            }
+            else
+            {
+                <div class="site-workflow-label">
+                    <i class="bi bi-diagram-3"></i>
+                    Workflow
+                </div>
+                <div class="site-empty-value">No Workflow</div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; } = null;
+
+    [Parameter]
+    public int? WorkOrderDispatch { get; set; } = null;
+
+    [Parameter]
+    public int? EmployeeId { get; set; } = 0;
+
+    [Parameter]
+    public string? EmpName { get; set; } = null;
+
+    [Parameter]
+    public string? WorkflowName { get; set; } = null;
+
+    [Parameter]
+    public string? Completed { get; set; } = null;
+
+    [Parameter]
+    public EventCallback<int> OnGoToWorkflowClick { get; set; }
+
+    private void GoToWorkflowClick()
+    {
+        if (OnGoToWorkflowClick.HasDelegate && Id.HasValue)
+        {
+            OnGoToWorkflowClick.InvokeAsync(Id.Value);
+        }
+    }
+}

@@ -1,0 +1,402 @@
+﻿@if (Initialized)
+{
+    <div class="DateOnlyInput">
+        <div class="Display">
+            @display
+        </div>
+        <div class="Buttons">
+            <button type="button" class="Button" @onclick='() => HandleInput("7")'>7</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("8")'>8</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("9")'>9</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("4")'>4</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("5")'>5</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("6")'>6</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("1")'>1</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("2")'>2</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("3")'>3</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("C")'>C</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("0")'>0</button>
+            <button type="button" class="Button" @onclick='() => HandleInput("AC")'>AC</button>
+        </div>
+    </div>
+}
+@code {
+
+    private string display = "";
+    private string enteredValues = string.Empty;
+    private bool Initialized = false;
+    private bool IgnoreChange = false;
+
+    [Parameter]
+    public DateOnly? Value { set; get; }
+
+    [Parameter]
+    public EventCallback<DateOnly?> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool UserFastPicker { set; get; } = false;
+
+    private void HandleChange()
+    {
+        if (UserFastPicker)
+        {
+            HandleFastPickerChange();
+        }
+        else
+        {
+            HandleNormalPickerChange();
+        }
+    }
+    private void HandleNormalPickerChange()
+    {
+        if (display == string.Empty || display.Contains("M") || display.Contains("M") || display.Contains("Y"))
+        {
+            if (Value != null)
+            {
+                Value = null;
+                IgnoreChange = true;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+        else
+        {
+            if (DateOnly.TryParse(display, out DateOnly result))
+            {
+                if (Value != result)
+                {
+                    Value = result;
+                    IgnoreChange = true;
+                    ValueChanged.InvokeAsync(Value);
+                }
+            }
+        }
+    }
+    private void HandleFastPickerChange()
+    {
+        if (display == string.Empty || display.Contains("M") || display.Contains("Y"))
+        {
+            if (Value != null)
+            {
+                Value = null;
+                IgnoreChange = true;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+        else
+        {
+            int month = int.Parse(display.Substring(0, 2));
+            int year = int.Parse(display.Substring(3, 2));
+
+            DateTime now = DateTime.UtcNow;
+            int nowYear = int.Parse(now.Year.ToString().Substring(2, 2)) + 20;
+            year = year > nowYear ? year + 1900 : year + 2000;
+
+            DateOnly result = new DateOnly(year, month, 1);
+
+            if (Value != result)
+            {
+                Value = result;
+                IgnoreChange = true;
+                ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
+
+    private void HandleInput(string value)
+    {
+        if (UserFastPicker)
+        {
+            HandleFastPickerInput(value);
+        }
+        else
+        {
+            HandleNormalPickerInput(value);
+        }
+    }
+    private void HandleNormalPickerInput(string value)
+    {
+        string month = "MM";
+        string day = "DD";
+        string year = "YYYY";
+        string allNumbers = "0123456789";
+
+        if (value == "AC")
+        {
+            enteredValues = string.Empty;
+        }
+        if (value == "C")
+        {
+            if (enteredValues.Length > 0)
+            {
+                // TODO: Clear all
+                enteredValues = enteredValues.Substring(0, (enteredValues.Length - 1));
+            }
+
+            switch (enteredValues.Length)
+            {
+                case 1:
+                    month = enteredValues.Substring(0, 1) + "M";
+                    break;
+                case 2:
+                    month = enteredValues.Substring(0, 2);
+                    break;
+                case 3:
+                    month = enteredValues.Substring(0, 2);
+                    day = enteredValues.Substring(2, 1) + "D";
+                    break;
+                case 4:
+                    month = enteredValues.Substring(0, 2);
+                    day = enteredValues.Substring(2, 2);
+                    break;
+                case 5:
+                    month = enteredValues.Substring(0, 2);
+                    day = enteredValues.Substring(2, 2);
+                    year = enteredValues.Substring(4, 1) + "YYY";
+                    break;
+                case 6:
+                    month = enteredValues.Substring(0, 2);
+                    day = enteredValues.Substring(2, 2);
+                    year = enteredValues.Substring(4, 2) + "YY";
+                    break;
+                case 7:
+                    month = enteredValues.Substring(0, 2);
+                    day = enteredValues.Substring(2, 2);
+                    year = enteredValues.Substring(4, 3) + "Y";
+                    break;
+                case 8:
+                    month = enteredValues.Substring(0, 2);
+                    day = enteredValues.Substring(2, 2);
+                    year = enteredValues.Substring(4, 4);
+                    break;
+            }
+        }
+        else if (value == "Today")
+        {
+            var now = DateTime.Now;
+            month = now.Month.ToString("00");
+            day = now.Day.ToString("00");
+            year = now.Year.ToString();
+
+            enteredValues = month + day + year;
+        }
+        else
+        {
+            switch (enteredValues.Length)
+            {
+                case 0:
+                    if (ValueIn(value, "01"))
+                    {
+                        enteredValues += value;
+                        month = value + "m";
+                    }
+                    break;
+                case 1:
+                    month = enteredValues.Substring(0, 1) + "M";
+                    if (ValueIn(value, month == "0M" ? "123456789" : "012"))
+                    {
+                        enteredValues += value;
+                        month = enteredValues;
+                    }
+                    break;
+                case 2:
+                    month = enteredValues.Substring(0, 2);
+                    if (ValueIn(value, month == "02" ? "012" : "0123"))
+                    {
+                        enteredValues += value;
+                        day = value + "d";
+                    }
+                    break;
+                case 3:
+                    month = enteredValues.Substring(0, 2);
+                    day = enteredValues.Substring(2, 1) + "D";
+                    if (ValueIn(value, day == "3D" ? "01" : allNumbers))
+                    {
+                        enteredValues += value;
+                        day = enteredValues.Substring(2, 2);
+                    }
+                    break;
+                case 4:
+                    month = enteredValues.Substring(0, 2);
+                    day = enteredValues.Substring(2, 2);
+                    if (ValueIn(value, "12"))
+                    {
+                        enteredValues += value;
+                        year = enteredValues.Substring(4, 1) + "YYY";
+                    }
+                    break;
+                case 5:
+                    month = enteredValues.Substring(0, 2);
+                    day = enteredValues.Substring(2, 2);
+                    year = enteredValues.Substring(4, 1) + "YYY";
+                    if (ValueIn(value, year == "1YYY" ? "89" : "01"))
+                    {
+                        enteredValues += value;
+                        year = enteredValues.Substring(4, 2) + "YY";
+                    }
+                    break;
+                case 6:
+                    enteredValues += value;
+                    month = enteredValues.Substring(0, 2);
+                    day = enteredValues.Substring(2, 2);
+                    year = enteredValues.Substring(4, 3) + "Y";
+                    break;
+                case 7:
+                    enteredValues += value;
+                    month = enteredValues.Substring(0, 2);
+                    day = enteredValues.Substring(2, 2);
+                    year = enteredValues.Substring(4, 4);
+                    break;
+                case 8:
+                    month = enteredValues.Substring(0, 2);
+                    day = enteredValues.Substring(2, 2);
+                    year = enteredValues.Substring(4, 4);
+                    break;
+
+            }
+        }
+
+        display = $"{month}/{day}/{year}";
+
+        HandleChange();
+    }
+    private void HandleFastPickerInput(string value)
+    {
+        string month = "MM";
+        string year = "YY";
+
+        if (value == "AC")
+        {
+            enteredValues = string.Empty;
+        }
+        else if (value == "C")
+        {
+            if (enteredValues.Length > 0)
+            {
+                enteredValues = enteredValues.Substring(0, (enteredValues.Length - 1));
+            }
+            switch (enteredValues.Length)
+            {
+                case 1:
+                    month = enteredValues.Substring(0, 1) + "M";
+                    break;
+                case 2:
+                    month = enteredValues.Substring(0, 2);
+                    break;
+                case 3:
+                    month = enteredValues.Substring(0, 2);
+                    year = enteredValues.Substring(2, 1) + "Y";
+                    break;
+                case 4:
+                    month = enteredValues.Substring(0, 2);
+                    year = enteredValues.Substring(2, 2);
+                    break;
+            }
+        }
+        else
+        {
+            switch (enteredValues.Length)
+            {
+                case 0:
+                    if (ValueIn(value, "01"))
+                    {
+                        enteredValues += value;
+                        month = value + "M";
+                    }
+                    break;
+                case 1:
+                    month = enteredValues.Substring(0, 1) + "M";
+                    if (ValueIn(value, month == "0M" ? "123456789" : "012"))
+                    {
+                        enteredValues += value;
+                        month = enteredValues;
+                    }
+                    break;
+                case 2:
+                    month = enteredValues.Substring(0, 2);
+                    enteredValues += value;
+                    year = value + "Y";
+
+                    break;
+                case 3:
+                    month = enteredValues.Substring(0, 2);
+                    enteredValues += value;
+                    year = enteredValues.Substring(2, 2);
+                    break;
+            }
+        }
+
+        display = $"{month}-{year}";
+
+        HandleChange();
+    }
+
+    private void SetUpPicker(DateOnly? value)
+    {
+        if(UserFastPicker)
+        {
+            SetUpFastPicker(value);
+        }
+        else
+        {
+            SetUpNormalPicker(value);
+        }
+    }
+    private void SetUpNormalPicker(DateOnly? value)
+    {
+        if (value.HasValue)
+        {
+            var month = value.Value.Month.ToString("00");
+            var day = value.Value.Day.ToString("00");
+            var year = value.Value.Year.ToString();
+
+            enteredValues = month + day + year;
+            display = $"{month}/{day}/{year}";
+        }
+        else
+        {
+            display = "MM/DD/YYYY";
+            enteredValues = string.Empty;
+        }
+    }
+    private void SetUpFastPicker(DateOnly? value)
+    {
+        if (!IgnoreChange)
+        {
+            if (value.HasValue)
+            {
+                var month = value.Value.Month.ToString("00");
+                var year = value.Value.Year.ToString().Substring(2, 2);
+
+                enteredValues = month + year;
+                display = $"{month}-{year}";
+            }
+            else
+            {
+                display = "MM-YY";
+                enteredValues = string.Empty;
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if (!IgnoreChange)
+        {
+            SetUpPicker(Value);
+        }
+
+        IgnoreChange = false;
+
+        if (!Initialized)
+        {
+            Initialized = true;
+        }
+    }
+
+    private bool ValueIn(string value, string set)
+    {
+        return set.Contains(value);
+    }
+}

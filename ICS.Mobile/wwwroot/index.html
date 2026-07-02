@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+    <meta name="format-detection" content="telephone=yes" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#00317e" id="meta-theme-color">
+
+    <title>ICSNext Mobile</title>
+
+    <base href="/" />
+
+    <script>
+        // Theme bootstrap — runs before first paint to avoid a flash of the
+        // wrong theme. Preference: 'light' | 'dark' | 'system' (localStorage).
+        window.icsTheme = {
+            KEY: 'ics-theme',
+            get: function () { try { return localStorage.getItem(this.KEY) || 'system'; } catch (e) { return 'system'; } },
+            resolve: function (pref) {
+                return pref === 'system'
+                    ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                    : pref;
+            },
+            apply: function (pref) {
+                var t = this.resolve(pref);
+                document.documentElement.setAttribute('data-theme', t);
+                var m = document.getElementById('meta-theme-color');
+                if (m) m.content = t === 'dark' ? '#121212' : '#00317e';
+            },
+            set: function (pref) {
+                try { localStorage.setItem(this.KEY, pref); } catch (e) { }
+                this.apply(pref);
+            },
+            getWave: function () { try { return localStorage.getItem('ics-bg-wave') === 'on'; } catch (e) { return false; } },
+            setWave: function (v) {
+                try { localStorage.setItem('ics-bg-wave', v ? 'on' : 'off'); } catch (e) { }
+                document.documentElement.classList.toggle('bg-wave', !!v);
+            }
+        };
+        window.icsTheme.apply(window.icsTheme.get());
+        if (window.icsTheme.getWave()) document.documentElement.classList.add('bg-wave');
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+                if (window.icsTheme.get() === 'system') window.icsTheme.apply('system');
+            });
+        }
+    </script>
+
+    <link href="_content/ICS.DesignSystem/css/tokens.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="css/root.css" rel="stylesheet" />
+    <link href="ICS.Mobile.styles.css" rel="stylesheet" />
+    <link href="css/bootstrap-icons.css" rel="stylesheet" />
+
+    <link href="manifest.webmanifest" rel="manifest" />
+
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="images/icon-512.png" />
+    <link rel="apple-touch-icon" sizes="300x300" href="images/icon-300.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="images/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="150x150" href="images/icon-150.png" />
+
+</head>
+
+<body>
+    <div id="app">
+        <div class="app-splash" role="status" aria-label="Loading ICSNext Mobile">
+            <img class="app-splash-icon" src="images/icon-192.png" alt="" />
+            <div class="app-splash-title">ICSNext Mobile</div>
+            <div class="app-splash-bar" aria-hidden="true">
+                <div class="app-splash-bar-fill"></div>
+            </div>
+            <div class="loading-progress-text"></div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        <a href="" class="reload">Error! &nbsp; Click to Reload App</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script src="_framework/blazor.webassembly.js"></script>
+    <!--<script src="_content/BlazorIndexedDB/dexie.min.js"></script>
+    <script src="_content/BlazorIndexedDB/blazorDB.js"></script>-->
+
+
+    <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
+
+
+    <script>
+        window.setAppBadge = function (number) {
+            if ("setAppBadge" in navigator) {
+                navigator.setAppBadge(number);
+            }
+        };
+
+        window.clearAppBadge = function () {
+            if ("clearAppBadge" in navigator) {
+                navigator.clearAppBadge();
+            }
+        };
+
+        window.scrollToTop = function () {
+            const scrollToTopWithFallback = () => {
+                // Method 1: Standard window scroll
+                if ('scrollBehavior' in document.documentElement.style) {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                } else {
+                    window.scrollTo(0, 0);
+                }
+
+                // Method 2: Direct element manipulation
+                const elementsToScroll = [
+                    document.documentElement,
+                    document.body,
+                    document.querySelector('#app'),
+                    document.querySelector('main'),
+                    document.querySelector('.content')
+                ];
+
+                elementsToScroll.forEach(el => {
+                    if (el) {
+                        el.scrollTop = 0;
+                    }
+                });
+            };
+
+            // Execute immediately
+            scrollToTopWithFallback();
+
+            // Execute again after a small delay (helps with iOS)
+            requestAnimationFrame(() => {
+                scrollToTopWithFallback();
+            });
+        };
+
+        function unloadApplication() {
+            window.location.reload();
+        }
+
+        window.setSearchBoxFocus = function () {
+            document.querySelector('input[name="search"]').focus();
+        };
+
+        window.setInputBoxFocus = function (elem) {
+            var inputelem = 'input[name="' + elem + '"]';
+            document.querySelector(inputelem).focus();
+        };
+
+        window.downloadImage = function (base64Data, mimeType) {
+            try {
+                // Create data URL
+                const dataUrl = 'data:' + mimeType + ';base64,' + base64Data;
+
+                // Create download link
+                const ext = mimeType.split('/')[1] || 'png';
+                const fileName = 'scratchpad-image-' + Date.now() + '.' + ext;
+
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (err) {
+                console.error('Download failed:', err);
+            }
+        };
+        window.convertImageToPng = function(base64Data, mimeType) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = function () {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    canvas.toBlob(function (blob) {
+                        resolve(blob);
+                    }, 'image/png');
+                };
+                img.onerror = reject;
+                img.src = 'data:' + mimeType + ';base64,' + base64Data;
+            });
+        };
+
+        window.openShareImage = async function (base64Data, mimeType, fileTitle) {
+            try {
+                // Check if Share API with files is supported
+                if (!navigator.canShare) {
+                    downloadImage(base64Data, mimeType);
+                    return true;
+                }
+
+                if (fileTitle == null || fileTitle == '') {
+                    fileTitle = 'Save Image';
+                }
+
+                let blob;
+                if (mimeType != 'image/png') {
+                    blob = await this.convertImageToPng(base64Data, mimeType);
+                } else {
+                    // Convert base64 to blob
+                    const byteCharacters = atob(base64Data);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    blob = new Blob([byteArray], { type: mimeType });
+                }
+
+                // Create a file from blob
+                const ext = mimeType.split('/')[1] || 'png';
+                const fileName = 'image-' + Date.now() + '.' + ext;
+                const file = new File([blob], fileName, { type: mimeType });
+
+                // Check if we can share this file
+                if (!navigator.canShare({ files: [file] })) {
+                    return false;
+                }
+
+                // Open share sheet
+                await navigator.share({
+                    files: [file],
+                    title: fileTitle
+                });
+
+                return true;
+            } catch (err) {
+                // User cancelled or error
+                console.log('Share cancelled or failed:', err);
+                return false;
+            }
+        };
+
+    </script>
+    <script src="js/geolocation.js"></script>
+    <script src="js/tabbar.js"></script>
+    <script src="js/contrast-audit.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/util.js"></script>
+    <script src="js/panzoom.min.js"></script>
+    <script src="js/signature_pad.umd.min.js"></script>
+    <script src="js/swiper.js"></script>
+    <script src="js/scratchpad-clipboard.js"></script>
+
+    <script>
+        // After service worker registration
+        navigator.serviceWorker.ready.then(function (registration) {
+            // Get all script tags and cache framework files
+            const scripts = document.querySelectorAll('script[src*="_content"]');
+            const urls = Array.from(scripts).map(s => s.src);
+
+            if (urls.length > 0 && registration.active) {
+                registration.active.postMessage({
+                    type: 'CACHE_URLS',
+                    urls: urls
+                });
+            }
+        });
+    </script>
+    <script src="/updateManager.js"></script>
+</body>
+
+</html>

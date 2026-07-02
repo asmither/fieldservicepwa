@@ -1,0 +1,342 @@
+﻿@page "/dispatch-detail"
+@inherits ICS.Mobile.Pages.PageBase
+@using ICS.Mobile.Components;
+@using ICS.Mobile.Pages.DispatchDetail.Components
+@using ICS.Portal.Data.Enumerations
+@* @using ICS.Mobile.Components.ScratchPad; *@
+
+<CSSDispatchDetail />
+@if (Initialized && DispTrackItem is not null && !LoadingWorkflow)
+{
+    <SyncIndicator SuppressClickableCloud=false />
+    @if (DispTrackItem is not null)
+    {
+            @* <ScratchPadOverlay @ref="scratchPadRef" CurrentUserId="@CurrentUserId" /> *@
+        @* <ScratchPadFab CurrentUserId="@CurrentUserId" /> *@
+
+        <ICS.Mobile.Pages.DispatchDetail.Components.PageHeader Status="@DispatchStatus" Priority="@DispatchPriority" OnNavigateBackClick="NavigateToDispatchList" />
+        <Dispatch Id="@DispTrackItem?.WorkOrderDispatchTechId" EmployeeId="@CurrentUserId"
+                  CustomerId="@DispTrackItem?.CustomerLocation?.CustomerId" CustomerLocationId="@DispTrackItem?.CustomerLocation?.Id"
+                  CustNo="@DispTrackItem?.Customer?.CustNo" LocNo="@DispTrackItem?.CustomerLocation?.ExternalId"
+                  CustomerName="@DispTrackItem?.Customer?.FullName"
+                  LocationName="@DispTrackItem?.CustomerLocation?.LocName"
+                  Zone="@DispTrackItem?.CustomerLocation?.Zone" Timezone="@DispTrackItem?.CustomerLocation?.TimezoneId"
+                  DispatchNumber="@DispTrackItem?.Dispatch?.ClientWorkOrder"
+                  CustomerPONumber="@DispTrackItem?.Dispatch?.PurchaseOrderNumber" DNE="@DispTrackItem?.Dispatch?.CalledInBy"
+                  Tasks="@DispTrackItem?.Dispatch?.TaskNames"
+                  AddressLine1="@DispTrackItem?.CustomerLocation?.AddressLine"
+                  City="@DispTrackItem?.CustomerLocation?.Locality" State="@DispTrackItem?.CustomerLocation?.AdminDistrict"
+                  Zip="@DispTrackItem?.CustomerLocation?.PostalCode" County="@DispTrackItem?.CustomerLocation?.AdminDistrict2"
+                  Neighborhood="@DispTrackItem?.CustomerLocation?.Neighborhood" Landmark="@DispTrackItem?.CustomerLocation?.Landmark"
+                  Longitude="@DispTrackItem?.CustomerLocation?.Longitude" Latitude="@DispTrackItem?.CustomerLocation?.Longitude"
+                  DueDate="@GetDueDate(DispTrackItem?.DispatchTechs?.FirstOrDefault(x => x.Id.Equals(DispTrackItem.WorkOrderDispatchTechId))?.DueDate)"
+                  DueTime="@GetDueTime(DispTrackItem?.DispatchTechs?.FirstOrDefault(x => x.Id.Equals(DispTrackItem.WorkOrderDispatchTechId))?.DueDate)"
+                  DueDateDaysAgo="@ICS.Portal.Data.Custom.DateFormatOptions.TimeAgo(DispTrackItem?.DispatchTechs?.FirstOrDefault(x => x.Id.Equals(DispTrackItem.WorkOrderDispatchTechId))?.DueDate)"
+                  CompleteDate="@GetDueDate(DispTrackItem?.Dispatch?.Complete)"
+                  OnMapButtonClick="OnMapButtonClick">
+        </Dispatch>
+
+        @if (CompletedWorkflows is not null && CompletedWorkflows.Any() && !ShowAddChecklists)
+        {
+            @EnableChecklistFilters(1)
+        }
+
+
+
+        @if (ShowChecklists)
+        {
+            <ChecklistHeader Title="@ChecklistHeaderTitle" Status="@ChecklistHeaderStatus" ShowFilter="@ChecklistHeaderShowFilter" ViewModeClick="ViewModeChanged" OnAddNewClick="OnAddChecklistClick" OnAddNewCloseClick="OnAddChecklistCloseClick" AddNewCount="@AddOnCount" />
+            <ChecklistContainer>
+                @if (!ShowAddChecklists && LoadedWorkflows is not null && LoadedWorkflows.Any())
+                {
+                    @foreach (var workflow in LoadedWorkflows.Where(x => x.WorkOrderDispatchTechId == DataService.AppState.DispatchTechId).OrderBy(x => x.Completed))
+                    {
+                        <ChecklistItem Prompt="@workflow.Prompt"
+                                       IsActive="@workflow.Active"
+                                       Caption="@workflow.HelpText"
+                                       WorkflowId="@workflow.WorkflowResultId"
+                                       WorkflowStatus="WorkflowStatuses.InProgress"
+                                       OnRemoveClick="OnRemoveWorkflowClick"
+                                       OnMacroClick="OnMacroWorkflowClick"
+                                       OnGoToWorkflowClick="OnGoToWorkflowLoadedClick">
+                        </ChecklistItem>
+                    }
+                }
+                @if (!ShowAddChecklists && InProgressWorkflows is not null && InProgressWorkflows.Count > 0)
+                {
+                    @foreach (var workflow in InProgressWorkflows.Where(x => x.WorkOrderDispatchTechId == DataService.AppState.DispatchTechId))
+                    {
+                        @if (LoadedWorkflows?.Find(x => x.WorkflowResultId.Equals(workflow.WorkflowResultId)) == null)
+                        {
+                            <ChecklistItem Prompt="@workflow.Prompt"
+                                           IsActive="@workflow.Active"
+                                           Caption="@workflow.HelpText"
+                                           WorkflowId="@workflow.WorkflowResultId"
+                                           WorkflowStatus="WorkflowStatuses.New"
+                                           OnRemoveClick="OnRemoveWorkflowClick"
+                                           OnMacroClick="OnMacroWorkflowClick"
+                                           OnGoToWorkflowClick="OnGoToWorkflowAllocatedClick">
+                            </ChecklistItem>
+                        }
+                    }
+                }
+                @if (!ShowAddChecklists && !ShowOnlyActiveChecklists && LoadedComplete is not null && LoadedComplete.Count > 0 && CompletedWorkflows is null)
+                {
+                    @foreach (var workflow in LoadedComplete)
+                    {
+                        <ChecklistItem Prompt="@workflow.Prompt"
+                                       IsActive="@workflow.Active"
+                                       Caption='@string.Concat("Completed ", ICS.Portal.Data.Custom.DateFormatOptions.TimeAgo(workflow.Completed), " by ",workflow.EmployeeId)'
+                                       WorkflowId="@workflow.WorkflowResultId"
+                                       WorkflowStatus="WorkflowStatuses.Complete"
+                                       OnGoToWorkflowClick="OnGoToWorkflowReviewClick">
+                        </ChecklistItem>
+                    }
+                }
+                @if (!ShowAddChecklists && !ShowOnlyActiveChecklists && CompletedWorkflows is not null && CompletedWorkflows.Count > 0)
+                {
+                    @foreach (var workflow in CompletedWorkflows)
+                    {
+                        <ChecklistItem Prompt="@workflow.Prompt"
+                                       IsActive="@workflow.Active"
+                                       Caption='@string.Concat("Completed ", ICS.Portal.Data.Custom.DateFormatOptions.TimeAgo(workflow.Completed), " by ",workflow.EmpName)'
+                                       WorkflowId="@workflow.WorkflowResultId"
+                                       WorkflowStatus="WorkflowStatuses.Complete"
+                                       OnGoToWorkflowClick="OnGoToWorkflowReviewClick">
+                        </ChecklistItem>
+                    }
+                }
+
+                @if (!ShowAddChecklists && ((CompletedWorkflows is not null && CompletedWorkflows.Count > 0) || (LoadedComplete is not null && LoadedComplete.Any())))
+                {
+                    @if (ShowOnlyActiveChecklists)
+                    {
+                        @if (CompletedWorkflows is null && LoadedComplete is not null && LoadedComplete.Count > 0)
+                        {
+                            var loadcount = LoadedComplete.Count;
+                            <ChecklistItem Prompt='@string.Concat("Show ", loadcount.ToString(), " Completed Checklist", (loadcount > 1 ? "s" : ""))'
+                                           Caption=""
+                                           WorkflowId="0"
+                                           WorkflowStatus="WorkflowStatuses.IncludeComplete"
+                                           OnIncludeMoreClick="OnShowCompleted">
+                            </ChecklistItem>
+                        }
+                        @if (CompletedWorkflows is not null && CompletedWorkflows.Count > 0)
+                        {
+                            //var count = CompletedWorkflows.Count(x => x.WorkOrderDispatchId.Equals(DispTrackItem.WorkOrderDispatchId));
+                            var count = CompletedWorkflows.Count();
+                            <ChecklistItem Prompt='@string.Concat("Show ", count.ToString(), " Completed Checklist", (count > 1 ? "s" : ""))'
+                                           Caption=""
+                                           WorkflowId="0"
+                                           WorkflowStatus="WorkflowStatuses.IncludeComplete"
+                                           OnIncludeMoreClick="OnShowCompleted">
+                            </ChecklistItem>
+                        }
+                    }
+                    @if (!ShowOnlyActiveChecklists)
+                    {
+                        <ChecklistItem Prompt=" Hide Completed Checklists"
+                                       Caption=""
+                                       WorkflowId="0"
+                                       WorkflowStatus="WorkflowStatuses.IncludeComplete"
+                                       OnIncludeMoreClick="OnHideCompleted">
+                        </ChecklistItem>
+                    }
+
+                }
+                @if (ShowAddChecklists)
+                {
+                    @if (DispTrackItem.AddOnWorkflows is not null && DispTrackItem.AddOnWorkflows.Count > 0)
+                    {
+                        @foreach (var workflow in DispTrackItem.AddOnWorkflows.Where(x => x.RequireDispatch.Equals(true) && x.HideFromSelection.Equals(false)))
+                        {
+                            <ChecklistItem Prompt="@workflow.Prompt"
+                                           Caption=""
+                                           WorkflowId="@workflow.Id"
+                                           WorkflowStatus="WorkflowStatuses.Addon"
+                                           OnAddNewCloseClick="OnAddChecklistCloseClick"
+                                           OnAddOnClick="OnGotoWorkflowAddOn">
+                            </ChecklistItem>
+                        }
+
+                        <ChecklistItem Prompt=" Cancel Add Checklist"
+                                       Caption=""
+                                       WorkflowId="0"
+                                       WorkflowStatus="WorkflowStatuses.Close"
+                                       OnAddNewCloseClick="OnAddChecklistCloseClick">
+                        </ChecklistItem>
+                    }
+                }
+            </ChecklistContainer>
+        }
+        else
+        {
+            if (IsPending)
+            {
+                <ChecklistHeader Title="    " Status="@ChecklistHeaderStatus" ShowFilter="@ChecklistHeaderShowFilter" ViewModeClick="ViewModeChanged" OnAddNewClick="OnAddChecklistClick" OnAddNewCloseClick="OnAddChecklistCloseClick" AddNewCount="@AddOnCount" />
+                <ChecklistContainer>
+                    @if (!ShowAddChecklists && InProgressWorkflows is not null && InProgressWorkflows.Any())
+                    {
+                        @foreach (var workflow in InProgressWorkflows)
+                        {
+                            <ChecklistItem Prompt="@workflow.Prompt"
+                                           Caption="@workflow.HelpText"
+                                           WorkflowId="@workflow.WorkflowResultId"
+                                           WorkflowStatus="WorkflowStatuses.InProgress"
+                                           OnRemoveClick="OnRemoveWorkflowClick"
+                                           OnMacroClick="OnMacroWorkflowClick"
+                                           OnGoToWorkflowClick="OnGoToWorkflowLoadedClick">
+                            </ChecklistItem>
+                        }
+                    }
+                    @if (!ShowAddChecklists && CompletedWorkflows is not null && CompletedWorkflows.Count > 0)
+                    {
+                        //var count = CompletedWorkflows.Count(x => x.WorkOrderDispatchId.Equals(DispTrackItem.WorkOrderDispatchId));
+                        var count = CompletedWorkflows.Count();
+                        <ChecklistItem Prompt='@string.Concat("Show ", count.ToString(), " Completed Checklist", (count > 1 ? "s" : ""))'
+                                       Caption=""
+                                       WorkflowId="0"
+                                       WorkflowStatus="WorkflowStatuses.IncludeComplete"
+                                       OnIncludeMoreClick="OnShowCompleted">
+                        </ChecklistItem>
+                    }
+                    @if (ShowAddChecklists)
+                    {
+                        @if (DispTrackItem.AddOnWorkflows is not null && DispTrackItem.AddOnWorkflows.Count > 0)
+                        {
+                            @foreach (var workflow in DispTrackItem.AddOnWorkflows.Where(x => x.RequireDispatch.Equals(true) && x.HideFromSelection.Equals(false)))
+                            {
+                                <ChecklistItem Prompt="@workflow.Prompt"
+                                               Caption=""
+                                               WorkflowId="@workflow.Id"
+                                               WorkflowStatus="WorkflowStatuses.Addon"
+                                               OnAddNewCloseClick="OnAddChecklistCloseClick"
+                                               OnAddOnClick="OnGotoWorkflowAddOn">
+                                </ChecklistItem>
+                            }
+
+                            <ChecklistItem Prompt=" Cancel Add Checklist"
+                                           Caption=""
+                                           WorkflowId="0"
+                                           WorkflowStatus="WorkflowStatuses.Close"
+                                           OnAddNewCloseClick="OnAddChecklistCloseClick">
+                            </ChecklistItem>
+                        }
+                    }
+                </ChecklistContainer>
+
+            }
+        }
+
+        @if (IsPending)
+        {
+            @if (DataService.InternetConnected)
+            {
+                @if (LoadedWorkflows is null || (LoadedWorkflows is not null && LoadedWorkflows.Count < 2))
+                {
+                    @if (DispTrackItem?.Dispatch is not null && (!DispTrackItem.Dispatch.Priority.Equals("X-TIME") && DispTrackItem?.Dispatch?.Complete is null))
+                    {
+                        <div class="ManageDispatch">
+                            <AppButton Variant="AppButton.ButtonVariant.Primary"
+                                       Size="AppButton.ButtonSize.Large"
+                                       FullWidth="true"
+                                       Icon="bi-play-fill"
+                                       OnClick="() => OnStartDispatch(DispTrackItem.WorkOrderDispatchTechId)">
+                                Begin This Job
+                            </AppButton>
+                        </div>
+                        <div class="SubDetailSeparator" />
+                    }
+                }
+            }
+        }
+
+
+        @if (!string.IsNullOrEmpty(DispTrackItem?.CustomerLocation?.Notes) || !string.IsNullOrEmpty(SanitizeString(DispTrackItem?.Dispatch?.Notes)))
+        {
+            <NotesAccordion Title="Notes">
+                <div class="DispatchNotesButtonContainer">
+                    <button class="DispatchNote" @onclick="() => OnAddNote(DispTrackItem!.WorkOrderDispatchTechId)">+ Add Dispatch Note</button>
+                </div>
+                @if (!DataService.AppState.IsContractor)
+                {
+                    @if (!string.IsNullOrEmpty(SanitizeString(DispTrackItem?.CustomerLocation?.Notes)))
+                    {
+                        <NotesContentLine Label="Location" Text="@TextToHtml(DispTrackItem?.CustomerLocation?.Notes)" />
+                        <div class="NotesSeparator"></div>
+                    }
+                }
+                @if (!string.IsNullOrEmpty(DispTrackItem?.Dispatch?.Notes))
+                {
+                    <NotesContentLine Label="Dispatch" Text="@TextToHtml(DispTrackItem?.Dispatch?.Notes)" />
+                }
+
+            </NotesAccordion>
+        }
+        @if (DispTrackItem is not null && DispTrackItem.EquipmentList is not null && DispTrackItem.EquipmentList.Count > 0)
+        {
+            <EquipmentAccordion Title="Equipment">
+                <EquipmentItem EquipList="DispTrackItem.EquipmentList" BluonEnabled="bUseBluon" GoToWorkflowReviewClick="OnGoToWorkflowReviewClick" />
+            </EquipmentAccordion>
+        }
+        <VisitHistoryAccordion Title="History" OnOpenOrCloseCallback="LoadPastVisits">
+            @if (DispatchesByLocation is not null && DispatchesByLocation.Count > 0)
+            {
+                foreach (var tech in DispatchesByLocation)
+                {
+                    <VisitHistoryItem Id="@tech.Id"
+                                      DueDate="@DateLabelDisplay(tech.DueDate)"
+                                      Dispatched="@DateLabelDisplay(tech.Dispatched)"
+                                      WorkStart="@DateLabelDisplay(tech.WorkStart)"
+                                      WorkStop="@DateLabelDisplay(tech.WorkStop)"
+                                      TechStatus="@tech.Status"
+                                      ExpandedVisit="@expandedVisitAppwideList"
+                                      ToggleExpandedCallback="@ToggleVisitExpanded"
+                                      DispData="@tech"
+                                      WorkflowHistory="@PriorVisitWorkflows.Where(x=>x.WorkOrderDispatchId.Equals(tech.WorkOrderDispatchId)).ToList()"
+                                      GoToWorkflowReviewClick="OnGoToWorkflowReviewClick">
+                    </VisitHistoryItem>
+                }
+            }
+            else
+            {
+                <ICSLoadingSpinner>
+                    <i class="bi-clock-fill"> </i>
+                </ICSLoadingSpinner>
+            }
+
+        </VisitHistoryAccordion>
+        <SiteHistoryAccordion Title="Site Audits">
+            @if (PriorVisitWorkflows is not null && PriorVisitWorkflows.Count > 0)
+            {
+                @foreach (var cwf in PriorVisitWorkflows.Where(q => q.WorkflowId.Equals(13)))
+                {
+                    <SiteHistoryItem Id="@cwf.WorkflowResultId"
+                                     EmployeeId="@cwf.EmployeeId"
+                                     EmpName="@cwf.EmpName"
+                                     WorkflowName="@cwf.Prompt"
+                                     Completed="@cwf.Completed.GetValueOrDefault(cwf.Created).ToString("ddd M/dd/yy" , System.Globalization.CultureInfo.InvariantCulture)"
+                                     WorkOrderDispatch="@cwf.WorkOrderDispatchId"
+                                     OnGoToWorkflowClick="OnGoToWorkflowReviewClick">
+                    </SiteHistoryItem>
+                }
+            }
+            else
+            {
+                <div>
+                    <center>
+                        <button class="MoreDataButton" @onclick="() => LoadPastWorkflows()"> - LOAD SITE AUDITS -</button>
+                    </center>
+                </div>
+            }
+        </SiteHistoryAccordion>
+
+    }
+}
+else
+{
+    <ICS.Mobile.Components.ICSLoadingSpinner>
+        <i class="bi-clock-fill"> </i>
+    </ICS.Mobile.Components.ICSLoadingSpinner>
+}
+<ICSDialogBox @ref="DialogBox" />

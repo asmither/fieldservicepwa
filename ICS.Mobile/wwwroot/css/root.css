@@ -1,0 +1,800 @@
+﻿/* Color, typography, spacing and status tokens live in the shared
+   ICS.DesignSystem RCL (_content/ICS.DesignSystem/css/tokens.css, linked
+   before this file). Only app-specific values and overrides remain here. */
+:root {
+    /* Brand background: clean CSS gradient (replaces the legacy wave PNG).
+       Light theme only; the dark theme's flat #121212 wins on specificity. */
+    --surface-app: linear-gradient(180deg, #013180 0%, #002458 55%, #001c44 100%) no-repeat, #001c44;
+    --RoundButtonGreenBackground: transparent no-repeat top; /*url('../images/buttonbackground.svg') */
+    --SearchIconBackground: transparent no-repeat left url("data:image/svg+xml,%3Csvg version='1.1' id='ICSSearch' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 32 32' xml:space='preserve' fill='%23000000'%3E%3Cg id='SVGRepo_bgCarrier' stroke-width='0'%3E%3C/g%3E%3Cg id='SVGRepo_tracerCarrier' stroke-linecap='round' stroke-linejoin='round'%3E%3C/g%3E%3Cg id='SVGRepo_iconCarrier'%3E%3Cstyle type='text/css'%3E .duotone_twee%7Bfill:%23bfe4e8;%7D .duotone_een%7Bfill:%238de7f7;%7D %3C/style%3E%3Cg%3E%3Cpath class='duotone_twee' d='M8.499,10H4.5C4.224,10,4,9.776,4,9.5v-1C4,8.224,4.224,8,4.5,8h6.24 C9.864,8.51,9.103,9.192,8.499,10z M27.5,8h-9.24c0.876,0.51,1.637,1.192,2.241,2H27.5c0.276,0,0.5-0.224,0.5-0.5v-1 C28,8.224,27.776,8,27.5,8z M7.43,12H4.5C4.224,12,4,12.224,4,12.5v1C4,13.776,4.224,14,4.5,14h2.524 C7.069,13.303,7.207,12.633,7.43,12z M27.5,12h-5.93c0.223,0.633,0.361,1.303,0.406,2H27.5c0.276,0,0.5-0.224,0.5-0.5v-1 C28,12.224,27.776,12,27.5,12z M27.5,16h-5.656c-0.146,0.708-0.395,1.38-0.726,2H27.5c0.276,0,0.5-0.224,0.5-0.5v-1 C28,16.224,27.776,16,27.5,16z M7.156,16H4.5C4.224,16,4,16.224,4,16.5v1C4,17.776,4.224,18,4.5,18h3.382 C7.55,17.38,7.302,16.708,7.156,16z'%3E%3C/path%3E%3Cpath class='duotone_een' d='M14.5,8C10.91,8,8,10.91,8,14.5c0,3.59,2.91,6.5,6.5,6.5s6.5-2.91,6.5-6.5C21,10.91,18.09,8,14.5,8z M14.5,19c-2.485,0-4.5-2.015-4.5-4.5c0-2.485,2.015-4.5,4.5-4.5s4.5,2.015,4.5,4.5C19,16.985,16.985,19,14.5,19z M26.573,25.443 l-1.381,1.407c-0.196,0.2-0.518,0.2-0.714-0.001l-5.932-6.065c0.841-0.542,1.569-1.243,2.135-2.066l5.893,6.025 C26.764,24.938,26.764,25.249,26.573,25.443z'%3E%3C/path%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    font-size: 16px;
+}
+
+/* Opt-in classic wave background (Settings > Theme toggle), light theme only.
+   Cards get solid (not glass) surfaces here — translucency washes out over
+   the busy wave art. */
+:root.bg-wave:not([data-theme="dark"]) {
+    --surface-app: var(--brand-800) url('../images/background-gradient-wave.png') no-repeat top;
+    --surface-card: rgba(9, 44, 92, 0.88);
+    --surface-raised-subtle: rgba(9, 44, 92, 0.55);
+    --surface-input: rgba(2, 20, 46, 0.5);
+    /* Solid fills carry the separation here — no rim, no float. */
+    --border-hairline: 1px solid transparent;
+    --elevation-1: none;
+}
+
+    /* Text sitting directly on the wave art can land on light crests —
+       a subtle dark shadow keeps it legible everywhere on the image. */
+    :root.bg-wave:not([data-theme="dark"]) .PageHeaderBasic > .IconText,
+    :root.bg-wave:not([data-theme="dark"]) .SettingsItemContainer > .Title,
+    :root.bg-wave:not([data-theme="dark"]) .CategoryTitle,
+    :root.bg-wave:not([data-theme="dark"]) .WorkflowName,
+    :root.bg-wave:not([data-theme="dark"]) .GenericBigDeal {
+        text-shadow: 0 1px 3px rgba(0, 22, 52, 0.65);
+    }
+
+    /* Muted section labels are fine on dark surfaces but too weak on the
+       art — promote them to primary text in wave mode. */
+    :root.bg-wave:not([data-theme="dark"]) .SettingsItemContainer > .Title,
+    :root.bg-wave:not([data-theme="dark"]) .CategoryTitle,
+    :root.bg-wave:not([data-theme="dark"]) .Title {
+        color: var(--text-primary);
+    }
+
+body:before {
+    content: '';
+    height: env(safe-area-inset-top);
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 100;
+    background: var(--surface-app-flat);
+}
+
+@media screen and (min-width:280px) {
+    :root {
+        font-size: 11.5px;
+    }
+}
+
+@media screen and (min-width:300px) {
+    :root {
+        font-size: 13px;
+    }
+}
+
+@media screen and (min-width:350px) {
+    :root {
+        font-size: 14px;
+    }
+}
+
+@media screen and (min-width:400px) {
+    :root {
+        font-size: 15px;
+    }
+}
+
+@media screen and (min-width:500px) {
+    :root {
+        font-size: 16px;
+    }
+}
+
+@media screen and (min-width:768px) {
+    :root {
+        font-size: 17px;
+    }
+}
+
+@media screen and (min-width:1020px) {
+    :root {
+        font-size: 18px;
+    }
+}
+
+@media screen and (min-width:1400px) {
+    :root {
+        font-size: 20px;
+    }
+}
+
+body {
+    background: var(--PrimaryBackground);
+    background-size: 100%;
+    font-family: var(--PrimaryFonts);
+    color: var(--PrimaryColor);
+}
+
+/* Full-card row: the entire card is the tap target, label left, glyph right.
+   Global because it's used by Settings, Sync, Errors, and UpdateComponent. */
+a.CardRow, a.CardRow:link, a.CardRow:visited,
+.SettingsItemContainer .Content a.CardRow {
+    color: var(--text-primary); /* rows read uniformly; the chevron signals navigation */
+}
+
+.CardRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: var(--touch-target);
+    padding: var(--space-2) 0;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: var(--text-base);
+    font-family: var(--font-sans);
+    text-decoration: none;
+    text-align: left;
+}
+
+    .CardRow i {
+        font-size: var(--text-lg);
+        color: var(--text-secondary);
+        line-height: 1;
+    }
+
+    .CardRow:active {
+        opacity: 0.7;
+    }
+
+    .CardRow.Static {
+        pointer-events: none;
+    }
+
+        .CardRow.Static i {
+            color: var(--status-success);
+        }
+
+    .CardRow .UpdateReady {
+        color: var(--accent-soft);
+        font-weight: var(--weight-semibold);
+    }
+
+/* Update check status / version line — plain caption, no colored box. */
+.UpdateNote {
+    margin-top: var(--space-2);
+    padding-left: var(--space-1);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+    .UpdateNote.Error {
+        color: var(--status-danger-text);
+    }
+
+/* When a page renders a bottom bar (tab bar or workflow navigation), float
+   the sync cloud above it (fallback without :has() support: indicator
+   overlaps the bar but stays tappable since it has the higher z-index). */
+body:has(.AppTabBar) .SyncIndicator,
+body:has(.WorkflowNavBar) .SyncIndicator {
+    bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-2));
+    margin-bottom: 0;
+}
+
+    body:has(.AppTabBar) .SyncIndicator > button,
+    body:has(.WorkflowNavBar) .SyncIndicator > button {
+        border-radius: 1rem;
+    }
+
+
+button {
+    cursor: pointer;
+}
+
+    button.Transparent {
+        border: none;
+        background-color: transparent;
+    }
+
+.custom-file-upload {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 150px;
+}
+
+    .custom-file-upload input[type="file"] {
+        overflow: hidden;
+        opacity: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .custom-file-upload label {
+        z-index: 1;
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        overflow: hidden;
+        background-color: rgba(0, 0, 0, 0.5);
+        background-size: 45px 58px;
+        border: 1px solid #DCDCE9;
+        border-radius: 5px;
+        margin: 0;
+    }
+
+        .custom-file-upload label span {
+            display: block;
+            font-size: 15px;
+            color: var(--SecondaryColor);
+            height: auto;
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            font-weight: 500;
+            transform: translate(0%, -50%);
+            align-items: center;
+            justify-content: center;
+            padding: 10px 0px;
+            width: 100%;
+            text-align: center;
+            border-radius: 0;
+        }
+
+            .custom-file-upload label span .icon {
+                --ionicon-stroke-width: 32px;
+                font-size: 58px;
+                color: var(--SecondaryColor);
+            }
+
+            .custom-file-upload label span strong {
+                display: block;
+                font-weight: 400;
+            }
+
+            .custom-file-upload label span i {
+                font-style: normal;
+                display: block;
+            }
+
+.CommonError {
+    border: var(--border-hairline);
+    border-left: 4px solid var(--status-danger);
+    border-radius: var(--radius-md);
+    background: rgba(225, 85, 57, 0.14);
+    color: var(--text-primary);
+    font-weight: var(--weight-medium);
+    padding: .5rem .5rem .5rem 1rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    grid-template-areas:
+        "Message Button";
+    margin-top: 1rem;
+}
+
+    .CommonError > .Message {
+        font-size: 1.1rem;
+        grid-area: Message;
+    }
+
+    .CommonError > .Button {
+        grid-area: Button;
+    }
+
+        .CommonError > .Button > i {
+            font-size: 2.5rem;
+            color: var(--status-danger);
+        }
+
+.RoundButtonGreen {
+    margin: 0;
+    padding: 0;
+    width: 4rem;
+    height: 4rem;
+    border-radius: var(--radius-full);
+    background: var(--RoundButtonGreenBackground);
+    background-size: 100%;
+    border: none;
+    transition: background-color var(--motion-fast) ease;
+}
+
+    .RoundButtonGreen:active {
+        background-color: var(--surface-raised-subtle);
+    }
+
+    .RoundButtonGreen:disabled {
+        pointer-events: none;
+        opacity: .55;
+    }
+
+    .RoundButtonGreen > i, .RoundButtonGreen > img {
+        color: var(--SecondaryColor);
+        font-size: 2.25rem;
+        width: 2.25rem;
+    }
+
+.PageHeaderBasic {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-areas:
+        "IconText Button";
+    margin-bottom: 0.5rem;
+}
+
+    .PageHeaderBasic > .RoundButtonGreen {
+        justify-self: end;
+        align-self: start;
+    }
+
+    .PageHeaderBasic > .IconText {
+        grid-area: IconText;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-column-gap: var(--space-3);
+        grid-template-areas:
+            "Icon Text";
+        align-items: center;
+        padding-top: var(--space-4);
+        font-size: var(--text-xl);
+        font-weight: var(--weight-semibold);
+        letter-spacing: -0.01em;
+        color: var(--text-primary);
+        min-width: 0;
+    }
+
+        .PageHeaderBasic > .IconText > .Text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-transform: uppercase; /* page titles are uppercase app-wide */
+            letter-spacing: 0.01em;
+        }
+
+        .PageHeaderBasic > .IconText > .Avatar {
+            grid-area: Icon;
+            width: 2.75rem;
+            height: 2.75rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-full);
+            background: var(--surface-raised-subtle);
+            border: var(--border-hairline);
+            overflow: hidden;
+        }
+
+            .PageHeaderBasic > .IconText > .Avatar > i {
+                font-size: 1.4rem;
+                color: var(--text-secondary);
+                line-height: 1;
+            }
+
+            .PageHeaderBasic > .IconText > .Avatar > img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            /* Default artifact: the ICS logo, inset within the chip */
+            .PageHeaderBasic > .IconText > .Avatar > img.Logo {
+                object-fit: contain;
+                padding: 5px;
+                box-sizing: border-box;
+            }
+
+.PageHeaderTabbed {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto;
+    grid-template-areas:
+        "Button . Tab";
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+    .PageHeaderTabbed > .Tab {
+        grid-area: Tab;
+        text-align: center;
+        border-radius: 0 0 10px 10px;
+        padding: 1rem 1rem 1rem 1rem;
+        background-color: rgba(0,0,0,0.5);
+    }
+
+        .PageHeaderTabbed > .Tab.Pending {
+            background-color: var(--PendingColor);
+        }
+
+        .PageHeaderTabbed > .Tab.Traveling {
+            background: var(--TravelingColor);
+        }
+
+        .PageHeaderTabbed > .Tab.Working {
+            background: var(--WorkingColor);
+        }
+
+        .PageHeaderTabbed > .Tab.Complete {
+            background: var(--CompleteColor);
+        }
+
+        .PageHeaderTabbed > .Tab > .TabTextTop {
+            display: inline-block;
+            padding-top: .25rem;
+            color: var(--SecondaryColor);
+            font-size: 1.4rem;
+            font-size: 1.2rem;
+            font-weight: normal;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: bolder;
+            width: 125px;
+            border-bottom: 1px solid rgba(255, 255, 255, .5);
+        }
+
+            .PageHeaderTabbed > .Tab > .TabTextTop::after {
+                content: '';
+                display: block;
+                max-width: 0;
+            }
+
+    .PageHeaderTabbed .Tab > .TabTextBottom {
+        font-size: 1.1rem;
+        font-weight: normal;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-bottom: .25rem;
+    }
+
+.RoundButtonGreen {
+    grid-area: Button;
+    align-self: start;
+}
+
+    .RoundButtonGreen .ArtifactIcon {
+        grid-area: Button;
+        line-height: 2em;
+        font-size: 2.5em;
+        align-items: start;
+        color: var(--SecondaryColor);
+    }
+
+    .RoundButtonGreen .ArtifactImg {
+        grid-area: Button;
+        align-items: center;
+    }
+
+    .RoundButtonGreen .ArtifactDefault {
+        padding-top: 2.0em;
+        grid-area: Button;
+        align-items: end;
+    }
+
+
+
+.ICS-dialog {
+    position: fixed;
+    z-index: 1100; /* above AppTabBar (999) and SyncIndicator (1001) */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: var(--surface-overlay);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.ICS-dialog-content {
+    background-color: var(--surface-card);
+    margin: 5% auto;
+    margin-top: calc(env(safe-area-inset-top) + 7rem);
+    border: var(--border-hairline);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    width: 92%;
+    max-width: 420px;
+    font-size: 1.35em;
+    box-shadow: var(--elevation-2);
+}
+
+/* Flat dialog: one card — title, message, buttons. No nested boxes. */
+.ICS-dialog-header {
+    padding: var(--space-4) var(--space-4) 0;
+    text-align: center;
+    background-color: transparent;
+    color: var(--text-primary);
+}
+
+    .ICS-dialog-header > h2 {
+        margin: 0;
+        font-size: var(--text-xl);
+        font-weight: var(--weight-semibold);
+    }
+
+.ICS-dialog-footer {
+    padding: 6px 0;
+    text-align: center;
+    background-color: transparent;
+    color: var(--text-primary);
+}
+
+.ICS-dialog-body {
+    padding: var(--space-2) var(--space-4) var(--space-4);
+    color: var(--text-primary);
+    background: transparent;
+}
+
+    .ICS-dialog-body > .ICS-dialog-prompt {
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        font-weight: var(--weight-regular);
+        font-size: var(--text-base);
+        line-height: var(--leading-normal);
+        color: var(--text-secondary);
+        background-color: transparent;
+    }
+
+.ICS-dialog-commentbox {
+    width: 100%;
+    display: block;
+    padding: 0; 
+    margin: 0; 
+}
+
+    .ICS-dialog-commentbox > textarea {
+        width: 100%; 
+        box-sizing: border-box; 
+        display: block;
+        font-size: 1.4em;
+        font-weight: bolder;
+        color: black;
+        padding: 8px; 
+        margin: 0; 
+    }
+
+
+.ICS-table {
+    width: 100%;
+    margin-bottom: 1em;
+    color: var(--text-primary);
+    border-collapse: collapse;
+    background: var(--surface-card);
+    border-radius: var(--radius-md);
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+    .ICS-table th, .ICS-table td {
+        text-align: left;
+        color: var(--text-primary);
+        padding: var(--space-1) 0;
+    }
+
+    .ICS-table th, .ICS-table .keycol {
+        text-align: right;
+        color: var(--text-muted);
+        font-weight: var(--weight-regular);
+        width: 40%;
+        padding-right: 1rem;
+    }
+
+    .ICS-table th, .ICS-table .valcol {
+        text-align: left;
+        font-weight: var(--weight-semibold);
+        color: var(--text-primary);
+        width: 66%;
+    }
+
+.ICS-dialog-footer {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto;
+    grid-template-areas:
+        "OkBtn CancelBtn"
+        "OptBtn OptBtn";
+    gap: 1rem;
+    padding: 1rem;
+    align-content: center;
+    align-items: center;
+    justify-content: center;
+}
+
+    .ICS-dialog-footer .ICS-btn, .ICS-okbtn, .ICS-cancelbtn, .ICS-optbtn {
+        padding: 0.5em 1em;
+        min-height: var(--touch-target);
+        background-color: var(--surface-raised-subtle);
+        border: var(--border-hairline);
+        font-size: var(--text-base);
+        font-weight: var(--weight-semibold);
+        color: var(--text-primary);
+        cursor: pointer;
+        border-radius: var(--radius-md);
+    }
+
+    .ICS-dialog-footer > .ICS-btn:hover {
+        background-color: var(--accent-strong);
+    }
+
+    .ICS-dialog-footer > .ICS-optbtn {
+        grid-column: OptBtn;
+    }
+
+    .ICS-dialog-footer > .ICS-okbtn {
+        grid-column: OkBtn;
+    }
+
+    .ICS-dialog-footer > .ICS-cancelbtn {
+        grid-column: CancelBtn;
+    }
+
+    .ICS-dialog-footer > .Default-Btn {
+        font-weight: var(--weight-bold);
+        color: var(--text-on-accent);
+        background-color: var(--accent-strong);
+        border-color: transparent;
+    }
+
+.full-height {
+    height: calc(100vh - 10rem);
+}
+
+body {
+    padding: calc(env(safe-area-inset-top) + 0rem) 0.5rem 0.5rem;
+    margin: 0;
+    margin-top: 1rem;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+
+.GenericContainer {
+    padding: var(--space-4);
+    border: var(--border-hairline);
+    border-radius: var(--radius-lg);
+    background-color: var(--surface-card);
+    box-shadow: var(--elevation-1);
+    margin-bottom: 8rem;
+    margin-top: var(--space-4);
+}
+
+    .GenericContainer > hr {
+        margin: .75rem 0;
+        padding-top: 12em;
+        color: white;
+    }
+
+    .GenericContainer > .Content {
+        padding: 0;
+    }
+
+.GenericBigDeal {
+    font-weight: 700;
+    font-size: larger;
+    margin-bottom: 0.5rem;
+}
+.GenericBasicItem {
+    border: var(--border-hairline);
+    margin-bottom: var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--surface-raised-subtle);
+    padding: var(--space-3);
+}
+
+    .GenericBasicItem .Prompt {
+        font-size: var(--text-lg);
+        font-weight: var(--weight-semibold);
+        padding-bottom: 0;
+        margin-bottom: .35rem;
+        color: var(--text-muted);
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+    }
+
+        .GenericBasicItem .Prompt > .SubLabel {
+            font-size: 1.0rem;
+            font-weight: normal;
+            color: #AAAAAA;
+        }
+
+
+    .GenericBasicItem .NoteLabel {
+        margin-top: .15rem;
+        margin-bottom: .25rem;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+    }
+
+    .GenericBasicItem .Note {
+        padding-bottom: 1rem;
+        line-height: 115%;
+        margin-left: 0.33rem;
+        font-size: 1.3rem;
+        color: white;
+        -webkit-user-select: all !important;
+        -moz-user-select: all !important;
+        -ms-user-select: element !important;
+        user-select: all !important;
+    }
+
+    .GenericBasicItem .Image {
+        width: 100%;
+        box-sizing: border-box;
+        padding-bottom: .5rem;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+    }
+
+    .GenericBasicItem .ImageLabel {
+        margin-top: .15rem;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+    }
+
+    .GenericBasicItem .Answer {
+        font-size: 1.3rem;
+        padding-bottom: 0;
+        line-height: 133%;
+        margin-left: 0.5rem;
+        margin-bottom: .35rem;
+        -webkit-user-select: all !important;
+        -moz-user-select: all !important;
+        -ms-user-select: element !important;
+        user-select: all !important;
+        color: white;
+    }
+
+    .GenericBasicItem > .Block {
+        background: rgba(255,255,255,.1);
+        border-radius: 0.35rem;
+        margin: 0.25rem;
+        padding: 0.25rem;
+    }
+
+/* ===== FILE/PHOTO UPLOAD Z-INDEX CONTROL ===== */
+/* Keep upload controls below dialogs (z-index: 50) */
+
+.custom-file-upload {
+    z-index: 1;
+}
+
+.WorkflowFilesAndPhotosContainer {
+    position: relative;
+    z-index: 1;
+}
+
+.WorkflowFilesAndPhotosContainer > .ButtonWrapper {
+    position: relative;
+    z-index: 2;
+}
+
+.WorkflowImageMedia {
+    position: relative;
+    z-index: 1;
+}
+
+.WorkflowImageMedia > .ButtonWrapper {
+    position: relative;
+    z-index: 2;
+}
+
+.file-upload-display {
+    position: relative;
+    z-index: 1;
+}
+
+/* ******* BEGIN DEVELOPMENT STYLES ****************** */

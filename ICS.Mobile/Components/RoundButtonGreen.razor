@@ -1,0 +1,62 @@
+﻿<button class="RoundButtonGreen" type="button" @onclick="Click">
+
+    @if (!string.IsNullOrEmpty(Image))
+    {
+        <span class="ArtifactImg"><img width="56" height="57" src="@Image" /></span>
+    }
+    else if (!string.IsNullOrEmpty(Icon))
+    {
+        <span class="ArtifactIcon"><i class="@Icon"></i></span>
+    }
+    else if (!string.IsNullOrEmpty(SVG) && SVG.Equals("Person"))
+    {
+        @* Legacy "Person" artifact — home/profile affordance, now token-styled. *@
+        <span class="ArtifactIcon"><i class="bi bi-person-circle"></i></span>
+    }
+    else if (!string.IsNullOrEmpty(SVG) && SVG.Equals("SubCool"))
+    {
+    <svg class="me-3" width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #0dcaf0;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+        <circle cx="12" cy="12" r="10" stroke-dasharray="2,2"></circle>
+    </svg>
+    }
+    else
+    {
+        <svg class="ArtifactDefault" width="34" height="34" viewBox="-8.5 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+            <title>Jump back to Dispatch Details</title>
+            <g id="goback" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+                <path d="M45,3 C45,1.9 44.2,1 43.1,1 L2.9,29 C1.3,30.1 1,31.3 1,32.1 L1,32.1 C1,32.1 1.1,33.8 2.9,35.1 L43.1,63 C44.1,63 45,62.1 45,61 L45,3 L45,3 Z" id="back" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="4" sketch:type="MSShapeGroup"></path>
+            </g>
+        </svg>
+    }
+
+
+
+</button>
+
+@code {
+
+    private void Click()
+    {
+        if (OnClick.HasDelegate)
+        {
+            OnClick.InvokeAsync();
+        }
+    }
+
+    [Parameter]
+    public EventCallback OnClick { set; get; }
+
+    [Parameter]
+    public bool Disabled { set; get; }
+
+    [Parameter]
+    public string? Image { set; get; }
+
+    [Parameter]
+    public string? Icon { set; get; }
+
+    [Parameter]
+    public string? SVG { set; get; }
+
+}
