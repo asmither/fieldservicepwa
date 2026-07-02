@@ -11,15 +11,17 @@ using ICS.Portal.Data.Queries.Models;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+
 #region Configure App Settings
 
 // There are various places in the UI that use this to hide or show features.
 const bool DEBUG = false;
 
 // This is used to select the appropriate ApiUrl and ImageBaseUrl
-// Debug | Stage | Production and is case sensitive
-// TODO: revert to "Production" before a production build/release.
-const string ENVIRONMENT = "Debug"; // local Functions host (localhost:7264 → ICSDEV); Stage API blocks the localhost origin via CORS, so local login must use the local host
+// Debug | Stage | Production and is case sensitive.
+// Codex/cloud builds can override this through wwwroot/appsettings.json.
+const string DEFAULT_ENVIRONMENT = "Debug"; // local Functions host (localhost:7264 -> ICSDEV); Stage API blocks the localhost origin via CORS, so local login must use the local host
 
 const string DEBUG_API_URL = "http://localhost:7264";
 const string STAGE_API_URL = "https://icsapidev.azurewebsites.net";
@@ -50,6 +52,11 @@ const int MAX_DISPATCHES_TO_SHOW = 32;
 const string BLUON_API_KEY = ""; // Bluon disconnected 2026-07 — empty disables the integration app-wide
 const string BLUON_API_ROOT = "https://hub.bluon.com/gateway/interior-climate-solutions";
 
+string ConfigValue(string key, string fallback)
+{
+    var value = builder.Configuration[key];
+    return string.IsNullOrWhiteSpace(value) ? fallback : value;
+}
 
 // Each permission here requires a corresponding permission request function in browser-permissions.js
 List<string> REQUIRED_PERMISSIONS = new(){
@@ -59,10 +66,11 @@ List<string> REQUIRED_PERMISSIONS = new(){
     //"microphone"
 };
 
+string environment = ConfigValue("Ics:Environment", DEFAULT_ENVIRONMENT);
 string apiUrl = string.Empty;
 string imageBaseUrl = string.Empty;
 
-switch (ENVIRONMENT)
+switch (environment)
 {
     case "Debug":
         apiUrl = DEBUG_API_URL;
@@ -77,9 +85,14 @@ switch (ENVIRONMENT)
         imageBaseUrl = PRODUCTION_IMAGE_BASE_URL;
         break;
     default:
-        throw new ArgumentOutOfRangeException("ENVIRONMENT", "Must be one of the following: Development, State, Production");
+        throw new ArgumentOutOfRangeException("Ics:Environment", "Must be one of the following: Debug, Stage, Production");
 }
 
+apiUrl = ConfigValue("Ics:ApiUrl", apiUrl);
+imageBaseUrl = ConfigValue("Ics:ImageBaseUrl", imageBaseUrl);
+string azureMapsKey = ConfigValue("Ics:AzureMapsKey", "");
+string bluonApiKey = ConfigValue("Ics:BluonApiKey", BLUON_API_KEY);
+string bluonApiRoot = ConfigValue("Ics:BluonApiRoot", BLUON_API_ROOT);
 
 // Create the settings service
 var settingsService = new SettingsService(
@@ -101,12 +114,13 @@ var settingsService = new SettingsService(
     IMAGE_TIMEOUT_DEFAULT,
     COMMAND_TIMEOUT_DEFAULT,
     USER_OVERRIDE_ID,
-    ENVIRONMENT,
+    environment,
     apiUrl,
     imageBaseUrl,
     MAX_DISPATCHES_TO_SHOW,
-    BLUON_API_KEY,
-    BLUON_API_ROOT
+    bluonApiKey,
+    bluonApiRoot,
+    azureMapsKey
     );
 
 #endregion Settings
@@ -164,7 +178,6 @@ IDXDBDefinition GetIDXDBDefinition()
 #endregion IndexedDB
 
 
-var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 

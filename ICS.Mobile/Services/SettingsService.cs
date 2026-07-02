@@ -28,7 +28,8 @@ namespace ICS.Mobile.Services
             string imageBaseUrl,
             int maxDispatchesToShow,
             string bluonApiKey,
-            string bluonApiRoot
+            string bluonApiRoot,
+            string azureMapsKey
             )
         {
             AppVersion = appVersion;
@@ -55,6 +56,7 @@ namespace ICS.Mobile.Services
             MaxDispatchesToShow = maxDispatchesToShow;
             BluonApiKey = bluonApiKey;
             BluonApiRoot = bluonApiRoot;
+            AzureMapsKey = azureMapsKey;
         }
 
         public string AppVersion { get; }
@@ -83,6 +85,7 @@ namespace ICS.Mobile.Services
         public int MaxDispatchesToShow { get; }
         public string BluonApiKey { get; }
         public string BluonApiRoot{ get; }
+        public string AzureMapsKey { get; }
         
     }
 }

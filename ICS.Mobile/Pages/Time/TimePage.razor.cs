@@ -16,7 +16,7 @@ namespace ICS.Mobile.Pages.Time
         bool debugMode = false;  // REMOVE THIS!  OVERRIDES EmployeeId to be xxx instead.  
         int debugUserId = 0; // 248; // 335 // 349; // 248;//32;  // Helpful when debugging to get tech with lotsa data!
 
-        private string MapsAPIKey = "";
+        private string MapsAPIKey => SettingsService.AzureMapsKey;
 
         #region Data Variables
 

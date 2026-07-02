@@ -3,6 +3,11 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Local/generated Blazor runtime configuration
+ICS.Mobile/wwwroot/appsettings.json
+ICS.Mobile/wwwroot/appsettings.*.json
+!ICS.Mobile/wwwroot/appsettings.example.json
+
 # User-specific files
 *.rsuser
 *.suo
